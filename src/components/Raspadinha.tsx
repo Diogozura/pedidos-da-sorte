@@ -68,11 +68,13 @@ export default function RaspadinhaJogo({
     const start = (e: MouseEvent | TouchEvent) => {
       if (isCompleted) return;
       isDrawing = true;
+      document.body.style.overflow = 'hidden'; // <- trava scroll
       draw(e);
     };
 
     const end = () => {
       isDrawing = false;
+        document.body.style.overflow = ''; // <- destrava scroll
       if (isCompleted) return;
 
       const imageData = ctx.getImageData(0, 0, width, height);
