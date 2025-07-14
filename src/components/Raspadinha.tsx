@@ -28,14 +28,18 @@ export default function RaspadinhaJogo({
   const [isCompleted, setIsCompleted] = useState(false);
   const [isReady, setIsReady] = useState(false); // ✅ controla o "piscado"
 
-  const brush = new Image();
-  brush.src = '/brush.png'; // coloque o brush na pasta /public
-
 
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
+
+    const brush = new Image();
+    brush.src = '/brush.png'; // coloque o brush na pasta /public
+
+    // Cobrir completamente o canvas com cor
+    const overlay = new Image();
+    overlay.src = '/overlay-image.png';
     if (!canvas || !container) return;
 
     const ctx = canvas.getContext('2d');
@@ -44,9 +48,7 @@ export default function RaspadinhaJogo({
     canvas.width = width;
     canvas.height = height;
 
-    // Cobrir completamente o canvas com cor
-    const overlay = new Image();
-    overlay.src = '/overlay-image.png';
+
 
     overlay.onload = () => {
       ctx.drawImage(overlay, 0, 0, width, height);

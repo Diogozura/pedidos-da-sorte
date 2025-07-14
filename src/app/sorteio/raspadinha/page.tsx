@@ -38,7 +38,7 @@ export default function RaspadinhaPage() {
     if (ganhou) {
       toast.success('🎉 Você ganhou!');
       setTimeout(() => {
-        // router.push('/sorteio/raspadinha?codigo=123132');
+        router.push('/sorteio/raspadinha?codigo=123132');
       }, 2000);
     } else {
       toast.error('Infelizmente você não ganhou desta vez.');
