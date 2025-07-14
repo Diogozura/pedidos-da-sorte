@@ -17,7 +17,7 @@ export default function RaspadinhaJogo({
   width,
   height,
   backgroundImage,
-  overlayColor = '#c4c4c4',
+  overlayColor = '#961f1f8f',
   radius = 25,
   percentToFinish = 50,
   onComplete,
@@ -27,6 +27,13 @@ export default function RaspadinhaJogo({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isReady, setIsReady] = useState(false); // ✅ controla o "piscado"
+
+  const brush = new Image();
+  brush.src = '/brush.png'; // coloque o brush na pasta /public
+
+  const overlay = new Image();
+  overlay.src = '/overlay-image.png'; // deve estar em /public
+
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -40,8 +47,10 @@ export default function RaspadinhaJogo({
     canvas.height = height;
 
     // Cobrir completamente o canvas com cor
-    ctx.fillStyle = overlayColor;
-    ctx.fillRect(0, 0, width, height);
+    overlay.onload = () => {
+      ctx.drawImage(overlay, 0, 0, width, height);
+      setIsReady(true); // imagem pronta para raspagem
+    };
 
     // ✅ Agora consideramos a imagem pronta
     setIsReady(true);
@@ -57,12 +66,17 @@ export default function RaspadinhaJogo({
     };
 
     const draw = (e: MouseEvent | TouchEvent) => {
-      if (!isDrawing || isCompleted) return;
+      if (!isDrawing || isCompleted || !brush.complete) return;
+
       const { x, y } = getPosition(e);
+
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, 2 * Math.PI);
-      ctx.fill();
+      ctx.globalAlpha = 1; // controla o quão forte "apaga" (1 = total)
+
+      const size = radius * 2;
+      ctx.drawImage(brush, x - radius, y - radius, size, size);
+
+      ctx.globalAlpha = 1; // reset para evitar afetar outros desenhos
     };
 
     const start = (e: MouseEvent | TouchEvent) => {
@@ -74,7 +88,7 @@ export default function RaspadinhaJogo({
 
     const end = () => {
       isDrawing = false;
-        document.body.style.overflow = ''; // <- destrava scroll
+      document.body.style.overflow = ''; // <- destrava scroll
       if (isCompleted) return;
 
       const imageData = ctx.getImageData(0, 0, width, height);
@@ -120,7 +134,7 @@ export default function RaspadinhaJogo({
         borderRadius: 12,
         overflow: 'hidden',
         border: '2px solid #000',
-        backgroundImage: isReady ? `url(${backgroundImage})` : 'none',
+        backgroundImage: isReady ? `url(${backgroundImage.startsWith('/') ? backgroundImage : '/' + backgroundImage})` : 'none',
         backgroundColor: !isReady ? overlayColor : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',

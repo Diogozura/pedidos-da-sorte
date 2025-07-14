@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import RaspadinhaJogo from '@/components/Raspadinha';
 import { toast } from 'react-toastify';
-import { Box, Container } from '@mui/material';
+import {  Container } from '@mui/material';
 import Link from 'next/link';
 
 export default function RaspadinhaPage() {
@@ -38,7 +38,7 @@ export default function RaspadinhaPage() {
     if (ganhou) {
       toast.success('🎉 Você ganhou!');
       setTimeout(() => {
-        router.push('/sorteio/ganhador');
+        // router.push('/sorteio/raspadinha?codigo=123132');
       }, 2000);
     } else {
       toast.error('Infelizmente você não ganhou desta vez.');
@@ -50,14 +50,14 @@ export default function RaspadinhaPage() {
   return (
     <Container maxWidth="md" style={{ textAlign: 'center', marginTop: '2rem' ,  }}>
       <h2>Raspe para descobrir se ganhou {codigo}</h2>
-      <Box sx={{overflow:'hidden'}}>
+      
         <RaspadinhaJogo
           width={300}
           height={300}
-          backgroundImage={ganhou ? '/result.png' : '/brush.png'}
+          backgroundImage={ganhou ? '/result.png' : '/result.png'}
           onComplete={handleComplete}
         />
-      </Box>
+     
 
 
 

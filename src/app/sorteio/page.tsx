@@ -41,6 +41,9 @@ export default function CodigoPage() {
   };
 
   return (
+    <>
+   
+     
     <Container maxWidth="md" sx={{ textAlign: 'center', mt: 6 }}>
       <Typography variant="h3" component="h1">
         Digite seu código de sorteio
@@ -68,5 +71,7 @@ export default function CodigoPage() {
         </FormControl>
       </form>
     </Container>
+      
+     </>
   );
 }
