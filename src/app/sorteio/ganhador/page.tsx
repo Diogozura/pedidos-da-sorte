@@ -22,7 +22,7 @@ export default function GanhadorPage() {
   };
 
   return (
-    <Container maxWidth="md" sx={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignItems: 'center', justifyContent: 'center' }}>
       <Typography variant="h3" component={'h1'} gutterBottom>
         🎉 Parabéns! Preencha seus dados:
       </Typography>

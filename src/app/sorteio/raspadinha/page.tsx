@@ -4,18 +4,19 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import RaspadinhaJogo from '@/components/Raspadinha';
 import { toast } from 'react-toastify';
-import { Container } from '@mui/material';
+import { Box, Container } from '@mui/material';
+import Link from 'next/link';
 
 export default function RaspadinhaPage() {
   const router = useRouter();
   const [codigo, setCodigo] = useState<string | null>(null);
-  const [validado, setValidado] = useState(false);
-  const [carregando, setCarregando] = useState(true);
+
   const [ganhou, setGanhou] = useState(false);
   const [finalizado, setFinalizado] = useState(false);
 
+
+
   useEffect(() => {
-    // 👇 Pega o código da URL direto no client
     const searchParams = new URLSearchParams(window.location.search);
     const codigoURL = searchParams.get('codigo');
     setCodigo(codigoURL);
@@ -25,10 +26,8 @@ export default function RaspadinhaPage() {
       return;
     }
 
-    // Simula validação
     setTimeout(() => {
-      setValidado(true);
-      setCarregando(false);
+    
       setGanhou(Math.random() < 0.3);
     }, 1000);
   }, [router]);
@@ -45,25 +44,26 @@ export default function RaspadinhaPage() {
       toast.error('Infelizmente você não ganhou desta vez.');
     }
   };
-console.log('codigo', codigo)
-  if (carregando) return <p>Validando código...</p>;
-  if (!validado) return <p>Código inválido.</p>;
+
+
 
   return (
-    <Container maxWidth="md" style={{ textAlign: 'center', marginTop: '2rem' }}>
-      <h2>Raspe para descobrir se ganhou</h2>
-      <RaspadinhaJogo
-        width={300}
-        height={300}
-        backgroundImage={ganhou ? '/result.png' : '/brush.png'}
-        onComplete={handleComplete}
-      >
-        RASPE AQUI
-      </RaspadinhaJogo>
+    <Container maxWidth="md" style={{ textAlign: 'center', marginTop: '2rem' ,  }}>
+      <h2>Raspe para descobrir se ganhou {codigo}</h2>
+      <Box sx={{overflow:'hidden'}}>
+        <RaspadinhaJogo
+          width={300}
+          height={300}
+          backgroundImage={ganhou ? '/result.png' : '/brush.png'}
+          onComplete={handleComplete}
+        />
+      </Box>
+
+
 
       {finalizado && !ganhou && (
         <p style={{ textAlign: 'center', marginTop: '1rem', color: '#BA0100' }}>
-          Infelizmente você não ganhou desta vez.
+          Infelizmente você não ganhou desta vez. ,  <Link href={'/'}>Voltar ao incio</Link>
         </p>
       )}
     </Container>
