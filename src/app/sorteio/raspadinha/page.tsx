@@ -1,35 +1,37 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import RaspadinhaJogo from '@/components/Raspadinha';
 import { toast } from 'react-toastify';
 import { Container } from '@mui/material';
 
-
 export default function RaspadinhaPage() {
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const codigo = searchParams.get('codigo');
-
+  const [codigo, setCodigo] = useState<string | null>(null);
   const [validado, setValidado] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [ganhou, setGanhou] = useState(false);
-  const [finalizado, setFinalizado] = useState(false); // <- novo
+  const [finalizado, setFinalizado] = useState(false);
 
   useEffect(() => {
-    if (!codigo) {
+    // 👇 Pega o código da URL direto no client
+    const searchParams = new URLSearchParams(window.location.search);
+    const codigoURL = searchParams.get('codigo');
+    setCodigo(codigoURL);
+
+    if (!codigoURL) {
       router.replace('/sorteio');
       return;
     }
 
-    // Simula verificação
+    // Simula validação
     setTimeout(() => {
       setValidado(true);
       setCarregando(false);
       setGanhou(Math.random() < 0.3);
     }, 1000);
-  }, [codigo]);
+  }, [router]);
 
   const handleComplete = () => {
     setFinalizado(true);
@@ -43,9 +45,10 @@ export default function RaspadinhaPage() {
       toast.error('Infelizmente você não ganhou desta vez.');
     }
   };
-
+console.log('codigo', codigo)
   if (carregando) return <p>Validando código...</p>;
   if (!validado) return <p>Código inválido.</p>;
+
   return (
     <Container maxWidth="md" style={{ textAlign: 'center', marginTop: '2rem' }}>
       <h2>Raspe para descobrir se ganhou</h2>
