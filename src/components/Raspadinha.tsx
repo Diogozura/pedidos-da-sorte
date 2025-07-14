@@ -31,8 +31,6 @@ export default function RaspadinhaJogo({
   const brush = new Image();
   brush.src = '/brush.png'; // coloque o brush na pasta /public
 
-  const overlay = new Image();
-  overlay.src = '/overlay-image.png'; // deve estar em /public
 
 
   useEffect(() => {
@@ -47,9 +45,18 @@ export default function RaspadinhaJogo({
     canvas.height = height;
 
     // Cobrir completamente o canvas com cor
+    const overlay = new Image();
+    overlay.src = '/overlay-image.png';
+
     overlay.onload = () => {
       ctx.drawImage(overlay, 0, 0, width, height);
-      setIsReady(true); // imagem pronta para raspagem
+      setIsReady(true);
+    };
+
+    overlay.onerror = () => {
+      ctx.fillStyle = overlayColor;
+      ctx.fillRect(0, 0, width, height);
+      setIsReady(true);
     };
 
     // ✅ Agora consideramos a imagem pronta
@@ -71,7 +78,7 @@ export default function RaspadinhaJogo({
       const { x, y } = getPosition(e);
 
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.globalAlpha = 1; // controla o quão forte "apaga" (1 = total)
+      ctx.globalAlpha = 0.5; // controla o quão forte "apaga" (1 = total)
 
       const size = radius * 2;
       ctx.drawImage(brush, x - radius, y - radius, size, size);
@@ -100,7 +107,18 @@ export default function RaspadinhaJogo({
 
       if (percent >= percentToFinish && !isCompleted) {
         setIsCompleted(true);
-        onComplete?.();
+
+        // Faz um fade-out do canvas antes de chamar onComplete
+        if (canvas) {
+          canvas.style.transition = 'opacity 0.6s ease-in-out';
+          canvas.style.opacity = '0';
+
+          setTimeout(() => {
+            onComplete?.();
+          }, 600); // Espera o fade-out terminar
+        } else {
+          onComplete?.();
+        }
       }
     };
 
@@ -165,7 +183,7 @@ export default function RaspadinhaJogo({
           zIndex: 2,
           pointerEvents: isCompleted ? 'none' : 'auto',
           opacity: isCompleted ? 0 : 1,
-          transition: 'opacity 0.3s ease-in-out',
+          transition: 'opacity 0.6s ease-in-out', // fade suave
         }}
       />
     </div>

@@ -54,7 +54,7 @@ export default function RaspadinhaPage() {
         <RaspadinhaJogo
           width={300}
           height={300}
-          backgroundImage={ganhou ? '/result.png' : '/result.png'}
+          backgroundImage={ganhou ? '/logo-pizza.png' : '/result.png'}
           onComplete={handleComplete}
         />
      
