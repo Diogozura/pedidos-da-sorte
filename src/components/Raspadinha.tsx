@@ -13,7 +13,7 @@ type Props = {
   children?: React.ReactNode;
 };
 
-export default function Raspadinha({
+export default function RaspadinhaJogo({
   width,
   height,
   backgroundImage,

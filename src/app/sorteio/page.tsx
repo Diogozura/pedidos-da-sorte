@@ -1,23 +1,45 @@
 'use client';
-import Raspadinha from "../components/Raspadinha";
 
+import { Button, Container, FormControl, TextField, Typography } from '@mui/material';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { toast } from 'react-toastify';
 
+export default function CodigoPage() {
+  const [codigo, setCodigo] = useState('');
+  const router = useRouter();
 
-export default function Sorteio() {
-    return (
-        <>
-            <div>
-                <h1 style={{ textAlign: 'center' }}>Raspadinha</h1>
-                <Raspadinha
-                    width={300}
-                    height={300}
-                    backgroundImage="/result.png"
-                    overlayColor="#a4a4a4"
-                    onComplete={() => alert('🎉 Você raspou o suficiente!')}
-                >
-                    {/* <p style={{ fontSize: 20 }}>Você Ganhou!</p> */}
-                </Raspadinha>
-            </div>
-        </>
-    )
+  const handleSubmit = async () => {
+    const upperCode = codigo.trim().toUpperCase();
+
+    await toast.promise(
+      new Promise<void>((resolve, reject) => {
+        setTimeout(() => {
+          if (upperCode === 'PEDIDO1') {
+            resolve();
+          } else {
+            reject();
+          }
+        }, 3000); // simula 3s de validação
+      }),
+      {
+        pending: 'Validando código...',
+        success: 'Código válido! 🎉',
+        error: 'Código inválido ❌',
+      }
+    ).then(() => {
+      router.push(`/sorteio/raspadinha?codigo=${upperCode}`);
+    });
+  };
+
+  return (
+    <Container maxWidth="md" style={{ textAlign: 'center', marginTop: '2rem' }}>
+      <Typography variant='h3' component={'h1'}>Digite seu código de sorteio</Typography>
+      <FormControl style={{ marginTop: '1rem' }}>
+        <TextField value={codigo} label='código' placeholder='Digite o código...' sx={{ mb: 1 }} onChange={(e) => setCodigo(e.target.value.toUpperCase())} />
+        <Button color='primary' variant='contained' onClick={handleSubmit}>Validar</Button>
+      </FormControl>
+
+    </Container>
+  );
 }

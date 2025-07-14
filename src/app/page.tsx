@@ -1,12 +1,14 @@
 
+import { Container, Typography } from "@mui/material";
 import Link from "next/link";
 
 export default function Home() {
   return (
-  <>
-  Sorteio diveritos e muito Raspadinha
+    <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignItems: 'center', justifyContent: 'center' }}>
 
-  acesse <Link href="/sorteio">Sorteio</Link>
-  </>
+     <Typography component={'h1'} variant="h2">Sorteio divertidos e muito Raspadinha</Typography> 
+
+       <Typography component={'h2'} variant="h5"><Link href="/sorteio">acesse Sorteio</Link></Typography>
+    </Container>
   );
 }
