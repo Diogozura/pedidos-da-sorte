@@ -4,33 +4,43 @@
 import DashboardCard from '@/components/DashboardCard';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
 import { useAuth } from '@/context/AuthContext';
-import { AppBar, Box, Button,  Container, Grid, Toolbar, Typography } from '@mui/material';
+import { AppBar, Box, Button,  CircularProgress,  Container, Grid, Toolbar, Typography } from '@mui/material';
+
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { logout } from '@/lib/logout';
 
 export default function DashboardPage() {
-  // const user = useAuth();
-  // const router = useRouter();
-
-  // useEffect(() => {
-  //   if (user === null) {
-  //     router.push('/auth/login');
-  //   }
-  // }, [user, router]);
-
-  // if (!user) return null;
+  const { user, loading } = useAuth();
   const router = useRouter();
 
-  const handleLogout = () => {
-    // auth.signOut() // se estiver usando Firebase Auth
-    router.push('/login');
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user) {
+    return (
+      <Container sx={{ mt: 4, textAlign: 'center' }}>
+        <CircularProgress />
+        <Typography>Verificando acesso...</Typography>
+      </Container>
+    );
+  }
+   const handleLogout = async () => {
+    await logout();
+    router.push('/');
   };
+
+
   return (
-    <>
+    <ProtectedRoute>
       {/* Header */}
       <AppBar position="static" sx={{ backgroundColor: '#BA0100' }}>
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-          <Typography variant="h6">Pedidos da Sorte</Typography>
+          <Typography variant="h6">Bem-vindo, {user?.email}</Typography>
           <Box display="flex" gap={2}>
             <Button color="inherit" onClick={() => router.push('/dashboard')}>
               Dashboard
@@ -86,7 +96,7 @@ export default function DashboardPage() {
           </Grid>
         </Grid>
       </Container>
-    </>
+    </ProtectedRoute>
 
   )
 }

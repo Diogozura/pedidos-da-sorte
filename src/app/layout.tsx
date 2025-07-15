@@ -6,6 +6,7 @@ config.autoAddCss = false;
 import { ThemeProvider } from '@/theme/ThemeContext';
 import ToastProvider from '@/components/ToastProvider';
 import { FormProvider } from '@/config/FormContext';
+import { AuthProvider } from '@/context/AuthContext';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -24,13 +25,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-inter">
         <ThemeProvider>
 
-         
-          <FormProvider>
-            <main>{children}</main>
 
+          <FormProvider>
+            <AuthProvider>
+              <main>{children}</main>
+            </AuthProvider>
             <ToastProvider />
           </FormProvider>
-       
+
         </ThemeProvider>
       </body>
     </html>

@@ -13,13 +13,17 @@ import {
   Divider,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { useFormContext } from '@/config/FormContext'; // importa seu contexto
+import { useFormContext } from '@/config/FormContext';
+import { toast } from 'react-toastify';
 
 export default function LoginPage() {
   const router = useRouter();
   const { formValues, setFormValues } = useFormContext();
 
-  const values = formValues['login'] || { email: '', senha: '' };
+ const values = {
+  email: formValues?.login?.email || '',
+  senha: formValues?.login?.senha || '',
+};
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -27,21 +31,27 @@ export default function LoginPage() {
   };
 
   const loginEmailSenha = async () => {
-     router.push('/dashboard');
-    // try {
-    //   await signInWithEmailAndPassword(auth, values.email, values.senha);
-    //   router.push('/dashboard');
-    // } catch (err: any) {
-    //   alert('Erro ao entrar: ' + err.message);
-    // }
+    if (!values.email || !values.senha) {
+      toast.error('Preencha o email e a senha!');
+      return;
+    }
+
+    try {
+      await signInWithEmailAndPassword(auth, values.email, values.senha);
+      toast.success('Login realizado com sucesso! 🎉');
+      setTimeout(() => router.push('/dashboard'), 1500);
+    } catch (err: any) {
+      toast.error('Erro ao entrar: ' + err.message);
+    }
   };
 
   const loginGoogle = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-      router.push('/dashboard');
+      toast.success('Login com Google realizado! ✅');
+      setTimeout(() => router.push('/dashboard'), 1500);
     } catch (err: any) {
-      alert('Erro ao entrar com Google: ' + err.message);
+      toast.error('Erro ao entrar com Google: ' + err.message);
     }
   };
 
