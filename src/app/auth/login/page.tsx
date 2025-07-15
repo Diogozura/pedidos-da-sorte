@@ -27,12 +27,13 @@ export default function LoginPage() {
   };
 
   const loginEmailSenha = async () => {
-    try {
-      await signInWithEmailAndPassword(auth, values.email, values.senha);
-      router.push('/dashboard');
-    } catch (err: any) {
-      alert('Erro ao entrar: ' + err.message);
-    }
+     router.push('/dashboard');
+    // try {
+    //   await signInWithEmailAndPassword(auth, values.email, values.senha);
+    //   router.push('/dashboard');
+    // } catch (err: any) {
+    //   alert('Erro ao entrar: ' + err.message);
+    // }
   };
 
   const loginGoogle = async () => {

@@ -9,7 +9,7 @@ export const lightTheme = createTheme({
     },
     background: {
       default: '#ffffffff',
-      paper: '#1d1d1d',
+      paper: '#ddddddff',
     },
   },
 });
