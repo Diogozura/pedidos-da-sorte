@@ -20,6 +20,9 @@ export default function GerenciarConta() {
   const router = useRouter();
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+
+   
   const fetchUsuarios = async () => {
     onAuthStateChanged(auth, async (user) => {
       if (!user) return;
@@ -53,10 +56,12 @@ export default function GerenciarConta() {
           email: userData.email
         }]);
       }
+      
     });
   };
 
   fetchUsuarios();
+   }
 }, []);
 
 
