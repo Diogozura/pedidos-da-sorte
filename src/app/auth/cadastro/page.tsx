@@ -1,14 +1,7 @@
 'use client';
 
-import { auth, googleProvider } from '@/lib/firebase';
-import {
-  createUserWithEmailAndPassword,
-  fetchSignInMethodsForEmail,
-  signInWithPopup,
-  updateProfile,
-} from 'firebase/auth';
-import { db } from '@/lib/firebase'; // Firestore importado
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Button,
   Container,
@@ -16,68 +9,52 @@ import {
   Typography,
   Divider,
 } from '@mui/material';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { toast } from 'react-toastify';
+
+import { auth, db } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
+import { IconButton, InputAdornment } from '@mui/material';
+
 
 export default function CadastroPage() {
   const router = useRouter();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
 
-  const salvarUsuarioNoFirestore = async (uid: string, nome: string, email: string) => {
-    const ref = doc(db, 'usuarios', uid);
-    await setDoc(ref, {
-      nome,
-      email,
-      pizzariaId: null,
-      nivel: 'admin', // ou 'pizzaria' dependendo do caso
-      criadoEm: new Date(),
-    });
-  };
+
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [senha, setSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
 
   const handleCadastro = async () => {
     if (!nome || !email || !senha) {
-      toast.error('Preencha todos os campos');
+      toast.error('Preencha todos os campos!');
       return;
     }
 
+
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
-      await updateProfile(userCredential.user, { displayName: nome });
-      await salvarUsuarioNoFirestore(userCredential.user.uid, nome, email);
+      const result = await createUserWithEmailAndPassword(auth, email, senha);
+      await updateProfile(result.user, { displayName: nome });
+
+      // Salva os dados no Firestore (coleção: usuarios)
+      await setDoc(doc(db, 'usuarios', result.user.uid), {
+        uid: result.user.uid,
+        nome,
+        email,
+        criadoEm: new Date(),
+        nivel: 'pizzaria', // ou 'admin' se quiser diferenciar
+      });
+
       toast.success('Conta criada com sucesso!');
-      router.push('/dashboard');
+      setTimeout(() => router.push('/dashboard'), 1500);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error('Erro ao cadastrar: ' + err.message);
-    }
-  };
-
-  const cadastrarComGoogle = async () => {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const { email, uid, displayName } = result.user;
-
-      if (!email) {
-        toast.error('Erro ao obter email da conta Google.');
-        return;
-      }
-
-      // Verifica se já está no banco de dados
-      const ref = doc(db, 'usuarios', uid);
-      const snapshot = await getDoc(ref);
-
-      if (snapshot.exists()) {
-        toast.error('Essa conta já está cadastrada!');
-        return;
-      }
-
-      await salvarUsuarioNoFirestore(uid, displayName || 'Sem nome', email);
-      toast.success('Conta com Google criada com sucesso!');
-      router.push('/dashboard');
-    } catch (err: any) {
-      toast.error('Erro ao cadastrar com Google: ' + err.message);
     }
   };
 
@@ -90,42 +67,63 @@ export default function CadastroPage() {
       <TextField
         fullWidth
         label="Nome completo"
-        value={nome}
         sx={{ mb: 2 }}
+        value={nome}
         onChange={(e) => setNome(e.target.value)}
       />
       <TextField
         fullWidth
         label="Email"
         type="email"
-        value={email}
         sx={{ mb: 2 }}
+        value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
       <TextField
         fullWidth
         label="Senha"
-        type="password"
-        value={senha}
+        type={mostrarSenha ? 'text' : 'password'}
         sx={{ mb: 2 }}
+        value={senha}
         onChange={(e) => setSenha(e.target.value)}
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton onClick={() => setMostrarSenha(!mostrarSenha)} edge="end">
+                <FontAwesomeIcon icon={mostrarSenha ? faEyeSlash : faEye} />
+              </IconButton>
+            </InputAdornment>
+          ),
+        }}
       />
 
+      <TextField
+        fullWidth
+        label="Confirmar Senha"
+        type={mostrarSenha ? 'text' : 'password'}
+        sx={{ mb: 2 }}
+        value={confirmarSenha}
+        onChange={(e) => setConfirmarSenha(e.target.value)}
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton onClick={() => setMostrarSenha(!mostrarSenha)} edge="end">
+                <FontAwesomeIcon icon={mostrarSenha ? faEyeSlash : faEye} />
+              </IconButton>
+            </InputAdornment>
+          ),
+        }}
+      />
       <Button fullWidth variant="contained" onClick={handleCadastro}>
         Cadastrar
       </Button>
 
-      <Divider sx={{ my: 3 }}>ou</Divider>
-
-      <Button fullWidth variant="outlined" onClick={cadastrarComGoogle}>
-        Cadastrar com Google
-      </Button>
+      <Divider sx={{ my: 3 }} />
 
       <Button
         fullWidth
         variant="text"
-        sx={{ mt: 2 }}
-        onClick={() => router.push('/login')}
+        onClick={() => router.push('/auth/login')}
       >
         Já tenho conta
       </Button>
