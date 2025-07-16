@@ -4,7 +4,7 @@
 import DashboardCard from '@/components/DashboardCard';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
 import { useAuth } from '@/context/AuthContext';
-import { AppBar, Box, Button,  CircularProgress,  Container, Grid, Toolbar, Typography } from '@mui/material';
+import { AppBar, Box, Button, CircularProgress, Container, Grid, Toolbar, Typography } from '@mui/material';
 
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useRouter } from 'next/navigation';
@@ -16,9 +16,12 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth/login');
+    if (typeof window !== 'undefined') {
+      if (!loading && !user) {
+        router.push('/auth/login');
+      }
     }
+
   }, [user, loading, router]);
 
   if (loading || !user) {
@@ -29,7 +32,7 @@ export default function DashboardPage() {
       </Container>
     );
   }
-   const handleLogout = async () => {
+  const handleLogout = async () => {
     await logout();
     router.push('/');
   };
@@ -54,7 +57,7 @@ export default function DashboardPage() {
             <Button color="inherit" onClick={handleLogout}>
               Sair
             </Button>
-             <ThemeToggleButton />
+            <ThemeToggleButton />
           </Box>
         </Toolbar>
       </AppBar>
@@ -66,28 +69,28 @@ export default function DashboardPage() {
         </Typography>
 
         <Grid container spacing={4}>
-          <Grid size={{xs:12, md:4}} >
+          <Grid size={{ xs: 12, md: 4 }} >
             <DashboardCard
               title="🎯 Raspadinhas Ativas"
               description="Visualize e gerencie todas as raspadinhas disponíveis no momento."
               onClick={() => router.push('/dashboard/ativas')}
             />
           </Grid>
-          <Grid size={{xs:12, md:4}}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <DashboardCard
               title="➕ Criar Raspadinha"
               description="Crie uma nova campanha de raspadinha personalizada."
               onClick={() => router.push('/dashboard/criar-sorteio')}
             />
           </Grid>
-          <Grid size={{xs:12, md:4}}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <DashboardCard
               title="➕ Promoções"
               description="Crie uma nova campanha de raspadinha personalizada."
               onClick={() => router.push('/dashboard/promocoes')}
             />
           </Grid>
-          <Grid size={{xs:12, md:4}}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <DashboardCard
               title="👤 Gerenciar Conta"
               description="Atualize seus dados, senha e preferências de conta."
