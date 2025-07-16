@@ -1,9 +1,10 @@
 'use client';
 
-import { auth, googleProvider } from '@/lib/firebase';
+import { auth, googleProvider, db } from '@/lib/firebase';
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
+  signOut,
 } from 'firebase/auth';
 import {
   Button,
@@ -15,15 +16,16 @@ import {
 import { useRouter } from 'next/navigation';
 import { useFormContext } from '@/config/FormContext';
 import { toast } from 'react-toastify';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function LoginPage() {
   const router = useRouter();
   const { formValues, setFormValues } = useFormContext();
 
- const values = {
-  email: formValues?.login?.email || '',
-  senha: formValues?.login?.senha || '',
-};
+  const values = {
+    email: formValues?.login?.email || '',
+    senha: formValues?.login?.senha || '',
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -37,7 +39,17 @@ export default function LoginPage() {
     }
 
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.senha);
+      const result = await signInWithEmailAndPassword(auth, values.email, values.senha);
+      const user = result.user;
+
+      // Verifica se o usuário existe no Firestore
+      const userDoc = await getDoc(doc(db, 'usuarios', user.uid));
+      if (!userDoc.exists()) {
+        await signOut(auth);
+        toast.error('Essa conta não está cadastrada no sistema.');
+        return;
+      }
+
       toast.success('Login realizado com sucesso! 🎉');
       setTimeout(() => router.push('/dashboard'), 1500);
     } catch (err: any) {
@@ -47,7 +59,17 @@ export default function LoginPage() {
 
   const loginGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const popup = await signInWithPopup(auth, googleProvider);
+      const user = popup.user;
+
+      // Verifica se o usuário está cadastrado no Firestore
+      const userDoc = await getDoc(doc(db, 'usuarios', user.uid));
+      if (!userDoc.exists()) {
+        await signOut(auth);
+        toast.error('Essa conta não está cadastrada no sistema.');
+        return;
+      }
+
       toast.success('Login com Google realizado! ✅');
       setTimeout(() => router.push('/dashboard'), 1500);
     } catch (err: any) {
@@ -66,7 +88,7 @@ export default function LoginPage() {
         label="Email"
         type="email"
         name="email"
-        value={values.email || ''}
+        value={values.email}
         sx={{ mb: 2 }}
         onChange={handleInputChange}
       />
@@ -75,7 +97,7 @@ export default function LoginPage() {
         label="Senha"
         type="password"
         name="senha"
-        value={values.senha || ''}
+        value={values.senha}
         sx={{ mb: 2 }}
         onChange={handleInputChange}
       />

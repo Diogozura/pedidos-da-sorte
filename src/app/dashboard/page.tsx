@@ -82,7 +82,7 @@ export default function DashboardPage() {
           </Grid>
           <Grid size={{xs:12, md:4}}>
             <DashboardCard
-              title="➕ Criar Raspadinha"
+              title="➕ Promoções"
               description="Crie uma nova campanha de raspadinha personalizada."
               onClick={() => router.push('/dashboard/promocoes')}
             />
