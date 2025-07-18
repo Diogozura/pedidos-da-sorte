@@ -14,7 +14,6 @@ export default function GanhadorPage() {
   const codigo = searchParams.get('codigo');
   const { formValues, setFormValues } = useFormContext();
   const [loading, setLoading] = useState(false);
-
   const values = formValues['ganhador'] || {};
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,7 +42,8 @@ export default function GanhadorPage() {
       const codigoDoc = snapshot.docs[0];
       const codigoId = codigoDoc.id;
       const codigoData = codigoDoc.data();
-
+      
+      
       // Salvar dados do ganhador
       await addDoc(collection(db, 'ganhadores'), {
         nome: values.nome,
@@ -60,7 +60,8 @@ export default function GanhadorPage() {
       });
 
       toast.success('Dados enviados com sucesso!');
-      router.push(`/sorteio/voucher?codigo=${codigo}`);
+      router.push(`/sorteio/${codigoData.campanhaId}/voucher?codigo=${codigo}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error('Erro ao salvar dados: ' + err.message);
     } finally {

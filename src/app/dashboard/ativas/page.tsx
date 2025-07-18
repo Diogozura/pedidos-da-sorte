@@ -41,7 +41,7 @@ interface Codigo {
   status: string;
   criadoEm?: Timestamp;
   usadoEm?: Timestamp;
-  premiado?: boolean;
+  premiado?: string;
 }
 
 export default function JogosAtivos() {
@@ -123,14 +123,14 @@ export default function JogosAtivos() {
         criadoEm: Timestamp.now(),
         usado: false,
         status: 'ativo',
-        premiado: false,
+        premiado: 'não sorteado',
       });
 
       const novo: Codigo = {
         id: docRef.id,
         codigo: novoCodigo,
         status: 'ativo',
-        premiado: false,
+        premiado: 'não sorteado',
       };
 
       setCodigosPorCampanha((prev) => ({
@@ -140,6 +140,7 @@ export default function JogosAtivos() {
 
       toast.success(`Código gerado: ${novoCodigo}`);
       navigator.clipboard.writeText(novoCodigo);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error('Erro ao gerar código: ' + err.message);
     }

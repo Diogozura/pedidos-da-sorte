@@ -19,6 +19,7 @@ import {
   increment,
 } from 'firebase/firestore';
 import { doc, updateDoc } from 'firebase/firestore';
+import { getRedirectUrlByStatus } from '@/utils/redirectByStatus';
 
 
 export default function CodigoPage() {
@@ -50,27 +51,40 @@ export default function CodigoPage() {
 
       const docRef = snapshot.docs[0].ref;
       const data = snapshot.docs[0].data();
-      console.log('data.status', data)
-
-       const campanhaRef = doc(db, 'campanhas', data.campanhaId);
-      // Atualiza o status para "validado" apenas se status for "ativo"
-      await updateDoc(docRef, {
-        status: 'validado',
-        usado: true,
-        usadoEm: new Date(),
-      });
-      if(data.status == 'ativo'){
+      const status = data.status;
+      console.log('data', data)
+      if (status === 'ativo') {
+        const campanhaRef = doc(db, 'campanhas', data.campanhaId);
         await updateDoc(campanhaRef, {
-        raspadinhasRestantes: increment(-1),
-      });
+          raspadinhasRestantes: increment(-1),
+        });
+
+        await updateDoc(docRef, {
+          status: 'validado',
+          usado: true,
+          usadoEm: new Date(),
+        });
+
+        toast.success('Código válido! 🎉');
       }
-    
-      toast.success('Código válido! 🎉');
-      router.push(`/sorteio/raspadinha?codigo=${upperCode}`);
+
+      // ✅ Redireciona com base no status (atualizado ou original)
+      const redirectUrl = getRedirectUrlByStatus(
+        status === 'ativo' ? 'validado' : status,
+        upperCode,
+        data.campanhaId
+      );
+
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error('Erro ao validar código: ' + err.message);
     }
   };
+
 
 
   return (

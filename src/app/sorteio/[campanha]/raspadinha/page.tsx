@@ -28,6 +28,7 @@ export default function RaspadinhaPage() {
   const [premio, setPremio] = useState(false);
 
 
+
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const codigoURL = searchParams.get('codigo');
@@ -55,6 +56,8 @@ export default function RaspadinhaPage() {
       const codigoDoc = snapshot.docs[0];
       const data = codigoDoc.data();
 
+      console.log('data.status', data.status)
+      console.log('data', data)
       const codigoDocId = codigoDoc.id;
       setCodigoDocId(codigoDocId);
       setCampanhaId(data.campanhaId);
@@ -91,28 +94,27 @@ export default function RaspadinhaPage() {
         return;
       }
 
-      // Realiza o sorteio
+
       let sorteado = false;
-      const chance = campanhaData.premiadasRestantes / campanhaData.raspadinhasRestantes;
 
-      if (campanhaData.premiadasRestantes > 0 && Math.random() < chance) {
-        sorteado = true;
-        setPremio(true);
-        setBackgroundImage(campanhaData.premioImagem || '/logo-pizza.png');
+      if (data.status === 'validado') {
+        const chance = campanhaData.premiadasRestantes / campanhaData.raspadinhasRestantes;
 
+        if (campanhaData.premiadasRestantes > 0 && Math.random() < chance) {
+          sorteado = true;
+          setPremio(true);
+          setBackgroundImage(campanhaData.premioImagem || '/logo-pizza.png');
+        }
 
-      } else {
-        setPremio(false);
-        setBackgroundImage('/result.png');
+        // Atualiza status para "aguardando raspagem"
+        await updateDoc(doc(db, 'codigos', codigoDocId), {
+          status: 'aguardando raspagem',
+          premiado: sorteado,
+          premioImagem: sorteado ? campanhaData.premioImagem || '/logo-pizza.png' : '',
+        });
       }
 
-      // Atualiza código com o resultado e status aguardando raspagem
-      await updateDoc(doc(db, 'codigos', codigoDocId), {
-        status: 'aguardando raspagem',
-        premiado: sorteado,
-        premioImagem: sorteado ? campanhaData.premioImagem || '/logo-pizza.png' : '',
-      });
-
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error('Erro na validação: ' + err.message);
     }
@@ -134,10 +136,16 @@ export default function RaspadinhaPage() {
 
 
 
-      if (codigoData?.status === 'aguardando raspagem' || codigoData?.premiado === true) {
+      if (codigoData?.status === 'aguardando raspagem' && codigoData?.premiado === true) {
         await updateDoc(campanhaRef, {
           premiadasRestantes: increment(-1),
         });
+        await updateDoc(codigoRef, {
+          usado: true,
+          status: 'aguardando dados ganhador',
+          usadoEm: new Date(),
+        });
+
       }
 
 
@@ -152,12 +160,13 @@ export default function RaspadinhaPage() {
       if (premio) {
         toast.success('🎉 Você ganhou!');
         setTimeout(() => {
-          router.push(`/sorteio/ganhador?codigo=${codigo}`);
+          router.push(`/sorteio/${campanhaId}/ganhador?codigo=${codigo}`);
         }, 2000);
       } else {
         toast.error('Infelizmente você não ganhou desta vez.');
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error('Erro ao finalizar raspadinha: ' + err.message);
     }
