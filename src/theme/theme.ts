@@ -8,7 +8,7 @@ export const lightTheme = createTheme({
       main: '#DF1616',
     },
     background: {
-      default: '#ffffffff',
+      default: '#f8f8f8ff',
       paper: '#ddddddff',
     },
   },

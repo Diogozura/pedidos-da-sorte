@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import RaspadinhaJogo from '@/components/Raspadinha';
 import { toast } from 'react-toastify';
-import { Container } from '@mui/material';
+import { Container, Typography } from '@mui/material';
 import { db } from '@/lib/firebase';
 import {
   collection,
@@ -17,6 +17,7 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import Link from 'next/link';
+import { BaseSorteio } from '../../base';
 
 export default function RaspadinhaPage() {
   const router = useRouter();
@@ -173,22 +174,27 @@ export default function RaspadinhaPage() {
   };
 
   return (
-    <Container maxWidth="md" style={{ textAlign: 'center', marginTop: '2rem' }}>
-      <h2>Raspe para descobrir se ganhou</h2>
+    <BaseSorteio >
+      <Container maxWidth="md" style={{ textAlign: 'center', marginTop: '2rem', height: '70vh', display: 'grid', alignContent: 'center', justifyContent: 'center'}}>
 
-      <RaspadinhaJogo
-        width={300}
-        height={300}
-        backgroundImage={backgroundImage}
-        onComplete={handleComplete}
-      />
+        <Typography variant='h4' component={'h1'}>Raspe para descobrir se ganhou</Typography>
 
-      {finalizado && !premio && (
-        <p style={{ textAlign: 'center', marginTop: '1rem', color: '#BA0100' }}>
-          Infelizmente você não ganhou desta vez.{' '}
-          <Link href="/">Voltar ao início</Link>
-        </p>
-      )}
-    </Container>
+        <RaspadinhaJogo
+          width={300}
+          height={300}
+          backgroundImage={backgroundImage}
+          onComplete={handleComplete}
+        />
+
+        {finalizado && !premio && (
+          <p style={{ textAlign: 'center', marginTop: '1rem', color: '#BA0100' }}>
+            Infelizmente você não ganhou desta vez.{' '}
+            <Link href="/">Voltar ao início</Link>
+          </p>
+        )}
+
+
+      </Container>
+    </BaseSorteio>
   );
 }

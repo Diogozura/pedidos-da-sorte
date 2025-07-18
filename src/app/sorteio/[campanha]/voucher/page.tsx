@@ -2,10 +2,11 @@
 
 import { db } from "@/lib/firebase";
 import { Box, Container, Typography } from "@mui/material";
-import {collection, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { collection, getDocs, query, updateDoc, where } from "firebase/firestore";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
+import { BaseSorteio } from "../../base";
 
 export default function VoucherPage() {
   const searchParams = useSearchParams();
@@ -36,29 +37,32 @@ export default function VoucherPage() {
       await updateDoc(docRef, {
         status: 'voucher disponível',
       });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       toast.error('Erro ao copiar ou atualizar o status.');
     }
   };
   return (
-    <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignContent: 'center', justifyContent: 'center' }}>
-      <h2>🎉 Seu voucher foi gerado!</h2>
-      <p>Use esse voucher na loja ou envie para a equipe.</p>
-      <Box
-        onClick={handleCopy}
-        style={{
-          marginTop: '20px',
-          padding: '20px',
-          border: '2px dashed #BA0100',
-          background: '#fff',
-          color: '#000',
-          fontWeight: 'bold',
-        }}
-      >
-        {voucherCode}
-      </Box>
-      <Typography variant="body1" component={'p'}>Voltar para o <Link href={'/'}>inicio</Link></Typography>
-    </Container>
+    <BaseSorteio>
+
+      <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignContent: 'center', justifyContent: 'center' }}>
+        <h2>🎉 Seu voucher foi gerado!</h2>
+        <p>Use esse voucher na loja ou envie para a equipe.</p>
+        <Box
+          onClick={handleCopy}
+          style={{
+            marginTop: '20px',
+            padding: '20px',
+            border: '2px dashed #BA0100',
+            background: '#fff',
+            color: '#000',
+            fontWeight: 'bold',
+          }}
+        >
+          {voucherCode}
+        </Box>
+        <Typography variant="body1" component={'p'}>Voltar para o <Link href={'/'}>inicio</Link></Typography>
+      </Container>
+    </BaseSorteio>
   );
 }

@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, updateDoc, doc, getDocs, query, where } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+import { BaseSorteio } from '../../base';
 
 export default function GanhadorPage() {
   const router = useRouter();
@@ -42,8 +43,8 @@ export default function GanhadorPage() {
       const codigoDoc = snapshot.docs[0];
       const codigoId = codigoDoc.id;
       const codigoData = codigoDoc.data();
-      
-      
+
+
       // Salvar dados do ganhador
       await addDoc(collection(db, 'ganhadores'), {
         nome: values.nome,
@@ -70,55 +71,60 @@ export default function GanhadorPage() {
   };
 
   return (
-    <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignItems: 'center', justifyContent: 'center' }}>
-      <Typography variant="h4" gutterBottom>
-        🎉 Parabéns! Preencha seus dados:
-      </Typography>
-      <Box
-        component="form"
-        onSubmit={handleSubmit}
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-          width: '100%',
-          maxWidth: 400,
-          mx: 'auto',
-          textAlign: 'center',
-        }}
-      >
-        <TextField
-          label="Nome completo"
-          name="nome"
-          fullWidth
-          autoComplete="name"
-          required
-          value={values.nome || ''}
-          onChange={handleInputChange}
-        />
-        <TextField
-          label="Telefone"
-          name="telefone"
-          fullWidth
-          autoComplete="tel"
-          required
-          value={values.telefone || ''}
-          onChange={handleInputChange}
-        />
-        <TextField
-          label="Endereço"
-          name="endereco"
-          fullWidth
-          autoComplete="street-address"
-          required
-          value={values.endereco || ''}
-          onChange={handleInputChange}
-        />
+    <BaseSorteio>
+      <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignItems: 'center', justifyContent: 'center' }}>
 
-        <Button type="submit" color="primary" variant="contained" disabled={loading}>
-          {loading ? 'Enviando...' : 'Validar'}
-        </Button>
-      </Box>
-    </Container>
+
+        <Typography variant="h4" gutterBottom>
+          🎉 Parabéns! Preencha seus dados:
+        </Typography>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            width: '100%',
+            maxWidth: 400,
+            mx: 'auto',
+            textAlign: 'center',
+          }}
+        >
+          <TextField
+            label="Nome completo"
+            name="nome"
+            fullWidth
+            autoComplete="name"
+            required
+            value={values.nome || ''}
+            onChange={handleInputChange}
+          />
+          <TextField
+            label="Telefone"
+            name="telefone"
+            fullWidth
+            autoComplete="tel"
+            required
+            value={values.telefone || ''}
+            onChange={handleInputChange}
+          />
+          <TextField
+            label="Endereço"
+            name="endereco"
+            fullWidth
+            autoComplete="street-address"
+            required
+            value={values.endereco || ''}
+            onChange={handleInputChange}
+          />
+
+          <Button type="submit" color="primary" variant="contained" disabled={loading}>
+            {loading ? 'Enviando...' : 'Validar'}
+          </Button>
+        </Box>
+
+      </Container>
+    </BaseSorteio>
   );
 }

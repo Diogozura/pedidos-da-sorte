@@ -24,6 +24,7 @@ import {
   Divider,
 } from '@mui/material';
 import { toast } from 'react-toastify';
+import Link from 'next/link';
 
 interface Campanha {
   id: string;
@@ -241,6 +242,9 @@ export default function JogosAtivos() {
                                 <>
                                   <Typography variant="body2">
                                     Status: {c.status}
+                                  </Typography>
+                                  <Typography variant="body2">
+                                    link: <Link href={'/sorteio'}>Sorteio</Link>
                                   </Typography>
                                   {c.criadoEm && (
                                     <Typography variant="body2">

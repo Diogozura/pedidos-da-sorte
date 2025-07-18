@@ -20,6 +20,7 @@ import {
 } from 'firebase/firestore';
 import { doc, updateDoc } from 'firebase/firestore';
 import { getRedirectUrlByStatus } from '@/utils/redirectByStatus';
+import { BaseSorteio } from './base';
 
 
 export default function CodigoPage() {
@@ -79,7 +80,7 @@ export default function CodigoPage() {
         router.push(redirectUrl);
       }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error('Erro ao validar código: ' + err.message);
     }
@@ -88,32 +89,35 @@ export default function CodigoPage() {
 
 
   return (
-    <Container maxWidth="md" sx={{ textAlign: 'center', mt: 6 }}>
-      <Typography variant="h3" component="h1">
-        Digite seu código de sorteio
-      </Typography>
+    <BaseSorteio>
 
-      <form onSubmit={handleSubmit}>
-        <FormControl fullWidth sx={{ mt: 4 }}>
-          <TextField
-            value={codigo}
-            label="Código"
-            placeholder="EX: ABC123"
-            required
-            inputProps={{ minLength: 5 }}
-            onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-          />
-          <Button
-            type="submit"
-            color="primary"
-            variant="contained"
-            sx={{ mt: 2 }}
-            disabled={codigo.trim().length < 5}
-          >
-            Validar
-          </Button>
-        </FormControl>
-      </form>
-    </Container>
+      <Container maxWidth="md" sx={{ height: '70vh', display: 'grid', alignContent: 'center', justifyContent: 'center', textAlign: 'center', mt: 6 }}>
+        <Typography variant="h4" component="h1">
+          Digite seu código de sorteio
+        </Typography>
+
+        <form onSubmit={handleSubmit}>
+          <FormControl fullWidth sx={{ mt: 4 }}>
+            <TextField
+              value={codigo}
+              label="Código"
+              placeholder="EX: ABC123"
+              required
+              inputProps={{ minLength: 5 }}
+              onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+            />
+            <Button
+              type="submit"
+              color="primary"
+              variant="contained"
+              sx={{ mt: 2 }}
+              disabled={codigo.trim().length < 5}
+            >
+              Validar
+            </Button>
+          </FormControl>
+        </form>
+      </Container>
+    </BaseSorteio>
   );
 }
