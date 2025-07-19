@@ -2,14 +2,14 @@
 'use client';
 
 import DashboardCard from '@/components/DashboardCard';
-import ThemeToggleButton from '@/components/ThemeToggleButton';
 import { useAuth } from '@/context/AuthContext';
-import { AppBar, Box, Button, CircularProgress, Container, Grid, Toolbar, Typography } from '@mui/material';
+import {  CircularProgress, Container, Grid, Typography } from '@mui/material';
 
-import ProtectedRoute from '@/components/ProtectedRoute';
+
 import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
-import { logout } from '@/lib/logout';
+import BaseDash from './base';
+
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -32,36 +32,11 @@ export default function DashboardPage() {
       </Container>
     );
   }
-  const handleLogout = async () => {
-    await logout();
-    router.push('/');
-  };
+ 
 
 
   return (
-    <ProtectedRoute>
-      {/* Header */}
-      <AppBar position="static" sx={{ backgroundColor: '#BA0100' }}>
-        <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-          <Typography variant="h6">Bem-vindo, {user?.email}</Typography>
-          <Box display="flex" gap={2}>
-            <Button color="inherit" onClick={() => router.push('/dashboard')}>
-              Dashboard
-            </Button>
-            <Button color="inherit" onClick={() => router.push('/dashboard/promocoes')}>
-              Promoção
-            </Button>
-            <Button color="inherit" onClick={() => router.push('/dashboard/jogos')}>
-              Jogos
-            </Button>
-            <Button color="inherit" onClick={handleLogout}>
-              Sair
-            </Button>
-            <ThemeToggleButton />
-          </Box>
-        </Toolbar>
-      </AppBar>
-
+    <BaseDash>
       {/* Conteúdo */}
       <Container sx={{ mt: 6 }}>
         <Typography variant="h4" gutterBottom>
@@ -99,7 +74,7 @@ export default function DashboardPage() {
           </Grid>
         </Grid>
       </Container>
-    </ProtectedRoute>
+    </BaseDash>
 
   )
 }

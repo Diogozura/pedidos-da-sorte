@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import ProtectedRoute from "@/components/ProtectedRoute";
 import {
   Button,
   Container,
@@ -20,6 +19,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
+import BaseDash from "../base";
 
 export default function GerenciarConta() {
   const [nome, setNome] = useState('');
@@ -63,7 +63,7 @@ export default function GerenciarConta() {
   };
 
   return (
-    <ProtectedRoute>
+    <BaseDash>
       <Container maxWidth="sm" sx={{ mt: 6 }}>
         <Typography variant="h4" gutterBottom>
           Criar conta de pizzaria
@@ -133,6 +133,6 @@ export default function GerenciarConta() {
 
       
       </Container>
-    </ProtectedRoute>
+    </BaseDash>
   );
 }

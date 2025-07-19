@@ -28,156 +28,191 @@ export default function RaspadinhaPage() {
   const [campanhaId, setCampanhaId] = useState<string | null>(null);
   const [premio, setPremio] = useState(false);
 
-
-
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const codigoURL = searchParams.get('codigo');
-    setCodigo(codigoURL);
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('codigo');
+    setCodigo(code);
 
-    if (!codigoURL) {
+    if (!code) {
       router.replace('/sorteio');
       return;
     }
-
-    validarCodigo(codigoURL);
+    validarCodigo(code);
   }, [router]);
 
-  const validarCodigo = async (codigo: string) => {
+  const validarCodigo = async (code: string) => {
     try {
-      const q = query(collection(db, 'codigos'), where('codigo', '==', codigo));
-      const snapshot = await getDocs(q);
-
-      if (snapshot.empty) {
+      // 1) busca o doc de código
+      const q = query(collection(db, 'codigos'), where('codigo', '==', code));
+      const snap = await getDocs(q);
+      if (snap.empty) {
         toast.error('Código inválido');
         router.replace('/sorteio');
         return;
       }
 
-      const codigoDoc = snapshot.docs[0];
-      const data = codigoDoc.data();
+      const docCod = snap.docs[0];
+      const dataCod = docCod.data();
+      const idCod = docCod.id;
+      setCodigoDocId(idCod);
+      setCampanhaId(dataCod.campanhaId);
 
-      console.log('data.status', data.status)
-      console.log('data', data)
-      const codigoDocId = codigoDoc.id;
-      setCodigoDocId(codigoDocId);
-      setCampanhaId(data.campanhaId);
-
-      // Já usado = bloqueia
-      if (data.status === 'usado' || data.status === 'encerrado') {
+      // 2) bloqueia se já usado ou encerrado
+      if (['usado', 'encerrado'].includes(dataCod.status)) {
         toast.error('Este código já foi utilizado.');
         router.replace('/sorteio');
         return;
       }
 
-      // Já sorteado = só carrega resultado
-      if (data.status === 'aguardando raspagem') {
-        toast.info('Esse código já foi sorteado. Raspe para revelar o resultado.');
-        setPremio(data.premiado);
-        setBackgroundImage(data.premiado ? data.premioImagem || '/logo-pizza.png' : '/result.png');
+      // 3) se já sorteado, apenas carrega o resultado
+      if (dataCod.status === 'aguardando raspagem') {
+        setPremio(dataCod.premiado);
+        setBackgroundImage(dataCod.premioImagem || '/result.png');
         return;
       }
 
-      // Status inválido
-      if (data.status !== 'validado') {
-        toast.error('Código inválido para raspadinha.');
+      // 4) só sorteia se for validado
+      if (dataCod.status !== 'validado') {
+        toast.error('Código não está pronto para raspadinha.');
         router.replace('/sorteio');
         return;
       }
 
-      // Caso seja status === validado → sorteia
-      const campanhaRef = doc(db, 'campanhas', data.campanhaId);
-      const campanhaSnap = await getDoc(campanhaRef);
-      const campanhaData = campanhaSnap.data();
-
-      if (!campanhaData) {
+      // 5) busca os dados da campanha
+      const refCamp = doc(db, 'campanhas', dataCod.campanhaId);
+      const snapCamp = await getDoc(refCamp);
+      const camp = snapCamp.data();
+      if (!camp) {
         toast.error('Campanha não encontrada.');
+        router.replace('/sorteio');
         return;
       }
 
+      // 6) verifica se ainda há prêmios
+      let ganhou = false;
+      let escolhido: any = null;
 
-      let sorteado = false;
-
-      if (data.status === 'validado') {
-        const chance = campanhaData.premiadasRestantes / campanhaData.raspadinhasRestantes;
-
-        if (campanhaData.premiadasRestantes > 0 && Math.random() < chance) {
-          sorteado = true;
-          setPremio(true);
-          setBackgroundImage(campanhaData.premioImagem || '/logo-pizza.png');
+      if (camp.premiosRestantes > 0) {
+        // filtra apenas prêmios com quantidadeRestantes > 0
+        const disponiveis = camp.premios.filter((p: any) => p.quantidadeRestantes > 0);
+        if (disponiveis.length) {
+          // sorteio ponderado pelo peso (quantidadeRestantes)
+          const totalPeso = disponiveis.reduce((sum: number, p: any) => sum + p.quantidadeRestantes, 0);
+          const rand = Math.floor(Math.random() * totalPeso);
+          let acc = 0;
+          for (const p of disponiveis) {
+            acc += p.quantidadeRestantes;
+            if (rand < acc) {
+              escolhido = p;
+              break;
+            }
+          }
         }
+      }
 
-        // Atualiza status para "aguardando raspagem"
-        await updateDoc(doc(db, 'codigos', codigoDocId), {
+      // 7) atualiza Firestore e estado local
+      console.log('escolhido', escolhido)
+      if (escolhido) {
+        ganhou = true;
+        setPremio(true);
+        setBackgroundImage(escolhido.imagem);
+
+        // decrementa o item escolhido e os contadores gerais
+        const novos = camp.premios.map((p: any) =>
+          p.nome === escolhido.nome
+            ? { ...p, quantidadeRestantes: p.quantidadeRestantes - 1 }
+            : p
+        );
+
+        await updateDoc(refCamp, {
+          premios: novos,
+          premiosRestantes: increment(-1),
+          raspadinhasRestantes: increment(-1),
+        });
+
+        // atualiza o código
+        await updateDoc(doc(db, 'codigos', idCod), {
           status: 'aguardando raspagem',
-          premiado: sorteado,
-          premioImagem: sorteado ? campanhaData.premioImagem || '/logo-pizza.png' : '',
+          premiado: true,
+          premioNome: escolhido.nome,
+          premioImagem: escolhido.imagem,
+        });
+
+      } else {
+        // sem prêmio (ou sem mais disponíveis)
+        setPremio(false);
+        setBackgroundImage('/result.png');
+
+        await updateDoc(doc(db, 'codigos', idCod), {
+          status: 'aguardando raspagem',
+          premiado: false,
+          premioNome: '',
+          premioImagem: '',
+          // se quiser decrementar raspadinhas mesmo sem prêmio, basta descomentar:
+          // raspadinhasRestantes: increment(-1),
         });
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error('Erro na validação: ' + err.message);
     }
   };
-
 
   const handleComplete = async () => {
     if (!codigoDocId || !campanhaId) return;
     setFinalizado(true);
 
     try {
-      const campanhaRef = doc(db, 'campanhas', campanhaId);
-      const codigoRef = doc(db, 'codigos', codigoDocId);
+      const refCod = doc(db, 'codigos', codigoDocId);
+      const snapCod = await getDoc(refCod);
+      const dataCod = snapCod.data();
 
-
-      // 🔍 Busca o status atual do código
-      const codigoSnap = await getDoc(codigoRef);
-      const codigoData = codigoSnap.data();
-
-
-
-      if (codigoData?.status === 'aguardando raspagem' && codigoData?.premiado === true) {
-        await updateDoc(campanhaRef, {
-          premiadasRestantes: increment(-1),
-        });
-        await updateDoc(codigoRef, {
-          usado: true,
+      // avança status
+      if (dataCod?.status === 'aguardando raspagem' && dataCod?.premiado) {
+        await updateDoc(refCod, {
           status: 'aguardando dados ganhador',
+          usado: true,
           usadoEm: new Date(),
         });
-
+      } else {
+        await updateDoc(refCod, {
+          status: 'encerrado',
+          usado: true,
+          usadoEm: new Date(),
+        });
       }
 
-
-      await updateDoc(codigoRef, {
-        usado: true,
-        status: 'encerrado',
-        usadoEm: new Date(),
-      });
-
-
-
-      if (premio) {
+      // feedback e redirecionamento
+      if (dataCod?.premiado) {
         toast.success('🎉 Você ganhou!');
         setTimeout(() => {
-          router.push(`/sorteio/${campanhaId}/ganhador?codigo=${codigo}`);
-        }, 2000);
+          router.replace(`/sorteio/${campanhaId}/ganhador?codigo=${codigo}`);
+        }, 1500);
       } else {
         toast.error('Infelizmente você não ganhou desta vez.');
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      toast.error('Erro ao finalizar raspadinha: ' + err.message);
+      toast.error('Erro ao finalizar: ' + err.message);
     }
   };
 
   return (
-    <BaseSorteio >
-      <Container maxWidth="md" style={{ textAlign: 'center', marginTop: '2rem', height: '70vh', display: 'grid', alignContent: 'center', justifyContent: 'center'}}>
-
-        <Typography variant='h4' component={'h1'}>Raspe para descobrir se ganhou</Typography>
+    <BaseSorteio>
+      <Container
+        maxWidth="md"
+        sx={{
+          textAlign: 'center',
+          mt: 4,
+          height: '70vh',
+          display: 'grid',
+          alignContent: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Typography variant="h4" gutterBottom>
+          Raspe para descobrir se ganhou
+        </Typography>
 
         <RaspadinhaJogo
           width={300}
@@ -187,13 +222,10 @@ export default function RaspadinhaPage() {
         />
 
         {finalizado && !premio && (
-          <p style={{ textAlign: 'center', marginTop: '1rem', color: '#BA0100' }}>
-            Infelizmente você não ganhou desta vez.{' '}
-            <Link href="/">Voltar ao início</Link>
-          </p>
+          <Typography color="#BA0100" mt={2}>
+            Infelizmente você não ganhou desta vez. <Link href="/">Voltar ao início</Link>
+          </Typography>
         )}
-
-
       </Container>
     </BaseSorteio>
   );

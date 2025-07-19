@@ -35,7 +35,7 @@ export default function VoucherPage() {
       const docRef = snap.docs[0].ref;
 
       await updateDoc(docRef, {
-        status: 'voucher disponível',
+        status: 'encerrado',
       });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {

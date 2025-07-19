@@ -5,9 +5,9 @@ import { Container, Grid, Typography, Card, CardContent } from "@mui/material";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import DashboardCard from "@/components/DashboardCard";
-import ProtectedRoute from "@/components/ProtectedRoute";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from 'firebase/auth';
+import BaseDash from '../base';
 
 interface Usuario {
   uid: string;
@@ -67,7 +67,7 @@ export default function GerenciarConta() {
 
 
   return (
-    <ProtectedRoute>
+    <BaseDash>
       <Container maxWidth="md" sx={{ mt: 6 }}>
         <Typography variant="h4" gutterBottom>
           Gerenciar Conta
@@ -76,8 +76,8 @@ export default function GerenciarConta() {
         <Grid container spacing={4} sx={{ mb: 6 }}>
           <Grid  size={{xs:12, md:4}}>
             <DashboardCard
-              title="🎯 Raspadinhas Ativas"
-              description="Visualize e gerencie todas as raspadinhas disponíveis no momento."
+              title="Cadastrar Empresa"
+              description="Cadastre empresas para ter acesso ao sistema "
               onClick={() => router.push('/dashboard/empresa')}
             />
           </Grid>
@@ -104,6 +104,6 @@ export default function GerenciarConta() {
           ))}
         </Grid>
       </Container>
-    </ProtectedRoute>
+    </BaseDash>
   );
 }
