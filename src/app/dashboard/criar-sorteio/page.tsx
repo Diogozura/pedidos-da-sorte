@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
 import {
   Container,
   TextField,
@@ -12,10 +12,9 @@ import {
   IconButton,
   Box,
   Grid,
-  InputAdornment
+  InputAdornment,
 } from '@mui/material';
 import { toast } from 'react-toastify';
-
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
 import BaseDash from '../base';
@@ -24,22 +23,31 @@ interface Premio {
   nome: string;
   imagem: string;
   quantidadeTotais: number;
-  quantidadeRestantes: number;
 }
 
-export default function Sorteio() {
+// Função utilitária para embaralhar um array (Fisher-Yates)
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+export default function CriarCampanha() {
   const [nome, setNome] = useState('');
-  const [quantidade, setQuantidade] = useState('');
+  const [totalRaspadinhas, setTotalRaspadinhas] = useState('');
   const [premios, setPremios] = useState<Premio[]>([
-    { nome: '', imagem: '', quantidadeTotais: 1, quantidadeRestantes: 1 }
+    { nome: '', imagem: '', quantidadeTotais: 1 },
   ]);
 
   const adicionarPremio = () => {
-    setPremios([...premios, { nome: '', imagem: '', quantidadeTotais: 1, quantidadeRestantes: 1 }]);
+    setPremios((prev) => [...prev, { nome: '', imagem: '', quantidadeTotais: 1 }]);
   };
 
   const removerPremio = (index: number) => {
-    setPremios(premios.filter((_, i) => i !== index));
+    setPremios((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleChangePremio = (
@@ -49,49 +57,78 @@ export default function Sorteio() {
   ) => {
     const novos = [...premios];
     if (field === 'quantidadeTotais') {
-      const qt = parseInt(value) || 1;
-      novos[index].quantidadeTotais = qt;
-      // sincroniza quantidadeRestantes inicialmente igual ao total
-      novos[index].quantidadeRestantes = qt;
-    } else if (field === 'nome' || field === 'imagem') {
+      novos[index].quantidadeTotais = parseInt(value) || 1;
+    } else {
       novos[index][field] = value;
     }
     setPremios(novos);
   };
 
   const criarCampanha = async () => {
-    if (!nome || !quantidade) {
-      toast.error('Preencha todos os campos');
+    if (!nome.trim() || !totalRaspadinhas) {
+      toast.error('Preencha o nome e o total de raspadinhas.');
       return;
     }
 
-    const total = parseInt(quantidade);
-    // soma quantidades totais de cada prêmio
-    const premiadasTotais = premios.reduce((sum, p) => sum + p.quantidadeTotais, 0);
-
-    if (isNaN(total) || premiadasTotais > total) {
-      toast.error('Dados inválidos. Verifique os valores.');
+    const total = parseInt(totalRaspadinhas, 10);
+    const somaPremios = premios.reduce((sum, p) => sum + p.quantidadeTotais, 0);
+    if (isNaN(total) || somaPremios > total) {
+      toast.error('Total de raspadinhas deve ser ≥ soma das quantidades de prêmios.');
       return;
     }
 
     try {
-      await addDoc(collection(db, 'campanhas'), {
+      // 1. Cria a campanha
+      const campanhasCol = collection(db, 'campanhas');
+      const campanhaRef = await addDoc(campanhasCol, {
         nome,
         totalRaspadinhas: total,
         raspadinhasRestantes: total,
-        premiosTotais: premiadasTotais,
-        premiosRestantes: premiadasTotais,
+        premiosTotais: somaPremios,
+        premiosRestantes: somaPremios,
         premios,
-        criadoEm: new Date()
+        criadoEm: new Date(),
       });
 
-      toast.success('Campanha criada com sucesso!');
+      // 2. Prepara lista de slots (prêmios + nulls)
+      const slots: (string | null)[] = [];
+      premios.forEach((p) => {
+        for (let i = 0; i < p.quantidadeTotais; i++) slots.push(p.nome);
+      });
+      // preenche o restante com nulls
+      while (slots.length < total) slots.push(null);
+
+      // 3. Embaralha slots para distribuição aleatória
+      const shuffledSlots = shuffleArray(slots);
+
+      // 4. Gera subcoleção de posições
+      const batch = writeBatch(db);
+      shuffledSlots.forEach((prizeName, index) => {
+        const posRef = doc(
+          db,
+          'campanhas',
+          campanhaRef.id,
+          'posicoes',
+          `${index + 1}`
+        );
+        batch.set(posRef, {
+          chance: index + 1,
+          prize: prizeName,
+          usado: false,
+          enviado: false,
+        });
+      });
+
+      await batch.commit();
+
+      toast.success('Campanha criada e posições embaralhadas com sucesso!');
+      // limpa form
       setNome('');
-      setQuantidade('');
-      setPremios([{ nome: '', imagem: '', quantidadeTotais: 1, quantidadeRestantes: 1 }]);
+      setTotalRaspadinhas('');
+      setPremios([{ nome: '', imagem: '', quantidadeTotais: 1 }]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      toast.error('Erro ao salvar campanha: ' + err.message);
+      toast.error('Erro ao criar campanha: ' + err.message);
     }
   };
 
@@ -114,8 +151,8 @@ export default function Sorteio() {
           label="Total de raspadinhas"
           fullWidth
           type="number"
-          value={quantidade}
-          onChange={(e) => setQuantidade(e.target.value)}
+          value={totalRaspadinhas}
+          onChange={(e) => setTotalRaspadinhas(e.target.value)}
           sx={{ mb: 2 }}
         />
 
@@ -128,7 +165,7 @@ export default function Sorteio() {
         {premios.map((p, index) => (
           <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
             <Grid container spacing={2} alignItems="center">
-              <Grid size={{ xs:12, sm:4}} >
+              <Grid size={{xs:12, sm:4}}>
                 <TextField
                   label="Nome do prêmio"
                   value={p.nome}
@@ -136,7 +173,7 @@ export default function Sorteio() {
                   fullWidth
                 />
               </Grid>
-              <Grid size={{ xs:12, sm:4}}>
+              <Grid size={{xs:12, sm:4}}>
                 <TextField
                   label="Imagem (URL)"
                   value={p.imagem}
@@ -144,7 +181,7 @@ export default function Sorteio() {
                   fullWidth
                 />
               </Grid>
-              <Grid size={{ xs:12, sm:2}}>
+              <Grid size={{xs:12, sm:2}}>
                 <TextField
                   label="Quantidade"
                   type="number"
@@ -154,7 +191,7 @@ export default function Sorteio() {
                   fullWidth
                 />
               </Grid>
-              <Grid size={{ xs:12, sm:2}}>
+              <Grid size={{xs:12, sm:2}} >
                 <IconButton onClick={() => removerPremio(index)}>
                   <FontAwesomeIcon icon={faMinus} />
                 </IconButton>
@@ -179,7 +216,7 @@ export default function Sorteio() {
         <Divider sx={{ mt: 4, mb: 2 }} />
 
         <Typography variant="body2" color="text.secondary">
-          As campanhas são usadas para gerar raspadinhas com controle de prêmios e sorteios.
+          As campanhas agora pré-alocam posições aleatórias de prêmios em subcoleção `posicoes`.
         </Typography>
       </Container>
     </BaseDash>

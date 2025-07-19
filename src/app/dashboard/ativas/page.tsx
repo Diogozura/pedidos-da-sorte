@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -9,6 +10,8 @@ import {
   query,
   where,
   Timestamp,
+  updateDoc,
+  doc,
 } from 'firebase/firestore';
 import {
   Container,
@@ -24,17 +27,15 @@ import {
   Divider,
 } from '@mui/material';
 import { toast } from 'react-toastify';
-import Link from 'next/link';
 import BaseDash from '../base';
 
 interface Campanha {
   id: string;
   nome: string;
   raspadinhasRestantes: number;
-  premiadasRestantes: number;
-  premiadasTotais: number;
+  premiosRestantes: number;
+  premiosTotais: number;
   totalRaspadinhas: number;
-
 }
 
 interface Codigo {
@@ -47,94 +48,91 @@ interface Codigo {
 }
 
 export default function JogosAtivos() {
-  const [filtros, setFiltros] = useState<Record<string, 'todos' | 'premiados' | 'recentes'>>({});
-
   const [campanhas, setCampanhas] = useState<Campanha[]>([]);
-  const [codigosPorCampanha, setCodigosPorCampanha] = useState<{
-    [campanhaId: string]: Codigo[];
-  }>({});
+  const [codigosPorCampanha, setCodigosPorCampanha] = useState<Record<string, Codigo[]>>({});
+  const [filtros, setFiltros] = useState<Record<string, 'todos' | 'premiados'>>({});
 
   useEffect(() => {
     const fetchCampanhasECodigos = async () => {
-      const campanhasSnap = await getDocs(collection(db, 'campanhas'));
-      const campanhasList: Campanha[] = [];
+      const campSnap = await getDocs(collection(db, 'campanhas'));
+      const campList: Campanha[] = [];
+      const codesMap: Record<string, Codigo[]> = {};
 
-      for (const docItem of campanhasSnap.docs) {
-        const data = docItem.data();
-        if (data.raspadinhasRestantes >= 0) {
-          const campanha: Campanha = {
-            id: docItem.id,
-            nome: data.nome,
-            raspadinhasRestantes: data.raspadinhasRestantes,
-            premiadasTotais: data.premiadasTotais,
-            totalRaspadinhas: data.totalRaspadinhas,
-            premiadasRestantes: data.premiadasRestantes,
-          };
-          campanhasList.push(campanha);
+      for (const campDoc of campSnap.docs) {
+        const data = campDoc.data();
+        const camp: Campanha = {
+          id: campDoc.id,
+          nome: data.nome,
+          raspadinhasRestantes: data.raspadinhasRestantes,
+          premiosRestantes: data.premiosRestantes,
+          premiosTotais: data.premiosTotais,
+          totalRaspadinhas: data.totalRaspadinhas,
+        };
+        campList.push(camp);
 
-          // buscar códigos
-          const codigosSnap = await getDocs(
-            query(collection(db, 'codigos'), where('campanhaId', '==', docItem.id))
-          );
-          console.log('codigosSnap', codigosSnap)
-          const codigos: Codigo[] = codigosSnap.docs.map((doc) => ({
-            id: doc.id,
-            codigo: doc.data().codigo,
-            usado: doc.data().usado,
-            status: doc.data().status, // fallback p/ antigos
-            premiado: doc.data().premiado,
-            criadoEm: doc.data().criadoEm,
-            usadoEm: doc.data()?.usadoEm,
-          }));
-
-          setCodigosPorCampanha((prev) => ({
-            ...prev,
-            [docItem.id]: codigos,
-          }));
-        }
+        const codesSnap = await getDocs(
+          query(
+            collection(db, 'codigos'),
+            where('campanhaId', '==', campDoc.id)
+          )
+        );
+        const listaCodigos: Codigo[] = codesSnap.docs.map((cd) => ({
+          id: cd.id,
+          codigo: cd.data().codigo,
+          status: cd.data().status,
+          criadoEm: cd.data().criadoEm,
+          usadoEm: cd.data().usadoEm,
+          premiado: cd.data().premiado,
+        }));
+        codesMap[campDoc.id] = listaCodigos;
       }
 
-      setCampanhas(campanhasList);
+      setCampanhas(campList);
+      setCodigosPorCampanha(codesMap);
     };
-
     fetchCampanhasECodigos();
   }, []);
 
   const gerarCodigo = async (campanhaId: string) => {
     try {
-      const campanhaSnap = await getDocs(
-        query(collection(db, 'campanhas'), where('__name__', '==', campanhaId))
+      const posicoesSnap = await getDocs(
+        query(
+          collection(db, 'campanhas', campanhaId, 'posicoes'),
+          where('usado', '==', false)
+        )
       );
-
-      if (campanhaSnap.empty) {
-        toast.error('Campanha não encontrada.');
+      if (posicoesSnap.empty) {
+        toast.warning('Sem posições disponíveis para essa campanha.');
         return;
       }
 
-      const campanha = campanhaSnap.docs[0].data();
-      if (campanha.raspadinhasRestantes <= 0) {
-        toast.warning('Esta campanha já encerrou. Não é possível gerar mais códigos.');
-        return;
-      }
+      const posDoc = posicoesSnap.docs[0];
+      const posData = posDoc.data();
+      const posId = posDoc.id;
 
       const novoCodigo = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-      const docRef = await addDoc(collection(db, 'codigos'), {
+      const codigoRef = await addDoc(collection(db, 'codigos'), {
         codigo: novoCodigo,
         campanhaId,
+        posicao: posId,
         criadoEm: Timestamp.now(),
-        usado: false,
         status: 'ativo',
-        premiado: 'não sorteado',
+        usado: false,
+        premiado: posData.prize || 'nenhum',
       });
 
+      await updateDoc(
+        doc(db, 'campanhas', campanhaId, 'posicoes', posId),
+        { usado: true }
+      );
+
       const novo: Codigo = {
-        id: docRef.id,
+        id: codigoRef.id,
         codigo: novoCodigo,
         status: 'ativo',
-        premiado: 'não sorteado',
+        premiado: posData.prize || 'nenhum',
       };
-
       setCodigosPorCampanha((prev) => ({
         ...prev,
         [campanhaId]: [...(prev[campanhaId] || []), novo],
@@ -142,140 +140,95 @@ export default function JogosAtivos() {
 
       toast.success(`Código gerado: ${novoCodigo}`);
       navigator.clipboard.writeText(novoCodigo);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error('Erro ao gerar código: ' + err.message);
     }
   };
 
-
   return (
-    <>
-      <BaseDash>
-        <Container maxWidth="md" sx={{ mt: 6 }}>
-          <Typography variant="h4" gutterBottom>
-            Campanhas Ativas
-          </Typography>
+    <BaseDash>
+      <Container maxWidth="md" sx={{ mt: 6 }}>
+        <Typography variant="h4" gutterBottom>
+          Campanhas Ativas
+        </Typography>
+        <Grid container spacing={3}>
+          {campanhas.map((camp) => {
+            const filtro = filtros[camp.id] ?? 'todos';
+            const listaOrig = codigosPorCampanha[camp.id] || [];
+            const lista =
+              filtro === 'premiados'
+                ? listaOrig.filter((c) => c.premiado && c.premiado !== 'nenhum')
+                : listaOrig;
 
-          <Grid container spacing={3}>
-            {campanhas.map((campanha) => {
-              const lista = codigosPorCampanha[campanha.id] || [];
-              // pega o filtro dessa campanha, default para 'todos'
-              const filtro = filtros[campanha.id] ?? 'todos';
+            return (
+              <Grid size={{xs:12, md:6}} key={camp.id}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6">{camp.nome}</Typography>
+                    <Typography>
+                      Raspadinhas restantes: {camp.raspadinhasRestantes}
+                    </Typography>
+                    <Typography>
+                      Prêmios restantes: {camp.premiosRestantes}
+                    </Typography>
+                  </CardContent>
+                  <CardActions>
+                    <Button
+                      variant="contained"
+                      onClick={() => gerarCodigo(camp.id)}
+                      disabled={camp.raspadinhasRestantes <= 0}
+                    >
+                      {camp.raspadinhasRestantes > 0
+                        ? 'Gerar Código'
+                        : 'Campanha Encerrada'}
+                    </Button>
+                  </CardActions>
 
-              // aplica filtro
-              let codigosFiltrados = lista.filter((c) =>
-                filtro === 'premiados' ? c.premiado : true
-              );
-              // aplica ordenação
-              if (filtro === 'recentes') {
-                codigosFiltrados = codigosFiltrados.sort(
-                  (a, b) => (b.criadoEm?.seconds || 0) - (a.criadoEm?.seconds || 0)
-                );
-              }
+                  {/* Filtro de códigos */}
+                  <CardActions sx={{ justifyContent: 'center', gap: 1 }}>
+                    <Button
+                      size="small"
+                      variant={filtro === 'todos' ? 'contained' : 'outlined'}
+                      onClick={() =>
+                        setFiltros((prev) => ({ ...prev, [camp.id]: 'todos' }))
+                      }
+                    >
+                      Todos
+                    </Button>
+                    <Button
+                      size="small"
+                      variant={
+                        filtro === 'premiados' ? 'contained' : 'outlined'
+                      }
+                      onClick={() =>
+                        setFiltros((prev) => ({ ...prev, [camp.id]: 'premiados' }))
+                      }
+                    >
+                      Premiados
+                    </Button>
+                  </CardActions>
 
-              return (
-
-
-
-                <Grid size={{ xs: 12, md: 6 }} key={campanha.id}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography variant="h6">{campanha.nome}</Typography>
-                      <Typography variant="body2">
-                        Raspadinhas restantes:{' '}
-                        <strong>
-                          {campanha.totalRaspadinhas}/{campanha.raspadinhasRestantes}
-                        </strong>
-                      </Typography>
-                      <Typography variant="body2">
-                        Prêmios restantes:{' '}
-                        <strong>
-                          {campanha.premiadasTotais}/{campanha.premiadasRestantes}
-                        </strong>
-                      </Typography>
-                    </CardContent>
-
-                    <CardActions>
-                      <Button
-                        variant="contained"
-                        onClick={() => gerarCodigo(campanha.id)}
-                        disabled={campanha.raspadinhasRestantes <= 0}
-                      >
-                        {campanha.raspadinhasRestantes <= 0
-                          ? 'Campanha Encerrada'
-                          : 'Gerar Código'}
-                      </Button>
-                    </CardActions>
-
-                    {lista.length > 0 && (
-                      <>
-                        <Divider sx={{ mt: 2, mb: 1 }} />
-                        <Typography sx={{ px: 2 }} variant="subtitle2">
-                          Códigos gerados
-                        </Typography>
-
-                        {/* filtros por campanha */}
-                        <CardActions sx={{ justifyContent: 'center', gap: 1 }}>
-                          {(['todos', 'premiados', 'recentes'] as const).map((f) => (
-                            <Button
-                              key={f}
-                              variant={filtro === f ? 'contained' : 'outlined'}
-                              size="small"
-                              onClick={() =>
-                                setFiltros({ ...filtros, [campanha.id]: f })
-                              }
-                            >
-                              {f === 'todos'
-                                ? 'Todos'
-                                : f === 'premiados'
-                                  ? 'Premiadas'
-                                  : 'Recentes'}
-                            </Button>
-                          ))}
-                        </CardActions>
-
-                        {/* lista filtrada */}
-                        <List dense disablePadding>
-                          {codigosFiltrados.map((c) => (
-                            <ListItem key={c.id}>
-                              <ListItemText
-                                primary={`Código: ${c.codigo}`}
-                                secondary={
-                                  <>
-                                    <Typography variant="body2">
-                                      Status: {c.status}
-                                    </Typography>
-                                    <Typography variant="body2">
-                                      link: <Link href={'/sorteio'}>Sorteio</Link>
-                                    </Typography>
-                                    {c.criadoEm && (
-                                      <Typography variant="body2">
-                                        Criado em:{' '}
-                                        {c.criadoEm.toDate().toLocaleString()}
-                                      </Typography>
-                                    )}
-                                    {c.usadoEm && (
-                                      <Typography variant="body2">
-                                        Usado em:{' '}
-                                        {c.usadoEm.toDate().toLocaleString()}
-                                      </Typography>
-                                    )}
-                                  </>
-                                }
-                              />
-                            </ListItem>
-                          ))}
-                        </List>
-                      </>
-                    )}
-                  </Card>
-                </Grid>
-              );
-            })}
-          </Grid>
-        </Container>
-      </BaseDash >
-    </>
+                  {lista.length > 0 && (
+                    <>
+                      <Divider sx={{ my: 1 }} />
+                      <List dense>
+                        {lista.map((c) => (
+                          <ListItem key={c.id}>
+                            <ListItemText
+                              primary={`Código: ${c.codigo}`}
+                              secondary={`Prêmio: ${c.premiado}`}
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </>
+                  )}
+                </Card>
+              </Grid>
+            );
+          })}
+        </Grid>
+      </Container>
+    </BaseDash>
   );
 }
