@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import {
+  onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth';
@@ -14,13 +15,14 @@ import {
   Container,
   TextField,
   Typography,
-  Divider,
-  IconButton, 
-  InputAdornment
+  IconButton,
+  InputAdornment,
+  Box
 } from '@mui/material';
 import { toast } from 'react-toastify';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import Image from 'next/image';
 
 
 
@@ -29,6 +31,23 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
+
+  // ✅ Se já estiver logado, redireciona para /dashboard
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'usuarios', user.uid));
+        if (userDoc.exists()) {
+          router.push('/dashboard');
+        } else {
+          // caso esteja autenticado mas não esteja cadastrado
+          await signOut(auth);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
 
 
   const loginEmailSenha = async () => {
@@ -57,50 +76,52 @@ export default function LoginPage() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 6 }}>
-      <Typography variant="h4" gutterBottom>
-        Entrar na sua conta
-      </Typography>
+    <>
 
-      <TextField
-        fullWidth
-        label="Email"
-        type="email"
-        sx={{ mb: 2 }}
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <TextField
-        fullWidth
-        label="Senha"
-        type={mostrarSenha ? 'text' : 'password'}
-        sx={{ mb: 2 }}
-        value={senha}
-        onChange={(e) => setSenha(e.target.value)}
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton onClick={() => setMostrarSenha(!mostrarSenha)} edge="end">
-                <FontAwesomeIcon icon={mostrarSenha ? faEyeSlash : faEye} />
-              </IconButton>
-            </InputAdornment>
-          ),
-        }}
-      />
+      <Container maxWidth="lg"
+        sx={{
+          height: '70vh',
+          display: 'grid',
+          alignContent: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          mt: 6,
+        }}>
+        <Typography variant="h4" gutterBottom>
+          Acessar conta
+        </Typography>
 
-      <Button fullWidth variant="contained" onClick={loginEmailSenha}>
-        Entrar com Email e Senha
-      </Button>
+        <TextField
+          fullWidth
+          label="Email"
+          type="email"
+          sx={{ mb: 2 }}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <TextField
+          fullWidth
+          label="Senha"
+          type={mostrarSenha ? 'text' : 'password'}
+          sx={{ mb: 2 }}
+          value={senha}
+          onChange={(e) => setSenha(e.target.value)}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={() => setMostrarSenha(!mostrarSenha)} edge="end">
+                  <FontAwesomeIcon icon={mostrarSenha ? faEyeSlash : faEye} />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
 
-      <Divider sx={{ my: 3 }} />
-
-      <Button
-        fullWidth
-        variant="text"
-        onClick={() => router.push('/auth/cadastro')}
-      >
-        Criar nova conta
-      </Button>
-    </Container>
+        <Button fullWidth variant="contained" onClick={loginEmailSenha}>
+          Entrar
+        </Button>
+      </Container>
+      <Box textAlign="center" mt={4}><Image width={100} height={40} src={'/Logo-original.png'} alt="Logo principal , Pedidos da sorte" /></Box>
+    </>
   );
 }

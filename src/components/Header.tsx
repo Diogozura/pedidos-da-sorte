@@ -24,9 +24,9 @@ import ThemeToggleButton from './ThemeToggleButton';
 
 const navLinks = [
     { label: 'Início', href: '/' },
-    { label: 'Sobre', href: '/sobre' },
-    { label: 'Serviços', href: '/servicos' },
-    { label: 'Raspadinha', href: '/raspadinha' },
+    { label: 'Sobre', href: '/#saiba-mais' },
+    // { label: 'Serviços', href: '/servicos' },
+    // { label: 'Raspadinha', href: '/raspadinha' },
 ];
 
 export default function Header() {
@@ -52,10 +52,10 @@ export default function Header() {
                             variant="contained"
                             color="primary"
                             fullWidth
-                            href="/contato"
+                            href="/auth/login"
                             sx={{ fontWeight: 'bold' }}
                         >
-                            Contato
+                            Login
                         </Button>
                     </ListItem>
                      <ThemeToggleButton />
@@ -104,10 +104,10 @@ export default function Header() {
                             <Button
                                 variant="contained"
                                 color="primary"
-                                href="/contato"
+                                href="/auth/login"
                                 sx={{ fontWeight: 'bold', borderRadius: 2, boxShadow: 2 }}
                             >
-                                Contato
+                                 Login
                             </Button>
                             <ThemeToggleButton />
                         </Box>
