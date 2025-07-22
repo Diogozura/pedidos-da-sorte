@@ -72,6 +72,13 @@ export default function DashboardPage() {
               onClick={() => router.push('/dashboard/conta')}
             />
           </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <DashboardCard
+              title="👤 Envio de código"
+              description="Envio de códigos para participantes , no whatsApp"
+              onClick={() => router.push('/dashboard/enviar')}
+            />
+          </Grid>
         </Grid>
       </Container>
     </BaseDash>
