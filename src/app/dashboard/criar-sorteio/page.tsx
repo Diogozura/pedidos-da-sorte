@@ -25,6 +25,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
 import BaseDash from '../base';
 import Head from 'next/head';
+import ProtegePagina from '@/components/ProtegePagina';
 
 interface Premio {
   nome: string;
@@ -234,217 +235,221 @@ export default function CriarCampanha() {
   };
 
   return (
-    <BaseDash>
-      <Head>
-        <title>Criar campanha - Pedidos da sorte </title>
-      </Head>
-      <Container maxWidth="md" sx={{ mt: 6 }}>
-        <Typography variant="h4" gutterBottom>
-          Criar nova campanha
-        </Typography>
+    <ProtegePagina permitido={['master', 'empresa']}>
 
-        <TextField
-          label="Nome da campanha"
-          placeholder='ex: fim do mês'
-          fullWidth
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          sx={{ mb: 2 }}
-        />
 
-        <TextField
-          label="Total de raspadinhas"
-          fullWidth
-          type="number"
-          value={totalRaspadinhas}
-          onChange={e => {
-            const val = parseInt(e.target.value, 10);
-            // só atualiza se for ≥ 1
-            if (!isNaN(val) && val >= 1) {
-              setTotalRaspadinhas(val.toString());
-            }
-          }}
-          inputProps={{ step: 1, min: 1, pattern: '[1-9]*', inputMode: 'numeric' }}
-          onKeyDown={e => ['e', 'E', '+', ',', '.', '-'].includes(e.key) && e.preventDefault()}
-          sx={{ mb: 2 }}
-        />
+      <BaseDash>
+        <Head>
+          <title>Criar campanha - Pedidos da sorte </title>
+        </Head>
+        <Container maxWidth="md" sx={{ mt: 6 }}>
+          <Typography variant="h4" gutterBottom>
+            Criar nova campanha
+          </Typography>
 
-        <FormControl fullWidth sx={{ mb: 2 }}>
-          <InputLabel id="modo-label">Modo da campanha</InputLabel>
-          <Select
-            labelId="modo-label"
-            label="Modo da campanha"
-            value={modo}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onChange={e => setModo(e.target.value as any)}
-          >
-            <MenuItem value="raspadinha">Enquanto tiver raspadinha</MenuItem>
-            <MenuItem value="prazo">Prazo até</MenuItem>
-          </Select>
-        </FormControl>
+          <TextField
+            label="Nome da campanha"
+            placeholder='ex: fim do mês'
+            fullWidth
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            sx={{ mb: 2 }}
+          />
 
-        {modo === 'prazo' && (
-          <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid size={6}>
-              <TextField
-                label="Data Início"
-                type="date"
-                fullWidth
-                inputProps={{ min: hoje }}
-                InputLabelProps={{ shrink: true }}
-                value={dataInicio}
-                onChange={e => setDataInicio(e.target.value)}
-              />
-            </Grid>
-            <Grid size={6}>
-              <TextField
-                label="Data Fim"
-                type="date"
-                fullWidth
-                inputProps={{ min: dataInicio || hoje }}
-                InputLabelProps={{ shrink: true }}
-                value={dataFim}
-                onChange={e => setDataFim(e.target.value)}
-              />
-            </Grid>
-          </Grid>
-        )}
+          <TextField
+            label="Total de raspadinhas"
+            fullWidth
+            type="number"
+            value={totalRaspadinhas}
+            onChange={e => {
+              const val = parseInt(e.target.value, 10);
+              // só atualiza se for ≥ 1
+              if (!isNaN(val) && val >= 1) {
+                setTotalRaspadinhas(val.toString());
+              }
+            }}
+            inputProps={{ step: 1, min: 1, pattern: '[1-9]*', inputMode: 'numeric' }}
+            onKeyDown={e => ['e', 'E', '+', ',', '.', '-'].includes(e.key) && e.preventDefault()}
+            sx={{ mb: 2 }}
+          />
 
-        <Divider sx={{ my: 4 }} />
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel id="modo-label">Modo da campanha</InputLabel>
+            <Select
+              labelId="modo-label"
+              label="Modo da campanha"
+              value={modo}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onChange={e => setModo(e.target.value as any)}
+            >
+              <MenuItem value="raspadinha">Enquanto tiver raspadinha</MenuItem>
+              <MenuItem value="prazo">Prazo até</MenuItem>
+            </Select>
+          </FormControl>
 
-        <Typography variant="h6" gutterBottom>
-          Prêmios
-        </Typography>
-
-        {premios.map((p, index) => (
-          <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid size={{ xs: 12, sm: 4 }}>
+          {modo === 'prazo' && (
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid size={6}>
                 <TextField
-                  label="Nome do prêmio"
-                  value={p.nome}
-                  onChange={(e) => handleChangePremio(index, 'nome', e.target.value)}
+                  label="Data Início"
+                  type="date"
                   fullWidth
+                  inputProps={{ min: hoje }}
+                  InputLabelProps={{ shrink: true }}
+                  value={dataInicio}
+                  onChange={e => setDataInicio(e.target.value)}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 4 }} >
-                {uploadingIndex === index ? (
-                  // input de upload
-                  <Button variant="outlined" component="label" fullWidth>
-                    Selecionar img
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      onChange={handleFileChange}
-                    />
-                  </Button>
-                ) : (
-                  // dropdown de imagens + opção "nova"
-                  <FormControl fullWidth>
-                    <InputLabel id={`img-label-${index}`}>Imagem do prêmio</InputLabel>
-                    <Select
-                      labelId={`img-label-${index}`}
-                      label="Imagem do prêmio"
-                      value={p.imagem || ''}
-                      onChange={e => handleSelectImagem(index, e.target.value)}
-                    >
-                      {imagensDisponiveis.map(url => {
-                        const nomeArquivo = url.split('/').pop();
-                        return (
-                          <MenuItem key={url} value={url}>
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <Avatar
-                                src={url}
-                                variant="square"
-                                sx={{ width: 40, height: 40, mr: 1 }}
-                              />
-                              {nomeArquivo}
-                            </Box>
-                          </MenuItem>
-                        );
-                      })}
-                      <MenuItem value="nova">
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <FontAwesomeIcon icon={faPlus} style={{ marginRight: 8 }} />
-                          Adicionar nova imagem
-                        </Box>
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-                )}
-              </Grid>
-              <Grid size={{ xs: 12, sm: 3 }}>
+              <Grid size={6}>
                 <TextField
-                  label="Quantidade"
-                  type="number"
-                  value={p.quantidadeTotais}
-                  onChange={(e) => handleChangePremio(index, 'quantidadeTotais', e.target.value)}
-                  InputProps={{ endAdornment: <InputAdornment position="end">x</InputAdornment> }}
+                  label="Data Fim"
+                  type="date"
                   fullWidth
+                  inputProps={{ min: dataInicio || hoje }}
+                  InputLabelProps={{ shrink: true }}
+                  value={dataFim}
+                  onChange={e => setDataFim(e.target.value)}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 1 }} >
-                <IconButton onClick={() => removerPremio(index)}>
-                  <FontAwesomeIcon icon={faMinus} />
-                </IconButton>
-              </Grid>
-              {/* PREVIEW DA IMAGEM SELECIONADA */}
-              <Grid size={12} sx={{ textAlign: 'center' }}>
-                {p.imagem ? (
-                  <Box
-                    component="img"
-                    src={p.imagem}
-                    alt={`Preview do prêmio ${index + 1}`}
-                    sx={{
-                      width: 200,
-                      height: 200,
-                      objectFit: 'cover',
-                      borderRadius: 1,
-                      border: '1px solid #ddd'
-                    }}
+            </Grid>
+          )}
+
+          <Divider sx={{ my: 4 }} />
+
+          <Typography variant="h6" gutterBottom>
+            Prêmios
+          </Typography>
+
+          {premios.map((p, index) => (
+            <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
+              <Grid container spacing={2} alignItems="center">
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    label="Nome do prêmio"
+                    value={p.nome}
+                    onChange={(e) => handleChangePremio(index, 'nome', e.target.value)}
+                    fullWidth
                   />
-                ) : (
-                  <Box
-                    sx={{
-                      width: 80,
-                      height: 80,
-                      bgcolor: 'grey.100',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: 1,
-                      border: '1px dashed #ccc'
-                    }}
-                  >
-                    Sem imagem
-                  </Box>
-                )}
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }} >
+                  {uploadingIndex === index ? (
+                    // input de upload
+                    <Button variant="outlined" component="label" fullWidth>
+                      Selecionar img
+                      <input
+                        type="file"
+                        hidden
+                        accept="image/*"
+                        onChange={handleFileChange}
+                      />
+                    </Button>
+                  ) : (
+                    // dropdown de imagens + opção "nova"
+                    <FormControl fullWidth>
+                      <InputLabel id={`img-label-${index}`}>Imagem do prêmio</InputLabel>
+                      <Select
+                        labelId={`img-label-${index}`}
+                        label="Imagem do prêmio"
+                        value={p.imagem || ''}
+                        onChange={e => handleSelectImagem(index, e.target.value)}
+                      >
+                        {imagensDisponiveis.map(url => {
+                          const nomeArquivo = url.split('/').pop();
+                          return (
+                            <MenuItem key={url} value={url}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Avatar
+                                  src={url}
+                                  variant="square"
+                                  sx={{ width: 40, height: 40, mr: 1 }}
+                                />
+                                {nomeArquivo}
+                              </Box>
+                            </MenuItem>
+                          );
+                        })}
+                        <MenuItem value="nova">
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <FontAwesomeIcon icon={faPlus} style={{ marginRight: 8 }} />
+                            Adicionar nova imagem
+                          </Box>
+                        </MenuItem>
+                      </Select>
+                    </FormControl>
+                  )}
+                </Grid>
+                <Grid size={{ xs: 12, sm: 3 }}>
+                  <TextField
+                    label="Quantidade"
+                    type="number"
+                    value={p.quantidadeTotais}
+                    onChange={(e) => handleChangePremio(index, 'quantidadeTotais', e.target.value)}
+                    InputProps={{ endAdornment: <InputAdornment position="end">x</InputAdornment> }}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 1 }} >
+                  <IconButton onClick={() => removerPremio(index)}>
+                    <FontAwesomeIcon icon={faMinus} />
+                  </IconButton>
+                </Grid>
+                {/* PREVIEW DA IMAGEM SELECIONADA */}
+                <Grid size={12} sx={{ textAlign: 'center' }}>
+                  {p.imagem ? (
+                    <Box
+                      component="img"
+                      src={p.imagem}
+                      alt={`Preview do prêmio ${index + 1}`}
+                      sx={{
+                        width: 200,
+                        height: 200,
+                        objectFit: 'cover',
+                        borderRadius: 1,
+                        border: '1px solid #ddd'
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        width: 80,
+                        height: 80,
+                        bgcolor: 'grey.100',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: 1,
+                        border: '1px dashed #ccc'
+                      }}
+                    >
+                      Sem imagem
+                    </Box>
+                  )}
+                </Grid>
+
               </Grid>
+            </Box>
+          ))}
 
-            </Grid>
-          </Box>
-        ))}
+          <Button
+            onClick={adicionarPremio}
+            variant="outlined"
+            sx={{ mb: 4 }}
+            startIcon={<FontAwesomeIcon icon={faPlus} />}
+          >
+            Adicionar prêmio
+          </Button>
 
-        <Button
-          onClick={adicionarPremio}
-          variant="outlined"
-          sx={{ mb: 4 }}
-          startIcon={<FontAwesomeIcon icon={faPlus} />}
-        >
-          Adicionar prêmio
-        </Button>
+          <Button variant="contained" fullWidth onClick={criarCampanha}>
+            Criar campanha
+          </Button>
 
-        <Button variant="contained" fullWidth onClick={criarCampanha}>
-          Criar campanha
-        </Button>
+          <Divider sx={{ mt: 4, mb: 2 }} />
 
-        <Divider sx={{ mt: 4, mb: 2 }} />
-
-        <Typography variant="body2" color="text.secondary">
-          As campanhas agora pré-alocam posições aleatórias de prêmios em subcoleção `posicoes`.
-        </Typography>
-      </Container>
-    </BaseDash>
+          <Typography variant="body2" color="text.secondary">
+            As campanhas agora pré-alocam posições aleatórias de prêmios em subcoleção `posicoes`.
+          </Typography>
+        </Container>
+      </BaseDash>
+    </ProtegePagina>
   );
 }
