@@ -1,9 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
+import { getStorage, ref as storageRef, listAll, getDownloadURL, uploadBytes } from 'firebase/storage';
 import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
 import {
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
   Container,
   TextField,
   Typography,
@@ -13,11 +18,13 @@ import {
   Box,
   Grid,
   InputAdornment,
+  Avatar,
 } from '@mui/material';
 import { toast } from 'react-toastify';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
 import BaseDash from '../base';
+import Head from 'next/head';
 
 interface Premio {
   nome: string;
@@ -37,10 +44,95 @@ function shuffleArray<T>(array: T[]): T[] {
 
 export default function CriarCampanha() {
   const [nome, setNome] = useState('');
-  const [totalRaspadinhas, setTotalRaspadinhas] = useState('');
+  const [totalRaspadinhas, setTotalRaspadinhas] = useState('100');
+  const [modo, setModo] = useState<'raspadinha' | 'prazo'>('raspadinha');
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
+  const hoje = new Date().toISOString().split('T')[0]; // ex: "2025-07-21"
   const [premios, setPremios] = useState<Premio[]>([
     { nome: '', imagem: '', quantidadeTotais: 1 },
   ]);
+  const [imagensDisponiveis, setImagensDisponiveis] = useState<string[]>([]);
+
+  // índice do prêmio que está adicionando nova imagem (-1 = nenhum)
+  const [uploadingIndex, setUploadingIndex] = useState<number>(-1);
+
+  useEffect(() => {
+    const storage = getStorage();
+    const pasta = storageRef(storage, 'prêmios');
+    listAll(pasta)
+      .then(res => Promise.all(res.items.map(item => getDownloadURL(item))))
+      .then(urls => setImagensDisponiveis(urls))
+      .catch(err => {
+        console.error(err);
+        toast.error('Erro ao carregar imagens de prêmios.');
+      });
+  }, []);
+  const handleSelectImagem = (idx: number, value: string) => {
+    if (value === 'nova') {
+      // entra no modo upload para este prêmio
+      setUploadingIndex(idx);
+    } else {
+      // apenas altera URL normal
+      const novos = [...premios];
+      novos[idx].imagem = value;
+      setPremios(novos);
+    }
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length || uploadingIndex < 0) return;
+    const file = e.target.files[0];
+    // cria preview imediato
+    const previewUrl = URL.createObjectURL(file);
+
+    // armazena imediatamente no state, antes do upload
+    setPremios(prev => {
+      const copia = [...prev];
+      copia[uploadingIndex].imagem = previewUrl;
+      return copia;
+    });
+
+    // daí faz validações e upload normalmente…
+    if (file.size > 100 * 1024) {
+      toast.error('A imagem deve ter menos de 100 KB.');
+      return;
+    }
+
+    const img = new Image();
+    img.onload = async () => {
+      if (img.width !== 500 || img.height !== 500) {
+        toast.error('A imagem precisa ser exatamente 500×500 px.');
+        return;
+      }
+      try {
+        const storage = getStorage();
+        const nome = `premios/${Date.now()}_${file.name}`;
+        const ref = storageRef(storage, nome);
+        await uploadBytes(ref, file);
+        const url = await getDownloadURL(ref);
+
+        // atualiza lista de disponíveis
+        setImagensDisponiveis(prev => [...prev, url]);
+        // substitui no state a preview temporária pela URL real
+        setPremios(prev => {
+          const copia = [...prev];
+          // revoga a preview pra liberar memória
+          URL.revokeObjectURL(copia[uploadingIndex].imagem);
+          copia[uploadingIndex].imagem = url;
+          return copia;
+        });
+
+        setUploadingIndex(-1);
+        toast.success('Imagem enviada com sucesso!');
+      } catch (err: any) {
+        toast.error('Falha no upload: ' + err.message);
+      }
+    };
+    img.src = previewUrl;
+  };
+
+
 
   const adicionarPremio = () => {
     setPremios((prev) => [...prev, { nome: '', imagem: '', quantidadeTotais: 1 }]);
@@ -69,7 +161,16 @@ export default function CriarCampanha() {
       toast.error('Preencha o nome e o total de raspadinhas.');
       return;
     }
-
+    if (modo === 'prazo') {
+      if (!dataInicio || dataInicio < hoje) {
+        toast.error('A data de início não pode ser anterior a hoje.');
+        return;
+      }
+      if (!dataFim || dataFim < dataInicio) {
+        toast.error('A data de fim não pode ser anterior à data de início.');
+        return;
+      }
+    }
     const total = parseInt(totalRaspadinhas, 10);
     const somaPremios = premios.reduce((sum, p) => sum + p.quantidadeTotais, 0);
     if (isNaN(total) || somaPremios > total) {
@@ -126,7 +227,7 @@ export default function CriarCampanha() {
       setNome('');
       setTotalRaspadinhas('');
       setPremios([{ nome: '', imagem: '', quantidadeTotais: 1 }]);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error('Erro ao criar campanha: ' + err.message);
     }
@@ -134,13 +235,17 @@ export default function CriarCampanha() {
 
   return (
     <BaseDash>
-      <Container maxWidth="sm" sx={{ mt: 6 }}>
+      <Head>
+        <title>Criar campanha - Pedidos da sorte </title>
+      </Head>
+      <Container maxWidth="md" sx={{ mt: 6 }}>
         <Typography variant="h4" gutterBottom>
           Criar nova campanha
         </Typography>
 
         <TextField
           label="Nome da campanha"
+          placeholder='ex: fim do mês'
           fullWidth
           value={nome}
           onChange={(e) => setNome(e.target.value)}
@@ -152,9 +257,58 @@ export default function CriarCampanha() {
           fullWidth
           type="number"
           value={totalRaspadinhas}
-          onChange={(e) => setTotalRaspadinhas(e.target.value)}
+          onChange={e => {
+            const val = parseInt(e.target.value, 10);
+            // só atualiza se for ≥ 1
+            if (!isNaN(val) && val >= 1) {
+              setTotalRaspadinhas(val.toString());
+            }
+          }}
+          inputProps={{ step: 1, min: 1, pattern: '[1-9]*', inputMode: 'numeric' }}
+          onKeyDown={e => ['e', 'E', '+', ',', '.', '-'].includes(e.key) && e.preventDefault()}
           sx={{ mb: 2 }}
         />
+
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel id="modo-label">Modo da campanha</InputLabel>
+          <Select
+            labelId="modo-label"
+            label="Modo da campanha"
+            value={modo}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onChange={e => setModo(e.target.value as any)}
+          >
+            <MenuItem value="raspadinha">Enquanto tiver raspadinha</MenuItem>
+            <MenuItem value="prazo">Prazo até</MenuItem>
+          </Select>
+        </FormControl>
+
+        {modo === 'prazo' && (
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid size={6}>
+              <TextField
+                label="Data Início"
+                type="date"
+                fullWidth
+                inputProps={{ min: hoje }}
+                InputLabelProps={{ shrink: true }}
+                value={dataInicio}
+                onChange={e => setDataInicio(e.target.value)}
+              />
+            </Grid>
+            <Grid size={6}>
+              <TextField
+                label="Data Fim"
+                type="date"
+                fullWidth
+                inputProps={{ min: dataInicio || hoje }}
+                InputLabelProps={{ shrink: true }}
+                value={dataFim}
+                onChange={e => setDataFim(e.target.value)}
+              />
+            </Grid>
+          </Grid>
+        )}
 
         <Divider sx={{ my: 4 }} />
 
@@ -165,7 +319,7 @@ export default function CriarCampanha() {
         {premios.map((p, index) => (
           <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
             <Grid container spacing={2} alignItems="center">
-              <Grid size={{xs:12, sm:4}}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   label="Nome do prêmio"
                   value={p.nome}
@@ -173,15 +327,54 @@ export default function CriarCampanha() {
                   fullWidth
                 />
               </Grid>
-              <Grid size={{xs:12, sm:4}}>
-                <TextField
-                  label="Imagem (URL)"
-                  value={p.imagem}
-                  onChange={(e) => handleChangePremio(index, 'imagem', e.target.value)}
-                  fullWidth
-                />
+              <Grid size={{ xs: 12, sm: 4 }} >
+                {uploadingIndex === index ? (
+                  // input de upload
+                  <Button variant="outlined" component="label" fullWidth>
+                    Selecionar img
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={handleFileChange}
+                    />
+                  </Button>
+                ) : (
+                  // dropdown de imagens + opção "nova"
+                  <FormControl fullWidth>
+                    <InputLabel id={`img-label-${index}`}>Imagem do prêmio</InputLabel>
+                    <Select
+                      labelId={`img-label-${index}`}
+                      label="Imagem do prêmio"
+                      value={p.imagem || ''}
+                      onChange={e => handleSelectImagem(index, e.target.value)}
+                    >
+                      {imagensDisponiveis.map(url => {
+                        const nomeArquivo = url.split('/').pop();
+                        return (
+                          <MenuItem key={url} value={url}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Avatar
+                                src={url}
+                                variant="square"
+                                sx={{ width: 40, height: 40, mr: 1 }}
+                              />
+                              {nomeArquivo}
+                            </Box>
+                          </MenuItem>
+                        );
+                      })}
+                      <MenuItem value="nova">
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <FontAwesomeIcon icon={faPlus} style={{ marginRight: 8 }} />
+                          Adicionar nova imagem
+                        </Box>
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
               </Grid>
-              <Grid size={{xs:12, sm:2}}>
+              <Grid size={{ xs: 12, sm: 3 }}>
                 <TextField
                   label="Quantidade"
                   type="number"
@@ -191,11 +384,44 @@ export default function CriarCampanha() {
                   fullWidth
                 />
               </Grid>
-              <Grid size={{xs:12, sm:2}} >
+              <Grid size={{ xs: 12, sm: 1 }} >
                 <IconButton onClick={() => removerPremio(index)}>
                   <FontAwesomeIcon icon={faMinus} />
                 </IconButton>
               </Grid>
+              {/* PREVIEW DA IMAGEM SELECIONADA */}
+              <Grid size={12} sx={{ textAlign: 'center' }}>
+                {p.imagem ? (
+                  <Box
+                    component="img"
+                    src={p.imagem}
+                    alt={`Preview do prêmio ${index + 1}`}
+                    sx={{
+                      width: 200,
+                      height: 200,
+                      objectFit: 'cover',
+                      borderRadius: 1,
+                      border: '1px solid #ddd'
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      bgcolor: 'grey.100',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 1,
+                      border: '1px dashed #ccc'
+                    }}
+                  >
+                    Sem imagem
+                  </Box>
+                )}
+              </Grid>
+
             </Grid>
           </Box>
         ))}
