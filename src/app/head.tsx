@@ -24,15 +24,15 @@ export default function Head() {
       {/* Open Graph / Facebook */}
       <meta property="og:title" content="Pedidos da sorte" />
       <meta property="og:description" content="Pedidos da sorte , marketing para seu negocio." />
-      <meta property="og:image" content="https://www.pedidosdasorte.com.br/og-image.png" />
-      <meta property="og:url" content="https://www.pedidosdasorte.com.br/" />
+      <meta property="og:image" content="https://www.pedidodasorte.com.br/og-image.png" />
+      <meta property="og:url" content="https://pedidodasorte.com.br.com.br" />
       <meta property="og:type" content="website" />
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content="Pedidos da sorte" />
       <meta name="twitter:description" content="Pedidos da sorte , marketing para seu negocio." />
-      <meta name="twitter:image" content="https://www.pedidosdasorte.com.br/og-image.png" />
+      <meta name="twitter:image" content="https://pedidodasorte.com.br/og-image.png" />
 
       <link rel="icon" href="/favicon.ico" />
 
