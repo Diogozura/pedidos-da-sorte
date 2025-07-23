@@ -3,13 +3,14 @@ import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || ''
+  const pathname = request.nextUrl.pathname
 
-  // Quando acessar sorteio.pedidosdasorte.com
-  if (hostname.startsWith('sorteio.pedidosdasorte.com')) {
-    // Força sempre ir para /sorteio
-    return NextResponse.rewrite(new URL('/sorteio', request.url))
+  // Garante que qualquer rota do subdomínio sorteio vá para /sorteio
+  if (hostname === 'sorteio.pedidodasorte.com.br' && pathname !== '/sorteio') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/sorteio'
+    return NextResponse.rewrite(url)
   }
 
-  // Senão segue o fluxo normal
   return NextResponse.next()
 }
