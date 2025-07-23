@@ -24,8 +24,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-br" className={inter.variable}>
       <body className="font-inter">
         <ThemeProvider>
-
-
           <FormProvider>
             <AuthProvider>
               <main>{children}</main>
