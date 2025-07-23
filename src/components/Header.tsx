@@ -5,7 +5,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     AppBar,
     Toolbar,
-    Typography,
     Button,
     IconButton,
     Drawer,
@@ -70,15 +69,8 @@ export default function Header() {
                 <Toolbar sx={{ justifyContent: 'space-between' }}>
                     {/* Logo + Título */}
                     <Box display="flex" alignItems="center" gap={1}>
-                        <Image src="/result.png" alt="Logo" width={40} height={40} />
-                        <Box>
-                            <Typography variant="h6" fontWeight="bold" color="error">
-                                Pedidos da Sorte
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                Marketing & Sorteios
-                            </Typography>
-                        </Box>
+                        <Image src="/Logo-original.png" alt="Logo" width={100} height={40} />
+                       
                     </Box>
 
                     {/* Navegação */}

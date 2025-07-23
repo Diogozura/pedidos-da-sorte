@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/theme/ThemeContext';
 import ToastProvider from '@/components/ToastProvider';
 import { FormProvider } from '@/config/FormContext';
 import { AuthProvider } from '@/context/AuthContext';
+import Head from './head';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -22,6 +23,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-br" className={inter.variable}>
+       <Head />
       <body className="font-inter">
         <ThemeProvider>
           <FormProvider>
