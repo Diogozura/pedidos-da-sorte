@@ -26,6 +26,7 @@ import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
 import BaseDash from '../base';
 import Head from 'next/head';
 import ProtegePagina from '@/components/ProtegePagina';
+import { useUsuarioLogado } from '@/hook/useUsuarioLogado';
 
 interface Premio {
   nome: string;
@@ -45,6 +46,15 @@ function shuffleArray<T>(array: T[]): T[] {
 
 export default function CriarCampanha() {
   const [nome, setNome] = useState('');
+  const { usuario } = useUsuarioLogado();
+
+  console.log('usuario', usuario)
+
+
+
+
+
+
   const [totalRaspadinhas, setTotalRaspadinhas] = useState('100');
   const [modo, setModo] = useState<'raspadinha' | 'prazo'>('raspadinha');
   const [dataInicio, setDataInicio] = useState('');
@@ -181,16 +191,29 @@ export default function CriarCampanha() {
 
     try {
       // 1. Cria a campanha
-      const campanhasCol = collection(db, 'campanhas');
-      const campanhaRef = await addDoc(campanhasCol, {
+      // 1. Monta dados da campanha
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const novaCampanha: Record<string, any> = {
         nome,
+        modo,
         totalRaspadinhas: total,
         raspadinhasRestantes: total,
         premiosTotais: somaPremios,
         premiosRestantes: somaPremios,
         premios,
         criadoEm: new Date(),
-      });
+        pizzariaId: usuario?.uid || null, // 👈 adicionado aqui
+      };
+
+      if (modo === 'prazo') {
+        novaCampanha.dataInicio = new Date(`${dataInicio}T00:00:00`);
+        novaCampanha.dataFim = new Date(`${dataFim}T23:59:59`);
+      }
+
+      // 2. Cria a campanha no Firestore
+      const campanhasCol = collection(db, 'campanhas');
+      const campanhaRef = await addDoc(campanhasCol, novaCampanha);
+      ;
 
       // 2. Prepara lista de slots (prêmios + nulls)
       const slots: (string | null)[] = [];
@@ -235,9 +258,7 @@ export default function CriarCampanha() {
   };
 
   return (
-    <ProtegePagina permitido={['master', 'empresa']}>
-
-
+    <ProtegePagina permitido={['admin', 'empresa']}>
       <BaseDash>
         <Head>
           <title>Criar campanha - Pedidos da sorte </title>

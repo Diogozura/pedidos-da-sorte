@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
 import BaseDash from './base';
 import ComPermissao from '@/components/ComPermissao';
+import ResumoCampanha from '@/components/ResumoCampanha';
 
 
 export default function DashboardPage() {
@@ -46,7 +47,7 @@ export default function DashboardPage() {
 
         <Grid container spacing={4}>
           
-          <ComPermissao permitido={['master', 'empresa']}>
+          <ComPermissao permitido={['admin', 'empresa']}>
             <Grid size={{ xs: 12, md: 4 }} >
               <DashboardCard
                 title="🎯 Raspadinhas Ativas"
@@ -56,7 +57,7 @@ export default function DashboardPage() {
             </Grid>
           </ComPermissao>
 
-          <ComPermissao permitido={['master', 'empresa']}>
+          <ComPermissao permitido={['admin', 'empresa']}>
             <Grid size={{ xs: 12, md: 4 }}>
               <DashboardCard
                 title="➕ Criar Raspadinha"
@@ -66,17 +67,7 @@ export default function DashboardPage() {
             </Grid>
           </ComPermissao>
 
-          <ComPermissao permitido={['master', 'empresa']}>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <DashboardCard
-                title="➕ Promoções"
-                description="Crie uma nova campanha de raspadinha personalizada."
-                onClick={() => router.push('/dashboard/promocoes')}
-              />
-            </Grid>
-          </ComPermissao>
-
-          <ComPermissao permitido={['master', 'empresa']}>
+          <ComPermissao permitido={['admin', 'empresa']}>
             <Grid size={{ xs: 12, md: 4 }}>
               <DashboardCard
                 title="👤 Gerenciar Conta"
@@ -86,13 +77,19 @@ export default function DashboardPage() {
             </Grid>
           </ComPermissao>
 
-          <ComPermissao permitido={['master', 'empresa', 'funcionario']}>
+          <ComPermissao permitido={['admin', 'empresa', 'funcionario']}>
             <Grid size={{ xs: 12, md: 4 }}>
               <DashboardCard
                 title="👤 Envio de código e validar voucher"
                 description="Envio de códigos para participantes , no whatsApp e validação do voucher"
                 onClick={() => router.push('/dashboard/enviar')}
               />
+            </Grid>
+          </ComPermissao>
+
+          <ComPermissao permitido={['admin', 'empresa']}>
+            <Grid size={{ xs: 12, md: 12 }}>
+             <ResumoCampanha />
             </Grid>
           </ComPermissao>
 

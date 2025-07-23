@@ -148,7 +148,7 @@ export default function RaspadinhaPage() {
         sx={{
           textAlign: 'center',
           mt: 4,
-          height: '70vh',
+          height: '60vh',
           display: 'grid',
           alignContent: 'center',
           justifyContent: 'center',

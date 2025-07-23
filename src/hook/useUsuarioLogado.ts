@@ -3,7 +3,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
-export type NivelPermissao = 'master' | 'empresa' | 'funcionario';
+export type NivelPermissao = 'admin' | 'empresa' | 'funcionario';
 
 export interface Usuario {
   uid: string;

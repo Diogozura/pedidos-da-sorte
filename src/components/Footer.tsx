@@ -13,15 +13,8 @@ export default function Footer() {
           {/* Marca */}
           <Grid size={{xs:12,  sm:6, md:3}}>
             <Box display="flex" alignItems="center" gap={1} mb={1}>
-              <Image src="/logo.png" alt="Logo" width={40} height={40} />
-              <Box>
-                <Typography fontWeight="bold" color="error">
-                  Pedidos da Sorte
-                </Typography>
-                <Typography variant="body2" color="gray">
-                  Marketing & Sorteios
-                </Typography>
-              </Box>
+              <Image src="/Logo-branca.png" alt="Logo" width={100} height={40} />
+              
             </Box>
             <Typography variant="body2" mt={1}>
               Transformamos sonhos em realidade através de campanhas inovadoras e sorteios emocionantes.
