@@ -136,6 +136,7 @@ export default function CriarCampanha() {
 
         setUploadingIndex(-1);
         toast.success('Imagem enviada com sucesso!');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         toast.error('Falha no upload: ' + err.message);
       }

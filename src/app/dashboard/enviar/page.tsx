@@ -24,6 +24,9 @@ import {
     Box,
     Tabs,
     Tab,
+    List,
+    ListItem,
+    ListItemText
 } from '@mui/material';
 import { toast } from 'react-toastify';
 import BaseDash from '../base';
@@ -52,12 +55,10 @@ interface Codigo {
 export default function EnviarCodigos() {
     const [campanhas, setCampanhas] = useState<Campanha[]>([]);
     const [codigosPorCampanha, setCodigosPorCampanha] = useState<Record<string, Codigo[]>>({});
-    // estados para telefone e validade
     const [phones, setPhones] = useState<Record<string, string>>({});
     const [phoneValid, setPhoneValid] = useState<Record<string, boolean>>({});
     const auth = getAuth();
-    const user = auth.currentUser
-
+    const user = auth.currentUser;
     const [tabIndex, setTabIndex] = useState(0);
 
     const handleTabChange = (_: React.SyntheticEvent, newIndex: number) => {
@@ -102,7 +103,6 @@ export default function EnviarCodigos() {
         fetchCampanhasECodigos();
     }, []);
 
-    // valida telefone (Brasil): só dígitos, 10 ou 11 caracteres
     const validatePhone = (value: string) => {
         const onlyDigits = value.replace(/\D/g, '');
         return /^[0-9]{10,11}$/.test(onlyDigits);
@@ -110,20 +110,12 @@ export default function EnviarCodigos() {
 
     const handlePhoneChange = (campanhaId: string) => (e: ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
-        setPhones(prev => ({ ...prev, [campanhaId]: val }));
-        setPhoneValid(prev => ({ ...prev, [campanhaId]: validatePhone(val) }));
-        // formata e armazena a máscara
-        const raw = e.target.value;
-        const masked = formatPhone(raw);
+        const masked = formatPhone(val);
         setPhones(prev => ({ ...prev, [campanhaId]: masked }));
-
-        // para validar, extraímos só os dígitos
-        const digits = masked.replace(/\D/g, '');
-        setPhoneValid(prev => ({ ...prev, [campanhaId]: digits.length === 11 }));
+        setPhoneValid(prev => ({ ...prev, [campanhaId]: validatePhone(masked) }));
     };
 
     const gerarCodigo = async (campanhaId: string) => {
-        const phone = phones[campanhaId]?.replace(/\D/g, '');
         const rawPhone = phones[campanhaId]?.replace(/\D/g, '');
         if (!phoneValid[campanhaId]) {
             toast.error('Por favor, informe um número de telefone válido.');
@@ -131,7 +123,6 @@ export default function EnviarCodigos() {
         }
 
         try {
-            // ... (mesma lógica de pegar posicoes e gerar código) ...
             const posicoesSnap = await getDocs(
                 query(collection(db, 'campanhas', campanhaId, 'posicoes'), where('usado', '==', false))
             );
@@ -161,7 +152,6 @@ export default function EnviarCodigos() {
                 { usado: true }
             );
 
-            // atualiza estado local
             const novo: Codigo = {
                 id: codigoRef.id,
                 codigo: novoCodigo,
@@ -176,11 +166,11 @@ export default function EnviarCodigos() {
             toast.success(`Código gerado: ${novoCodigo}`);
             navigator.clipboard.writeText(novoCodigo);
 
-            // monta mensagem e abre WhatsApp
             const siteLink = `${window.location.origin}/sorteio`;
             const message = `Parabéns você ganhou uma ficha para jogar no Pedidos da Sorte! Seu código é ${novoCodigo} – acesse ${siteLink}`;
-            const whatsappURL = `https://api.whatsapp.com/send?phone=55${phone}&text=${encodeURIComponent(message)}`;
+            const whatsappURL = `https://api.whatsapp.com/send?phone=55${rawPhone}&text=${encodeURIComponent(message)}`;
             window.open(whatsappURL, '_blank');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             toast.error('Erro ao gerar código: ' + err.message);
         }
@@ -193,7 +183,6 @@ export default function EnviarCodigos() {
                     Gerenciamento de Códigos
                 </Typography>
 
-                {/* === TABS === */}
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                     <Tabs value={tabIndex} onChange={handleTabChange}>
                         <Tab label="Enviar Códigos" />
@@ -201,13 +190,11 @@ export default function EnviarCodigos() {
                     </Tabs>
                 </Box>
 
-                {/* === PAINÉIS === */}
                 {tabIndex === 0 && (
                     <Box sx={{ mt: 3 }}>
-                        {/* aqui vai exatamente o seu Grid de campanhas para enviar WhatsApp */}
                         <Grid container spacing={3}>
                             {campanhas.map(camp => (
-                                <Grid size={12} key={camp.id}>
+                                <Grid size={12}  key={camp.id}>
                                     <Card>
                                         <CardContent>
                                             <Typography variant="h6">{camp.nome}</Typography>
@@ -225,6 +212,17 @@ export default function EnviarCodigos() {
                                                         : ''
                                                 }
                                             />
+
+                                            <List dense>
+                                                {(codigosPorCampanha[camp.id] || []).slice(-3).reverse().map((codigo) => (
+                                                    <ListItem key={codigo.id}>
+                                                        <ListItemText
+                                                            primary={`Código: ${codigo.codigo}`}
+                                                            secondary={`Status: ${codigo.status} ${codigo.premiado !== 'nenhum' ? '• Prêmio: ' + codigo.premiado : ''}`}
+                                                        />
+                                                    </ListItem>
+                                                ))}
+                                            </List>
                                         </CardContent>
                                         <CardActions>
                                             <Button
@@ -246,7 +244,6 @@ export default function EnviarCodigos() {
 
                 {tabIndex === 1 && (
                     <Box sx={{ mt: 3 }}>
-                        {/* Validação de Voucher */}
                         <ValidateVoucherPanel />
                     </Box>
                 )}

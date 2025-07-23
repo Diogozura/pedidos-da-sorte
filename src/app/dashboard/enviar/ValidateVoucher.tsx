@@ -34,6 +34,7 @@ export default  function ValidateVoucherPanel() {
           toast.warning(`Este voucher já está com status "${data.status}"`);
         }
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error('Erro ao validar voucher: ' + err.message);
     } finally {

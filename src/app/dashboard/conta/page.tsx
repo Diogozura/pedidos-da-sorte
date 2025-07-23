@@ -109,6 +109,7 @@ export default function GerenciarConta() {
       setModalAberto(false);
       setNovoValor('');
       setSenhaAdmin('');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -125,7 +126,7 @@ export default function GerenciarConta() {
 
         {(usuarioLogado?.nivel === 'admin' || usuarioLogado?.nivel === 'master') && (
           <Grid container spacing={4} sx={{ mb: 6 }}>
-            <Grid item xs={12} md={4}>
+            <Grid size={{xs:12,md:4}} >
               <DashboardCard
                 title="Cadastrar Empresa"
                 description="Cadastre empresas para ter acesso ao sistema"
@@ -141,7 +142,7 @@ export default function GerenciarConta() {
 
         <Grid container spacing={2}>
           {usuarios.map((usuario) => (
-            <Grid item xs={12} md={4} key={usuario.uid}>
+            <Grid size={{xs:12,md:4}} key={usuario.uid}>
               <Card variant="outlined">
                 <CardContent>
                   <Typography variant="subtitle1" fontWeight="bold">

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import RaspadinhaJogo from '@/components/Raspadinha';
 import { toast } from 'react-toastify';
@@ -29,19 +29,7 @@ export default function RaspadinhaPage() {
   const [campanhaId, setCampanhaId] = useState<string | null>(null);
   const [premiado, setPremiado] = useState<boolean>(false);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('codigo');
-    setCodigo(code);
-
-    if (!code) {
-      router.replace('/sorteio');
-      return;
-    }
-    validarCodigo(code);
-  }, [router]);
-
-  const validarCodigo = async (code: string) => {
+  const validarCodigo = useCallback(async (code: string) => {
     try {
       const q = query(
         collection(db, 'codigos'),
@@ -92,7 +80,21 @@ export default function RaspadinhaPage() {
     } catch (err: any) {
       toast.error('Erro na validação: ' + err.message);
     }
-  };
+  },[router]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('codigo');
+    setCodigo(code);
+
+    if (!code) {
+      router.replace('/sorteio');
+      return;
+    }
+    validarCodigo(code);
+  }, [router, validarCodigo]);
+
+
 
   const loadPrize = async (prizeName: string | null, campId: string) => {
     const campRef = doc(db, 'campanhas', campId);
