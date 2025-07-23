@@ -78,14 +78,13 @@ export default function LoginPage() {
   return (
     <>
 
-      <Container maxWidth="lg"
+      <Container maxWidth="sm"
         sx={{
           height: '70vh',
-          display: 'grid',
+        
           alignContent: 'center',
           justifyContent: 'center',
           textAlign: 'center',
-          mt: 6,
         }}>
         <Typography variant="h4" gutterBottom>
           Acessar conta
