@@ -17,7 +17,8 @@ import {
   Typography,
   IconButton,
   InputAdornment,
-  Box
+  Box,
+  CircularProgress
 } from '@mui/material';
 import { toast } from 'react-toastify';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -31,6 +32,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // ✅ Se já estiver logado, redireciona para /dashboard
   useEffect(() => {
@@ -55,7 +57,7 @@ export default function LoginPage() {
       toast.error('Preencha o email e a senha!');
       return;
     }
-
+    setLoading(true);
     try {
       const result = await signInWithEmailAndPassword(auth, email, senha);
       const user = result.user;
@@ -65,6 +67,7 @@ export default function LoginPage() {
       if (!userDoc.exists()) {
         await signOut(auth);
         toast.error('Essa conta não está cadastrada no sistema.');
+        setLoading(false);
         return;
       }
 
@@ -81,13 +84,14 @@ export default function LoginPage() {
       <Container maxWidth="sm"
         sx={{
           height: '70vh',
-        
+
           alignContent: 'center',
           justifyContent: 'center',
           textAlign: 'center',
         }}>
+        <Box textAlign="center" mb={4}><Image width={200} height={80} src={'/Logo-original.png'} alt="Logo principal , Pedidos da sorte" /></Box>
         <Typography variant="h4" gutterBottom>
-          Acessar conta
+          Área do Cliente
         </Typography>
 
         <TextField
@@ -115,12 +119,20 @@ export default function LoginPage() {
             ),
           }}
         />
+        <Box display={'grid'} justifyContent={'space-around'}>
+          <Button variant="contained" onClick={loginEmailSenha} sx={{ mb: 1 }}>
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Acessar'}
+          </Button>
+          <Button variant="contained" color='inherit'
+           onClick={() => toast.info('Link de recuperação em breve!')}
+          disabled={loading}
+          >
+            Esqueci minha senha
+          </Button>
+        </Box>
 
-        <Button fullWidth variant="contained" onClick={loginEmailSenha}>
-          Entrar
-        </Button>
       </Container>
-      <Box textAlign="center" mt={4}><Image width={100} height={40} src={'/Logo-original.png'} alt="Logo principal , Pedidos da sorte" /></Box>
+
     </>
   );
 }

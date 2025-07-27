@@ -11,6 +11,8 @@ import React, { useEffect } from 'react';
 import BaseDash from './base';
 import ComPermissao from '@/components/ComPermissao';
 import ResumoCampanha from '@/components/ResumoCampanha';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheck, faPlus, faShare, faUser } from '@fortawesome/free-solid-svg-icons';
 
 
 export default function DashboardPage() {
@@ -41,57 +43,64 @@ export default function DashboardPage() {
     <BaseDash>
       {/* Conteúdo */}
       <Container sx={{ mt: 6 }}>
-        <Typography variant="h4" gutterBottom>
-          Bem-vindo ao seu painel 🎉
+        <Typography variant="h4" component={'h1'} textAlign={'center'} gutterBottom>
+          Painel de controle
         </Typography>
 
-        <Grid container spacing={4}>
-          
-          <ComPermissao permitido={['admin', 'empresa']}>
-            <Grid size={{ xs: 12, md: 4 }} >
-              <DashboardCard
-                title="🎯 Raspadinhas Ativas"
-                description="Visualize e gerencie todas as raspadinhas disponíveis no momento."
-                onClick={() => router.push('/dashboard/ativas')}
-              />
-            </Grid>
-          </ComPermissao>
+        <Grid container spacing={2}>
+
 
           <ComPermissao permitido={['admin', 'empresa']}>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <DashboardCard
-                title="➕ Criar Raspadinha"
-                description="Crie uma nova campanha de raspadinha personalizada."
+                icon={<FontAwesomeIcon icon={faPlus} />}
+                color='vermelho'
+                title=" Criar nova campanha"
                 onClick={() => router.push('/dashboard/criar-sorteio')}
               />
             </Grid>
           </ComPermissao>
 
           <ComPermissao permitido={['admin', 'empresa']}>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <DashboardCard
-                title="👤 Gerenciar Conta"
-                description="Atualize seus dados, senha e preferências de conta."
+                icon={<FontAwesomeIcon icon={faCheck} />}
+                title="Minhas campanhas"
+                onClick={() => router.push('/dashboard/ativas')}
+              />
+            </Grid>
+          </ComPermissao>
+
+
+
+          <ComPermissao permitido={['admin', 'empresa']}>
+            <Grid size={{ xs: 12, md: 3 }}>
+              <DashboardCard
+                icon={<FontAwesomeIcon icon={faUser} />}
+                title="Gerenciar Conta"
+                color='vermelho'
                 onClick={() => router.push('/dashboard/conta')}
               />
             </Grid>
           </ComPermissao>
 
           <ComPermissao permitido={['admin', 'empresa', 'funcionario']}>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <DashboardCard
-                title="👤 Envio de código e validar voucher"
-                description="Envio de códigos para participantes , no whatsApp e validação do voucher"
+                icon={<FontAwesomeIcon icon={faShare} />}
+                color='preto'
+                title="Envio de código e validar voucher"
+
                 onClick={() => router.push('/dashboard/enviar')}
               />
             </Grid>
           </ComPermissao>
 
-          <ComPermissao permitido={['admin', 'empresa']}>
+          {/* <ComPermissao permitido={['admin', 'empresa']}>
             <Grid size={{ xs: 12, md: 12 }}>
-             <ResumoCampanha />
+              <ResumoCampanha />
             </Grid>
-          </ComPermissao>
+          </ComPermissao> */}
 
         </Grid>
       </Container>

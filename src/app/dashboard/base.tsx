@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Image from "next/image";
+import Link from "next/link";
 
 
 export default function BaseDash({ children }: { children: React.ReactNode }) {
@@ -40,19 +41,10 @@ export default function BaseDash({ children }: { children: React.ReactNode }) {
     return (
         <ProtectedRoute>
             {/* Header */}
-            <AppBar position="static" sx={{ backgroundColor: '#BA0100' }}>
+            <AppBar position="static" color="default">
                 <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="h6">Bem-vindo, {user?.email}</Typography>
+                   <Box textAlign="center" mt={4}> <Link href={'/dashboard'}><Image width={100} height={40} src={logoSrc} alt="Logo principal , Pedidos da sorte" /></Link></Box>
                     <Box display="flex" gap={2}>
-                        <Button color="inherit" onClick={() => router.push('/dashboard')}>
-                            Dashboard
-                        </Button>
-                        <Button color="inherit" onClick={() => router.push('/dashboard/promocoes')}>
-                            Promoção
-                        </Button>
-                        <Button color="inherit" onClick={() => router.push('/dashboard/jogos')}>
-                            Jogos
-                        </Button>
                         <Button color="inherit" onClick={handleLogout}>
                             Sair
                         </Button>
