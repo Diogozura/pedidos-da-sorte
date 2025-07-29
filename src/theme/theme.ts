@@ -1,36 +1,36 @@
 // theme.ts
-import { createTheme } from '@mui/material/styles';
+import { createTheme } from "@mui/material/styles";
 
 const bordaRadius = 12;
 
 export const lightTheme = createTheme({
   palette: {
-    mode: 'light',
+    mode: "light",
     primary: {
-      main: '#DF1616', // vermelho da identidade
+      main: "#DF1616", // vermelho da identidade
     },
     secondary: {
-      main: '#000000', // para botões escuros
+      main: "#000000", // para botões escuros
     },
     background: {
-      default: '#ffffff',
-      paper: '#f0f0f0',
+      default: "#ffffff",
+      paper: "#f0f0f0",
     },
     text: {
-      primary: '#000000',
-      secondary: '#ffffff',
+      primary: "#000000",
+      secondary: "#000000ff",
     },
   },
   shape: {
     borderRadius: bordaRadius,
   },
   typography: {
-    fontFamily: 'Poppins, sans-serif',
+    fontFamily: "Comfortaa, sans-serif",
     fontWeightRegular: 400,
     fontWeightMedium: 600,
     fontWeightBold: 700,
     button: {
-      textTransform: 'none', // mantém texto normal nos botões
+      textTransform: "none", // mantém texto normal nos botões
       fontWeight: 600,
     },
   },
@@ -39,7 +39,7 @@ export const lightTheme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: bordaRadius,
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
         },
       },
     },
@@ -48,6 +48,18 @@ export const lightTheme = createTheme({
         root: {
           borderRadius: 8,
           fontWeight: 600,
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          "&.Mui-error .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#DF1616",
+          },
+          "&.Mui-error.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderWidth: 2,
+          },
         },
       },
     },
@@ -56,29 +68,29 @@ export const lightTheme = createTheme({
 
 export const darkTheme = createTheme({
   palette: {
-    mode: 'dark',
+    mode: "dark",
     primary: {
-      main: '#ffffff',
+      main: "#ffffff",
     },
     background: {
-      default: '#BA0100',
-      paper: '#1d1d1d',
+      default: "#BA0100",
+      paper: "#1d1d1d",
     },
     text: {
-      primary: '#ffffff',
-      secondary: '#000000',
+      primary: "#ffffff",
+      secondary: "#000000",
     },
   },
   shape: {
     borderRadius: bordaRadius,
   },
   typography: {
-    fontFamily: 'Poppins, sans-serif',
+    fontFamily: "Poppins, sans-serif",
     fontWeightRegular: 400,
     fontWeightMedium: 600,
     fontWeightBold: 700,
     button: {
-      textTransform: 'none',
+      textTransform: "none",
       fontWeight: 600,
     },
   },
@@ -87,7 +99,7 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: bordaRadius,
-          boxShadow: '0 2px 4px rgba(255,255,255,0.1)',
+          boxShadow: "0 2px 4px rgba(255,255,255,0.1)",
         },
       },
     },
@@ -96,6 +108,18 @@ export const darkTheme = createTheme({
         root: {
           borderRadius: 8,
           fontWeight: 600,
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          "&.Mui-error .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#DF1616",
+          },
+          "&.Mui-error.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderWidth: 2,
+          },
         },
       },
     },
