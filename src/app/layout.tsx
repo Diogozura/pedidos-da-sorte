@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Comfortaa } from 'next/font/google';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 import { config } from '@fortawesome/fontawesome-svg-core';
 config.autoAddCss = false;
@@ -8,7 +8,7 @@ import ToastProvider from '@/components/ToastProvider';
 import { FormProvider } from '@/config/FormContext';
 import { AuthProvider } from '@/context/AuthContext';
 
-const inter = Inter({
+const inter = Comfortaa({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-inter',
