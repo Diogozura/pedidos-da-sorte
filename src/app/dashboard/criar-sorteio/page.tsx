@@ -136,7 +136,7 @@ export default function CriarCampanha() {
 
         setUploadingIndex(-1);
         toast.success('Imagem enviada com sucesso!');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         toast.error('Falha no upload: ' + err.message);
       }
@@ -268,198 +268,205 @@ export default function CriarCampanha() {
           <Typography variant="h4" gutterBottom>
             Criar nova campanha
           </Typography>
+          <Grid container>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
+                label="Nome da campanha"
+                placeholder='ex: fim do mês'
+                fullWidth
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                sx={{ mb: 2 }}
+              />
 
-          <TextField
-            label="Nome da campanha"
-            placeholder='ex: fim do mês'
-            fullWidth
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            sx={{ mb: 2 }}
-          />
+              <TextField
+                label="Total de raspadinhas"
+                fullWidth
+                type="number"
+                value={totalRaspadinhas}
+                onChange={e => {
+                  const val = parseInt(e.target.value, 10);
+                  // só atualiza se for ≥ 1
+                  if (!isNaN(val) && val >= 1) {
+                    setTotalRaspadinhas(val.toString());
+                  }
+                }}
+                inputProps={{ step: 1, min: 1, pattern: '[1-9]*', inputMode: 'numeric' }}
+                onKeyDown={e => ['e', 'E', '+', ',', '.', '-'].includes(e.key) && e.preventDefault()}
+                sx={{ mb: 2 }}
+              />
 
-          <TextField
-            label="Total de raspadinhas"
-            fullWidth
-            type="number"
-            value={totalRaspadinhas}
-            onChange={e => {
-              const val = parseInt(e.target.value, 10);
-              // só atualiza se for ≥ 1
-              if (!isNaN(val) && val >= 1) {
-                setTotalRaspadinhas(val.toString());
-              }
-            }}
-            inputProps={{ step: 1, min: 1, pattern: '[1-9]*', inputMode: 'numeric' }}
-            onKeyDown={e => ['e', 'E', '+', ',', '.', '-'].includes(e.key) && e.preventDefault()}
-            sx={{ mb: 2 }}
-          />
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel id="modo-label">Modo da campanha</InputLabel>
+                <Select
+                  labelId="modo-label"
+                  label="Modo da campanha"
+                  value={modo}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  onChange={e => setModo(e.target.value as any)}
+                >
+                  <MenuItem value="raspadinha">Enquanto tiver raspadinha</MenuItem>
+                  <MenuItem value="prazo">Prazo até</MenuItem>
+                </Select>
+              </FormControl>
 
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel id="modo-label">Modo da campanha</InputLabel>
-            <Select
-              labelId="modo-label"
-              label="Modo da campanha"
-              value={modo}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              onChange={e => setModo(e.target.value as any)}
-            >
-              <MenuItem value="raspadinha">Enquanto tiver raspadinha</MenuItem>
-              <MenuItem value="prazo">Prazo até</MenuItem>
-            </Select>
-          </FormControl>
+              {modo === 'prazo' && (
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                  <Grid size={6}>
+                    <TextField
+                      label="Data Início"
+                      type="date"
+                      fullWidth
+                      inputProps={{ min: hoje }}
+                      InputLabelProps={{ shrink: true }}
+                      value={dataInicio}
+                      onChange={e => setDataInicio(e.target.value)}
+                    />
+                  </Grid>
+                  <Grid size={6}>
+                    <TextField
+                      label="Data Fim"
+                      type="date"
+                      fullWidth
+                      inputProps={{ min: dataInicio || hoje }}
+                      InputLabelProps={{ shrink: true }}
+                      value={dataFim}
+                      onChange={e => setDataFim(e.target.value)}
+                    />
+                  </Grid>
+                </Grid>
+              )}
 
-          {modo === 'prazo' && (
-            <Grid container spacing={2} sx={{ mb: 2 }}>
-              <Grid size={6}>
-                <TextField
-                  label="Data Início"
-                  type="date"
-                  fullWidth
-                  inputProps={{ min: hoje }}
-                  InputLabelProps={{ shrink: true }}
-                  value={dataInicio}
-                  onChange={e => setDataInicio(e.target.value)}
-                />
-              </Grid>
-              <Grid size={6}>
-                <TextField
-                  label="Data Fim"
-                  type="date"
-                  fullWidth
-                  inputProps={{ min: dataInicio || hoje }}
-                  InputLabelProps={{ shrink: true }}
-                  value={dataFim}
-                  onChange={e => setDataFim(e.target.value)}
-                />
-              </Grid>
             </Grid>
-          )}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Typography variant="h6" gutterBottom>
+                Prêmios
+              </Typography>
+
+              {premios.map((p, index) => (
+                <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <TextField
+                        label="Nome do prêmio"
+                        value={p.nome}
+                        onChange={(e) => handleChangePremio(index, 'nome', e.target.value)}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 4 }} >
+                      {uploadingIndex === index ? (
+                        // input de upload
+                        <Button variant="outlined" component="label" fullWidth>
+                          Selecionar img
+                          <input
+                            type="file"
+                            hidden
+                            accept="image/*"
+                            onChange={handleFileChange}
+                          />
+                        </Button>
+                      ) : (
+                        // dropdown de imagens + opção "nova"
+                        <FormControl fullWidth>
+                          <InputLabel id={`img-label-${index}`}>Imagem do prêmio</InputLabel>
+                          <Select
+                            labelId={`img-label-${index}`}
+                            label="Imagem do prêmio"
+                            value={p.imagem || ''}
+                            onChange={e => handleSelectImagem(index, e.target.value)}
+                          >
+                            {imagensDisponiveis.map(url => {
+                              const nomeArquivo = url.split('/').pop();
+                              return (
+                                <MenuItem key={url} value={url}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <Avatar
+                                      src={url}
+                                      variant="square"
+                                      sx={{ width: 40, height: 40, mr: 1 }}
+                                    />
+                                    {nomeArquivo}
+                                  </Box>
+                                </MenuItem>
+                              );
+                            })}
+                            <MenuItem value="nova">
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <FontAwesomeIcon icon={faPlus} style={{ marginRight: 8 }} />
+                                Adicionar nova imagem
+                              </Box>
+                            </MenuItem>
+                          </Select>
+                        </FormControl>
+                      )}
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 3 }}>
+                      <TextField
+                        label="Quantidade"
+                        type="number"
+                        value={p.quantidadeTotais}
+                        onChange={(e) => handleChangePremio(index, 'quantidadeTotais', e.target.value)}
+                        InputProps={{ endAdornment: <InputAdornment position="end">x</InputAdornment> }}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 1 }} >
+                      <IconButton onClick={() => removerPremio(index)}>
+                        <FontAwesomeIcon icon={faMinus} />
+                      </IconButton>
+                    </Grid>
+                    {/* PREVIEW DA IMAGEM SELECIONADA */}
+                    <Grid size={12} sx={{ textAlign: 'center' }}>
+                      {p.imagem ? (
+                        <Box
+                          component="img"
+                          src={p.imagem}
+                          alt={`Preview do prêmio ${index + 1}`}
+                          sx={{
+                            width: 200,
+                            height: 200,
+                            objectFit: 'cover',
+                            borderRadius: 1,
+                            border: '1px solid #ddd'
+                          }}
+                        />
+                      ) : (
+                        <Box
+                          sx={{
+                            width: 80,
+                            height: 80,
+                            bgcolor: 'grey.100',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: 1,
+                            border: '1px dashed #ccc'
+                          }}
+                        >
+                          Sem imagem
+                        </Box>
+                      )}
+                    </Grid>
+
+                  </Grid>
+                </Box>
+              ))}
+
+              <Button
+                onClick={adicionarPremio}
+                variant="outlined"
+                sx={{ mb: 4 }}
+                startIcon={<FontAwesomeIcon icon={faPlus} />}
+              >
+                Adicionar prêmio
+              </Button>
+            </Grid>
+          </Grid>
 
           <Divider sx={{ my: 4 }} />
 
-          <Typography variant="h6" gutterBottom>
-            Prêmios
-          </Typography>
 
-          {premios.map((p, index) => (
-            <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
-              <Grid container spacing={2} alignItems="center">
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField
-                    label="Nome do prêmio"
-                    value={p.nome}
-                    onChange={(e) => handleChangePremio(index, 'nome', e.target.value)}
-                    fullWidth
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4 }} >
-                  {uploadingIndex === index ? (
-                    // input de upload
-                    <Button variant="outlined" component="label" fullWidth>
-                      Selecionar img
-                      <input
-                        type="file"
-                        hidden
-                        accept="image/*"
-                        onChange={handleFileChange}
-                      />
-                    </Button>
-                  ) : (
-                    // dropdown de imagens + opção "nova"
-                    <FormControl fullWidth>
-                      <InputLabel id={`img-label-${index}`}>Imagem do prêmio</InputLabel>
-                      <Select
-                        labelId={`img-label-${index}`}
-                        label="Imagem do prêmio"
-                        value={p.imagem || ''}
-                        onChange={e => handleSelectImagem(index, e.target.value)}
-                      >
-                        {imagensDisponiveis.map(url => {
-                          const nomeArquivo = url.split('/').pop();
-                          return (
-                            <MenuItem key={url} value={url}>
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <Avatar
-                                  src={url}
-                                  variant="square"
-                                  sx={{ width: 40, height: 40, mr: 1 }}
-                                />
-                                {nomeArquivo}
-                              </Box>
-                            </MenuItem>
-                          );
-                        })}
-                        <MenuItem value="nova">
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <FontAwesomeIcon icon={faPlus} style={{ marginRight: 8 }} />
-                            Adicionar nova imagem
-                          </Box>
-                        </MenuItem>
-                      </Select>
-                    </FormControl>
-                  )}
-                </Grid>
-                <Grid size={{ xs: 12, sm: 3 }}>
-                  <TextField
-                    label="Quantidade"
-                    type="number"
-                    value={p.quantidadeTotais}
-                    onChange={(e) => handleChangePremio(index, 'quantidadeTotais', e.target.value)}
-                    InputProps={{ endAdornment: <InputAdornment position="end">x</InputAdornment> }}
-                    fullWidth
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 1 }} >
-                  <IconButton onClick={() => removerPremio(index)}>
-                    <FontAwesomeIcon icon={faMinus} />
-                  </IconButton>
-                </Grid>
-                {/* PREVIEW DA IMAGEM SELECIONADA */}
-                <Grid size={12} sx={{ textAlign: 'center' }}>
-                  {p.imagem ? (
-                    <Box
-                      component="img"
-                      src={p.imagem}
-                      alt={`Preview do prêmio ${index + 1}`}
-                      sx={{
-                        width: 200,
-                        height: 200,
-                        objectFit: 'cover',
-                        borderRadius: 1,
-                        border: '1px solid #ddd'
-                      }}
-                    />
-                  ) : (
-                    <Box
-                      sx={{
-                        width: 80,
-                        height: 80,
-                        bgcolor: 'grey.100',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: 1,
-                        border: '1px dashed #ccc'
-                      }}
-                    >
-                      Sem imagem
-                    </Box>
-                  )}
-                </Grid>
-
-              </Grid>
-            </Box>
-          ))}
-
-          <Button
-            onClick={adicionarPremio}
-            variant="outlined"
-            sx={{ mb: 4 }}
-            startIcon={<FontAwesomeIcon icon={faPlus} />}
-          >
-            Adicionar prêmio
-          </Button>
 
           <Button variant="contained" fullWidth onClick={criarCampanha}>
             Criar campanha
