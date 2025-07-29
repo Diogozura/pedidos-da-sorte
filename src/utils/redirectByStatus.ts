@@ -1,7 +1,7 @@
 import { toast } from 'react-toastify';
 
 export function getRedirectUrlByStatus(status: string, codigo: string,campanhaId: string): string | null {
-  const base = `/sorteio/${campanhaId}`;
+  const base = `/${campanhaId}`;
 
   switch (status) {
     case 'ativo':

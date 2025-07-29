@@ -65,13 +65,10 @@ export default function DashboardPage() {
               <DashboardCard
                 icon={<FontAwesomeIcon icon={faCheck} />}
                 title="Minhas campanhas"
-                onClick={() => router.push('/dashboard/ativas')}
+                onClick={() => router.push('/dashboard/campanhas')}
               />
             </Grid>
           </ComPermissao>
-
-
-
           <ComPermissao permitido={['admin', 'empresa']}>
             <Grid size={{ xs: 12, md: 3 }}>
               <DashboardCard
@@ -88,7 +85,7 @@ export default function DashboardPage() {
               <DashboardCard
                 icon={<FontAwesomeIcon icon={faShare} />}
                 color='preto'
-                title="Envio de código e validar voucher"
+                title="Gerenciador de Códigos"
 
                 onClick={() => router.push('/dashboard/GerenciarCodigos')}
               />

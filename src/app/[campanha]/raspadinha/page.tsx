@@ -18,7 +18,8 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import Link from 'next/link';
-import { BaseSorteio } from '../../base';
+import { BaseSorteio } from '@/components/baseSorteio';
+
 
 export default function RaspadinhaPage() {
   const router = useRouter();
@@ -117,8 +118,8 @@ export default function RaspadinhaPage() {
       const refCod = doc(db, 'codigos', codigoDocId);
       const snapCod = await getDoc(refCod);
       const dataCod = snapCod.data();
-
-      if (dataCod?.status === 'aguardando raspagem' && dataCod?.premiado) {
+      console.log('dataCod?.premiado', dataCod?.premiado)
+      if (dataCod?.status === 'aguardando raspagem' && dataCod?.premiado !== 'nenhum') {
         await updateDoc(refCod, {
           status: 'aguardando dados ganhador',
           usado: true,
@@ -127,7 +128,7 @@ export default function RaspadinhaPage() {
         toast.success('🎉 Você ganhou!');
         setTimeout(() => {
           router.replace(
-            `/sorteio/${campanhaId}/ganhador?codigo=${codigo}`
+            `/${campanhaId}/ganhador?codigo=${codigo}`
           );
         }, 1500);
       } else {
@@ -137,6 +138,11 @@ export default function RaspadinhaPage() {
           usadoEm: Timestamp.now(),
         });
         toast.error('Infelizmente você não ganhou desta vez.');
+         setTimeout(() => {
+          router.replace(
+            `/`
+          );
+        }, 1500);
       }
     } catch (err: any) {
       toast.error('Erro ao finalizar: ' + err.message);

@@ -3,7 +3,7 @@
 
 import { Button, Container, FormControl, TextField, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { db } from '@/lib/firebase';
 import {
@@ -17,12 +17,21 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { getRedirectUrlByStatus } from '@/utils/redirectByStatus';
-import { BaseSorteio } from './sorteio/base';
+import { BaseSorteio } from '@/components/baseSorteio';
+;
 
 
 export default function CodigoPage() {
   const [codigo, setCodigo] = useState('');
   const router = useRouter();
+
+    useEffect(() => {
+    const search = window.location.search; // ex: "?Q56LSV"
+    if (search.startsWith('?') && search.length > 1) {
+      const valor = search.substring(1); // remove o "?"
+      setCodigo(valor);
+    }
+  }, []);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -74,9 +83,10 @@ export default function CodigoPage() {
 
         toast.success('Código válido! 🎉');
       }
-
+     
       // Redireciona conforme status (novo ou existente)
       const nextStatus = status === 'ativo' ? 'validado' : status;
+       console.log('nextStatus', nextStatus)
       const redirectUrl = getRedirectUrlByStatus(
         nextStatus,
         upperCode,

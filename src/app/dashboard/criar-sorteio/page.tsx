@@ -14,19 +14,21 @@ import {
   Typography,
   Button,
   Divider,
-  IconButton,
+
   Box,
   Grid,
   InputAdornment,
-  Avatar,
+  IconButton,
+
 } from '@mui/material';
-import { toast } from 'react-toastify';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
+import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import BaseDash from '../base';
 import Head from 'next/head';
 import ProtegePagina from '@/components/ProtegePagina';
 import { useUsuarioLogado } from '@/hook/useUsuarioLogado';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 
 interface Premio {
   nome: string;
@@ -63,7 +65,7 @@ export default function CriarCampanha() {
   const [premios, setPremios] = useState<Premio[]>([
     { nome: '', imagem: '', quantidadeTotais: 1 },
   ]);
-  const [imagensDisponiveis, setImagensDisponiveis] = useState<string[]>([]);
+  // const [imagensDisponiveis, setImagensDisponiveis] = useState<string[]>([]);
 
   // índice do prêmio que está adicionando nova imagem (-1 = nenhum)
   const [uploadingIndex, setUploadingIndex] = useState<number>(-1);
@@ -73,23 +75,23 @@ export default function CriarCampanha() {
     const pasta = storageRef(storage, 'prêmios');
     listAll(pasta)
       .then(res => Promise.all(res.items.map(item => getDownloadURL(item))))
-      .then(urls => setImagensDisponiveis(urls))
+      // .then(urls => setImagensDisponiveis(urls))
       .catch(err => {
         console.error(err);
         toast.error('Erro ao carregar imagens de prêmios.');
       });
   }, []);
-  const handleSelectImagem = (idx: number, value: string) => {
-    if (value === 'nova') {
-      // entra no modo upload para este prêmio
-      setUploadingIndex(idx);
-    } else {
-      // apenas altera URL normal
-      const novos = [...premios];
-      novos[idx].imagem = value;
-      setPremios(novos);
-    }
-  };
+  // const handleSelectImagem = (idx: number, value: string) => {
+  //   if (value === 'nova') {
+  //     // entra no modo upload para este prêmio
+  //     setUploadingIndex(idx);
+  //   } else {
+  //     // apenas altera URL normal
+  //     const novos = [...premios];
+  //     novos[idx].imagem = value;
+  //     setPremios(novos);
+  //   }
+  // };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length || uploadingIndex < 0) return;
@@ -124,7 +126,7 @@ export default function CriarCampanha() {
         const url = await getDownloadURL(ref);
 
         // atualiza lista de disponíveis
-        setImagensDisponiveis(prev => [...prev, url]);
+        // setImagensDisponiveis(prev => [...prev, url]);
         // substitui no state a preview temporária pela URL real
         setPremios(prev => {
           const copia = [...prev];
@@ -252,10 +254,18 @@ export default function CriarCampanha() {
       setNome('');
       setTotalRaspadinhas('');
       setPremios([{ nome: '', imagem: '', quantidadeTotais: 1 }]);
+      router.push('/dashboard');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error('Erro ao criar campanha: ' + err.message);
     }
+  };
+
+  const router = useRouter();
+
+  const handleCancelar = () => {
+    toast.info('Cadastro cancelado.');
+    router.push('/dashboard');
   };
 
   return (
@@ -264,11 +274,11 @@ export default function CriarCampanha() {
         <Head>
           <title>Criar campanha - Pedidos da sorte </title>
         </Head>
-        <Container maxWidth="md" sx={{ mt: 6 }}>
-          <Typography variant="h4" gutterBottom>
+        <Container maxWidth="lg" sx={{ mt: 6 }}>
+          <Typography component={'h1'} variant="h4" textAlign={'center'} gutterBottom>
             Criar nova campanha
           </Typography>
-          <Grid container>
+          <Grid container spacing={4} justifyContent="center" alignItems="center">
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 label="Nome da campanha"
@@ -305,8 +315,8 @@ export default function CriarCampanha() {
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   onChange={e => setModo(e.target.value as any)}
                 >
-                  <MenuItem value="raspadinha">Enquanto tiver raspadinha</MenuItem>
-                  <MenuItem value="prazo">Prazo até</MenuItem>
+                  <MenuItem value="raspadinha">Número de jogos</MenuItem>
+                  <MenuItem value="prazo">tempo</MenuItem>
                 </Select>
               </FormControl>
 
@@ -346,7 +356,7 @@ export default function CriarCampanha() {
               {premios.map((p, index) => (
                 <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
                   <Grid container spacing={2} alignItems="center">
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid size={{ xs: 12, sm: 5 }}>
                       <TextField
                         label="Nome do prêmio"
                         value={p.nome}
@@ -354,54 +364,7 @@ export default function CriarCampanha() {
                         fullWidth
                       />
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }} >
-                      {uploadingIndex === index ? (
-                        // input de upload
-                        <Button variant="outlined" component="label" fullWidth>
-                          Selecionar img
-                          <input
-                            type="file"
-                            hidden
-                            accept="image/*"
-                            onChange={handleFileChange}
-                          />
-                        </Button>
-                      ) : (
-                        // dropdown de imagens + opção "nova"
-                        <FormControl fullWidth>
-                          <InputLabel id={`img-label-${index}`}>Imagem do prêmio</InputLabel>
-                          <Select
-                            labelId={`img-label-${index}`}
-                            label="Imagem do prêmio"
-                            value={p.imagem || ''}
-                            onChange={e => handleSelectImagem(index, e.target.value)}
-                          >
-                            {imagensDisponiveis.map(url => {
-                              const nomeArquivo = url.split('/').pop();
-                              return (
-                                <MenuItem key={url} value={url}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <Avatar
-                                      src={url}
-                                      variant="square"
-                                      sx={{ width: 40, height: 40, mr: 1 }}
-                                    />
-                                    {nomeArquivo}
-                                  </Box>
-                                </MenuItem>
-                              );
-                            })}
-                            <MenuItem value="nova">
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <FontAwesomeIcon icon={faPlus} style={{ marginRight: 8 }} />
-                                Adicionar nova imagem
-                              </Box>
-                            </MenuItem>
-                          </Select>
-                        </FormControl>
-                      )}
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 3 }}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <TextField
                         label="Quantidade"
                         type="number"
@@ -411,44 +374,66 @@ export default function CriarCampanha() {
                         fullWidth
                       />
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 1 }} >
-                      <IconButton onClick={() => removerPremio(index)}>
-                        <FontAwesomeIcon icon={faMinus} />
-                      </IconButton>
-                    </Grid>
-                    {/* PREVIEW DA IMAGEM SELECIONADA */}
-                    <Grid size={12} sx={{ textAlign: 'center' }}>
-                      {p.imagem ? (
-                        <Box
-                          component="img"
-                          src={p.imagem}
-                          alt={`Preview do prêmio ${index + 1}`}
-                          sx={{
-                            width: 200,
-                            height: 200,
-                            objectFit: 'cover',
-                            borderRadius: 1,
-                            border: '1px solid #ddd'
-                          }}
-                        />
-                      ) : (
-                        <Box
-                          sx={{
-                            width: 80,
-                            height: 80,
-                            bgcolor: 'grey.100',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: 1,
-                            border: '1px dashed #ccc'
-                          }}
-                        >
-                          Sem imagem
-                        </Box>
-                      )}
-                    </Grid>
+                    <Grid size={{ xs: 12, sm: 3 }} sx={{ textAlign: 'center' }}>
+                      <Box
+                        component="label" // transforma em "label" para funcionar com <input type="file">
+                        htmlFor={`upload-img-${index}`}
+                        sx={{
+                          cursor: 'pointer',
+                          display: 'inline-block',
+                        }}
+                      >
+                        {p.imagem ? (
+                          <Box
+                            component="img"
+                            src={p.imagem}
+                            alt={`Preview do prêmio ${index + 1}`}
+                            sx={{
+                              width: 200,
+                              height: 200,
+                              objectFit: 'cover',
+                              borderRadius: 1,
+                              border: '1px solid #ddd',
+                            }}
+                          />
+                        ) : (
+                          <Box
+                            sx={{
+                              width: 80,
+                              height: 80,
+                              bgcolor: 'grey.100',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: 1,
+                              border: '1px dashed #ccc',
+                              fontSize: 12,
+                              color: 'text.secondary',
+                            }}
+                          >
+                            Sem imagem
+                          </Box>
+                        )}
+                      </Box>
 
+                      {/* input hidden acoplado */}
+                      <input
+                        id={`upload-img-${index}`}
+                        type="file"
+                        hidden
+                        accept="image/*"
+                        onChange={handleFileChange}
+                      />
+                    </Grid>
+                    {premios.length >= 3 ? (
+                      <>
+                        <Grid size={{ xs: 12, sm: 1 }} >
+                          <IconButton onClick={() => removerPremio(index)}>
+                            <FontAwesomeIcon icon={faMinus} />
+                          </IconButton>
+                        </Grid>
+                      </>
+                    ): null }
                   </Grid>
                 </Box>
               ))}
@@ -462,16 +447,26 @@ export default function CriarCampanha() {
                 Adicionar prêmio
               </Button>
             </Grid>
+
+            <Grid size={12}>
+              <Divider sx={{ my: 4 }} />
+            </Grid>
+
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box>Add Logo</Box>
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }} display={'contents'}>
+              <Button variant="contained" color='secondary' onClick={handleCancelar}>
+                Canceler
+              </Button>
+              <Button variant="contained" onClick={criarCampanha}>
+                Cadastrar
+              </Button>
+
+            </Grid>
+
           </Grid>
-
-          <Divider sx={{ my: 4 }} />
-
-
-
-          <Button variant="contained" fullWidth onClick={criarCampanha}>
-            Criar campanha
-          </Button>
-
           <Divider sx={{ mt: 4, mb: 2 }} />
 
           <Typography variant="body2" color="text.secondary">

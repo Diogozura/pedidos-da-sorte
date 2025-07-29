@@ -7,7 +7,8 @@ import { useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, updateDoc, doc, getDocs, query, where } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-import { BaseSorteio } from '../../base';
+import { BaseSorteio } from '@/components/baseSorteio';
+
 
 export default function GanhadorPage() {
   const router = useRouter();
@@ -61,7 +62,7 @@ export default function GanhadorPage() {
       });
 
       toast.success('Dados enviados com sucesso!');
-      router.push(`/sorteio/${codigoData.campanhaId}/voucher?codigo=${codigo}`);
+      router.push(`/${codigoData.campanhaId}/voucher?codigo=${codigo}`);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error('Erro ao salvar dados: ' + err.message);
