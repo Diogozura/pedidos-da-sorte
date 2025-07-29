@@ -19,7 +19,7 @@ import {
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
-import { BaseSorteio } from "../../base";
+import { BaseSorteio } from '@/components/baseSorteio';
 
 // Função para gerar código aleatório
 const gerarCodigoVoucher = (): string => {

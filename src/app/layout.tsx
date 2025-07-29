@@ -30,7 +30,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </AuthProvider>
             <ToastProvider />
           </FormProvider>
-
         </ThemeProvider>
       </body>
     </html>
