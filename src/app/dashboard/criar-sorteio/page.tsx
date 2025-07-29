@@ -14,14 +14,15 @@ import {
   Typography,
   Button,
   Divider,
-  IconButton,
+
   Box,
   Grid,
   InputAdornment,
-  Avatar,
+  IconButton,
+
 } from '@mui/material';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
+import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import BaseDash from '../base';
 import Head from 'next/head';
 import ProtegePagina from '@/components/ProtegePagina';
@@ -373,7 +374,7 @@ export default function CriarCampanha() {
                         fullWidth
                       />
                     </Grid>
-                    <Grid size={{xs: 12, sm: 3 }} sx={{ textAlign: 'center' }}>
+                    <Grid size={{ xs: 12, sm: 3 }} sx={{ textAlign: 'center' }}>
                       <Box
                         component="label" // transforma em "label" para funcionar com <input type="file">
                         htmlFor={`upload-img-${index}`}
@@ -424,7 +425,15 @@ export default function CriarCampanha() {
                         onChange={handleFileChange}
                       />
                     </Grid>
-
+                    {premios.length >= 3 ? (
+                      <>
+                        <Grid size={{ xs: 12, sm: 1 }} >
+                          <IconButton onClick={() => removerPremio(index)}>
+                            <FontAwesomeIcon icon={faMinus} />
+                          </IconButton>
+                        </Grid>
+                      </>
+                    ): null }
                   </Grid>
                 </Box>
               ))}

@@ -28,6 +28,8 @@ import { useRouter } from "next/navigation";
 import { EmailAuthProvider, onAuthStateChanged, reauthenticateWithCredential, updateEmail, updatePassword } from 'firebase/auth';
 import BaseDash from '../base';
 import { toast } from 'react-toastify';
+import { faUserTie } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 interface Usuario {
   uid: string;
@@ -129,7 +131,7 @@ export default function GerenciarConta() {
             <Grid size={{xs:12,md:4}} >
               <DashboardCard
                 title="Cadastrar Empresa"
-                description="Cadastre empresas para ter acesso ao sistema"
+                  icon={<FontAwesomeIcon icon={faUserTie } />}
                 onClick={() => router.push('/dashboard/empresa')}
               />
             </Grid>
