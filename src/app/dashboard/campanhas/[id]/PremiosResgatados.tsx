@@ -12,9 +12,10 @@ interface Resgate {
   resgatadoEm: string;
 }
 
-export default function PremiosResgatados({ campanhaId }: { campanhaId: string }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default function PremiosResgatados({ campanhaId }:any) {
   const [resgates, setResgates] = useState<Resgate[]>([]);
-
+  console.log('campanhaId', campanhaId)
   useEffect(() => {
     const fetchResgates = async () => {
       const q = query(

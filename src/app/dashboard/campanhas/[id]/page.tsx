@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -5,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Box, Button, Chip, Container, Grid, Typography } from '@mui/material';
-import { useRouter } from 'next/navigation';
+// import { useRouter } from 'next/navigation';
 import Head from 'next/head';
 import PremiosResgatados from './PremiosResgatados';
 import BaseDash from '../../base';
@@ -13,7 +14,9 @@ import BaseDash from '../../base';
 export default function DetalhesCampanhaPage() {
     const { id } = useParams();
     const [campanha, setCampanha] = useState<any>(null);
-    const router = useRouter();
+    // const router = useRouter();
+
+
 
     useEffect(() => {
         if (!id) return;
@@ -29,7 +32,11 @@ export default function DetalhesCampanhaPage() {
 
         carregarCampanha();
     }, [id]);
+    const campanhaId = id
 
+    if (!id) {
+        return <Typography>Campanha não encontrada</Typography>;
+    }
     if (!campanha) return null;
 
     const porcentagemUtilizada = Math.round(
@@ -44,7 +51,7 @@ export default function DetalhesCampanhaPage() {
         100
     );
 
-    console.log('campanha.status', campanha)
+   
     return (
         <>
 
@@ -90,7 +97,7 @@ export default function DetalhesCampanhaPage() {
                             </Box>
                         </Grid>
                         <Grid size={{ xs: 12, md: 6 }}>
-                            <PremiosResgatados campanhaId={id} />
+                            <PremiosResgatados campanhaId={campanhaId} />
                         </Grid>
                     </Grid>
                 </Container>

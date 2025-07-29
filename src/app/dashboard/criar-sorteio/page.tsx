@@ -65,7 +65,7 @@ export default function CriarCampanha() {
   const [premios, setPremios] = useState<Premio[]>([
     { nome: '', imagem: '', quantidadeTotais: 1 },
   ]);
-  const [imagensDisponiveis, setImagensDisponiveis] = useState<string[]>([]);
+  // const [imagensDisponiveis, setImagensDisponiveis] = useState<string[]>([]);
 
   // índice do prêmio que está adicionando nova imagem (-1 = nenhum)
   const [uploadingIndex, setUploadingIndex] = useState<number>(-1);
@@ -75,23 +75,23 @@ export default function CriarCampanha() {
     const pasta = storageRef(storage, 'prêmios');
     listAll(pasta)
       .then(res => Promise.all(res.items.map(item => getDownloadURL(item))))
-      .then(urls => setImagensDisponiveis(urls))
+      // .then(urls => setImagensDisponiveis(urls))
       .catch(err => {
         console.error(err);
         toast.error('Erro ao carregar imagens de prêmios.');
       });
   }, []);
-  const handleSelectImagem = (idx: number, value: string) => {
-    if (value === 'nova') {
-      // entra no modo upload para este prêmio
-      setUploadingIndex(idx);
-    } else {
-      // apenas altera URL normal
-      const novos = [...premios];
-      novos[idx].imagem = value;
-      setPremios(novos);
-    }
-  };
+  // const handleSelectImagem = (idx: number, value: string) => {
+  //   if (value === 'nova') {
+  //     // entra no modo upload para este prêmio
+  //     setUploadingIndex(idx);
+  //   } else {
+  //     // apenas altera URL normal
+  //     const novos = [...premios];
+  //     novos[idx].imagem = value;
+  //     setPremios(novos);
+  //   }
+  // };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length || uploadingIndex < 0) return;
@@ -126,7 +126,7 @@ export default function CriarCampanha() {
         const url = await getDownloadURL(ref);
 
         // atualiza lista de disponíveis
-        setImagensDisponiveis(prev => [...prev, url]);
+        // setImagensDisponiveis(prev => [...prev, url]);
         // substitui no state a preview temporária pela URL real
         setPremios(prev => {
           const copia = [...prev];
