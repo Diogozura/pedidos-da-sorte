@@ -10,7 +10,6 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
 import BaseDash from './base';
 import ComPermissao from '@/components/ComPermissao';
-import ResumoCampanha from '@/components/ResumoCampanha';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faPlus, faShare, faUser } from '@fortawesome/free-solid-svg-icons';
 
@@ -91,7 +90,7 @@ export default function DashboardPage() {
                 color='preto'
                 title="Envio de código e validar voucher"
 
-                onClick={() => router.push('/dashboard/enviar')}
+                onClick={() => router.push('/dashboard/GerenciarCodigos')}
               />
             </Grid>
           </ComPermissao>

@@ -1,78 +1,132 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client';
 
-import BannerPrincipal from "@/components/BannerPrincipal";
-import FeatureCard from "@/components/FeatureCard";
-import Footer from "@/components/Footer";
-import Header from "@/components/Header";
-import { faBolt, faBullseye, faTrophy, faUsers } from "@fortawesome/free-solid-svg-icons";
-import { Box, Container, Grid, Typography } from "@mui/material";
+import { Button, Container, FormControl, TextField, Typography } from '@mui/material';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { toast } from 'react-toastify';
+import { db } from '@/lib/firebase';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  increment,
+  doc,
+  updateDoc,
+  Timestamp,
+} from 'firebase/firestore';
+import { getRedirectUrlByStatus } from '@/utils/redirectByStatus';
+import { BaseSorteio } from './sorteio/base';
 
-export default function Home() {
+
+export default function CodigoPage() {
+  const [codigo, setCodigo] = useState('');
+  const router = useRouter();
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const upperCode = codigo.trim().toUpperCase();
+
+    if (upperCode.length < 5) {
+      toast.warning('O código deve ter pelo menos 5 caracteres.');
+      return;
+    }
+
+    try {
+      // Busca o documento de código
+      const q = query(
+        collection(db, 'codigos'),
+        where('codigo', '==', upperCode)
+      );
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        toast.error('Código inválido ❌');
+        return;
+      }
+
+      const codeDoc = snapshot.docs[0];
+      const data = codeDoc.data();
+      const status = data.status;
+
+      // Só processa se estiver ativo
+      if (status !== 'ativo') {
+        toast.info('Este código já foi validado anteriormente.');
+      } else {
+        // Atualiza contadores na campanha
+        const campanhaRef = doc(db, 'campanhas', data.campanhaId);
+        const updates: Record<string, any> = {
+          raspadinhasRestantes: increment(-1),
+        };
+        // Se tiver prêmio associado, decrementa também
+        if (data.premiado && data.premiado !== 'nenhum') {
+          updates.premiosRestantes = increment(-1);
+        }
+        await updateDoc(campanhaRef, updates);
+
+        // Marca código como validado
+        await updateDoc(codeDoc.ref, {
+          status: 'validado',
+          usado: true,
+          usadoEm: Timestamp.now(),
+        });
+
+        toast.success('Código válido! 🎉');
+      }
+
+      // Redireciona conforme status (novo ou existente)
+      const nextStatus = status === 'ativo' ? 'validado' : status;
+      const redirectUrl = getRedirectUrlByStatus(
+        nextStatus,
+        upperCode,
+        data.campanhaId
+      );
+      if (redirectUrl) router.push(redirectUrl);
+    } catch (err: any) {
+      toast.error('Erro ao validar código: ' + err.message);
+    }
+  };
+
   return (
-    <>
-      <Header />
-      <BannerPrincipal />
+    <BaseSorteio>
+      <Container
+        maxWidth="md"
+        sx={{
+          height: '70vh',
+          display: 'grid',
+          alignContent: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          mt: 6,
+        }}
+      >
+        <Typography variant="h4" component="h1">
+          Digite seu código de sorteio
+        </Typography>
 
-
-      <Box sx={{ py: 8, backgroundColor: '#fff', textAlign: 'center' }}>
-
-        <Typography component={'h2'} variant="body1" id="saiba-mais">🐞 Sobre Nós</Typography>
-        <Box sx={{ py: 6, backgroundColor: '#fff' }}>
-          <Container maxWidth="md">
-            <Typography
-              variant="h4"
-              align="center"
-              fontWeight="bold"
-              gutterBottom
+        <form onSubmit={handleSubmit}>
+          <FormControl fullWidth sx={{ mt: 4 }}>
+            <TextField
+              value={codigo}
+              label="Código"
+              placeholder="EX: ABC123"
+              required
+              inputProps={{ minLength: 5 }}
+              onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+            />
+            <Button
+              type="submit"
+              color="primary"
+              variant="contained"
+              sx={{ mt: 2 }}
+              disabled={codigo.trim().length < 5}
             >
-              Transformamos Sonhos em <Box component="span" color="error.main">Realidade</Box>
-            </Typography>
-
-            <Typography
-              variant="body1"
-              align="center"
-              color="text.secondary"
-              sx={{ mt: 2, maxWidth: 700, mx: 'auto' }}
-            >
-              Somos uma empresa especializada em marketing digital e sorteios online,
-              dedicada a criar experiências únicas que conectam marcas e pessoas através da emoção e da sorte.
-            </Typography>
-          </Container>
-        </Box>
-
-        <Container maxWidth="lg">
-          <Grid container spacing={4}>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <FeatureCard
-                icon={faBullseye}
-                title="Marketing Estratégico"
-                description="Criamos campanhas personalizadas que conectam sua marca ao público certo no momento ideal."
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <FeatureCard
-                icon={faUsers}
-                title="Comunidade Ativa"
-                description="Mais de 50 mil participantes engajados em nossa plataforma de sorteios e promoções."
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <FeatureCard
-                icon={faTrophy}
-                title="Resultados Comprovados"
-                description="Histórico de sucesso com mais de 1000 sorteios realizados e prêmios entregues."
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <FeatureCard
-                icon={faBolt}
-                title="Tecnologia Inovadora"
-                description="Plataforma segura e confiável com sistema de sorteios transparente e auditável."
-              />
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
-      <Footer />
-    </>
+              Validar
+            </Button>
+          </FormControl>
+        </form>
+      </Container>
+    </BaseSorteio>
   );
 }
