@@ -4,12 +4,13 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { Box, Button, Chip, Container, Grid, Typography } from '@mui/material';
 // import { useRouter } from 'next/navigation';
 import Head from 'next/head';
 import PremiosResgatados from './PremiosResgatados';
 import BaseDash from '../../base';
+import { toast } from 'react-toastify';
 
 export default function DetalhesCampanhaPage() {
     const { id } = useParams();
@@ -51,7 +52,24 @@ export default function DetalhesCampanhaPage() {
         100
     );
 
-   
+    const handleFinalizarCampanha = async () => {
+        if (!campanhaId) return;
+
+        const confirmar = window.confirm('Tem certeza que deseja encerrar esta campanha? Isso é irreversível.');
+        if (!confirmar) return;
+
+        try {
+            await updateDoc(doc(db, 'campanhas', campanhaId), {
+                status: 'encerrada',
+            });
+            toast.success('Campanha encerrada com sucesso!');
+            setCampanha((prev: any) => ({ ...prev, status: 'encerrada' }));
+        } catch (error) {
+            console.error(error);
+            toast.error('Erro ao encerrar campanha.');
+        }
+    };
+
     return (
         <>
 
@@ -82,8 +100,35 @@ export default function DetalhesCampanhaPage() {
                             </Typography>
 
                             <Box mt={4} display="flex" gap={2}>
-                                <Button variant="contained" color="error">Pausar Campanha</Button>
-                                <Button variant="contained" color="inherit">Finalizar Campanha</Button>
+                                <Button
+                                    variant="contained"
+                                    color={campanha.status === 'pausada' ? 'success' : 'error'}
+                                    disabled={campanha.status === 'encerrada'}
+                                    onClick={async () => {
+                                        const novoStatus = campanha.status === 'pausada' ? 'ativa' : 'pausada';
+
+                                        try {
+                                            await updateDoc(doc(db, 'campanhas', campanhaId), {
+                                                status: novoStatus,
+                                            });
+                                            toast.success(`Campanha ${novoStatus === 'ativa' ? 'ativada' : 'pausada'} com sucesso!`);
+                                            setCampanha((prev: any) => ({ ...prev, status: novoStatus }));
+                                        } catch (error) {
+                                            console.error(error);
+                                            toast.error('Erro ao atualizar status da campanha.');
+                                        }
+                                    }}
+                                >
+                                    {campanha.status === 'pausada' ? 'Ativar Campanha' : 'Pausar Campanha'}
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    color="inherit"
+                                    onClick={handleFinalizarCampanha}
+                                    disabled={campanha.status === 'encerrada'}
+                                >
+                                    Finalizar Campanha
+                                </Button>
                             </Box>
                         </Grid>
 

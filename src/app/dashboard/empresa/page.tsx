@@ -54,6 +54,12 @@ export default function GerenciarConta() {
     if (usuario?.nivel === 'admin') buscarPizzarias();
   }, [usuario]);
 
+  useEffect(() => {
+    if (usuario?.nivel === 'empresa') {
+      setNivel('funcionario');
+    }
+  }, [usuario]);
+
   const handleCadastro = async () => {
     if (!nome || !email || !senha || !confirmarSenha) {
       toast.error('Preencha todos os campos!');

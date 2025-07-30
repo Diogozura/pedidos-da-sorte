@@ -205,7 +205,8 @@ export default function CriarCampanha() {
         premiosRestantes: somaPremios,
         premios,
         criadoEm: new Date(),
-        pizzariaId: usuario?.uid || null, // 👈 adicionado aqui
+        pizzariaId: usuario?.uid || null, 
+        status: 'ativa'
       };
 
       if (modo === 'prazo') {

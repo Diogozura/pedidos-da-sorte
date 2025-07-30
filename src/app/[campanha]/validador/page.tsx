@@ -18,6 +18,7 @@ import {
 } from 'firebase/firestore';
 import { getRedirectUrlByStatus } from '@/utils/redirectByStatus';
 import { BaseSorteio } from '@/components/baseSorteio';
+import { verificarEEncerrarCampanha } from '@/lib/campanhaUtils';
 ;
 
 
@@ -25,7 +26,7 @@ export default function CodigoPage() {
   const [codigo, setCodigo] = useState('');
   const router = useRouter();
 
-    useEffect(() => {
+  useEffect(() => {
     const search = window.location.search; // ex: "?Q56LSV"
     if (search.startsWith('?') && search.length > 1) {
       const valor = search.substring(1); // remove o "?"
@@ -68,6 +69,8 @@ export default function CodigoPage() {
         const updates: Record<string, any> = {
           raspadinhasRestantes: increment(-1),
         };
+        // Aqui verifica se precisa encerrar
+        await verificarEEncerrarCampanha(data.campanhaId);
         // Se tiver prêmio associado, decrementa também
         if (data.premiado && data.premiado !== 'nenhum') {
           updates.premiosRestantes = increment(-1);
@@ -83,10 +86,10 @@ export default function CodigoPage() {
 
         toast.success('Código válido! 🎉');
       }
-     
+
       // Redireciona conforme status (novo ou existente)
       const nextStatus = status === 'ativo' ? 'validado' : status;
-       console.log('nextStatus', nextStatus)
+      console.log('nextStatus', nextStatus)
       const redirectUrl = getRedirectUrlByStatus(
         nextStatus,
         upperCode,

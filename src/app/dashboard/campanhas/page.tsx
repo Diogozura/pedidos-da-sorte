@@ -2,32 +2,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  Timestamp,
-} from 'firebase/firestore';
 import {
   Container,
   Grid,
   Typography,
   CardContent,
   ButtonBase,
+  Box,
+  CircularProgress,
 } from '@mui/material';
 import BaseDash from '../base';
 import { useRouter } from 'next/navigation';
-
-interface Campanha {
-  id: string;
-  nome: string;
-  raspadinhasRestantes: number;
-  premiosRestantes: number;
-  premiosTotais: number;
-  totalRaspadinhas: number;
-}
+import { useCampanhasPermitidas } from '@/hook/useCampanhasPermitidas';
 
 interface Codigo {
   id: string;
@@ -39,35 +27,18 @@ interface Codigo {
 }
 
 export default function JogosAtivos() {
-  const [campanhas, setCampanhas] = useState<Campanha[]>([]);
-  const router = useRouter()
-
+  const { campanhas, loading } = useCampanhasPermitidas();
+  const [codigosMap, setCodigosMap] = useState<Record<string, Codigo[]>>({});
+  const router = useRouter();
 
   useEffect(() => {
-    const fetchCampanhasECodigos = async () => {
-      const campSnap = await getDocs(collection(db, 'campanhas'));
-      const campList: Campanha[] = [];
-      const codesMap: Record<string, Codigo[]> = {};
-
-      for (const campDoc of campSnap.docs) {
-        const data = campDoc.data();
-        const camp: Campanha = {
-          id: campDoc.id,
-          nome: data.nome,
-          raspadinhasRestantes: data.raspadinhasRestantes,
-          premiosRestantes: data.premiosRestantes,
-          premiosTotais: data.premiosTotais,
-          totalRaspadinhas: data.totalRaspadinhas,
-        };
-        campList.push(camp);
-
-        const codesSnap = await getDocs(
-          query(
-            collection(db, 'codigos'),
-            where('campanhaId', '==', campDoc.id)
-          )
+    const fetchCodigos = async () => {
+      const map: Record<string, Codigo[]> = {};
+      for (const camp of campanhas) {
+        const snap = await getDocs(
+          query(collection(db, 'codigos'), where('campanhaId', '==', camp.id))
         );
-        const listaCodigos: Codigo[] = codesSnap.docs.map((cd) => ({
+        map[camp.id] = snap.docs.map((cd) => ({
           id: cd.id,
           codigo: cd.data().codigo,
           status: cd.data().status,
@@ -75,17 +46,51 @@ export default function JogosAtivos() {
           usadoEm: cd.data().usadoEm,
           premiado: cd.data().premiado,
         }));
-        codesMap[campDoc.id] = listaCodigos;
       }
-
-      setCampanhas(campList);
+      setCodigosMap(map);
     };
-    fetchCampanhasECodigos();
-  }, []);
 
-  console.log('campanhas', campanhas)
+    if (campanhas.length) {
+      fetchCodigos();
+    }
+  }, [campanhas]);
 
-  const textColor = '#FFFFFF';
+  if (loading) {
+    return (
+      <BaseDash>
+        <Box display="flex" justifyContent="center" alignItems="center" height="60vh">
+          <CircularProgress />
+        </Box>
+      </BaseDash>
+    );
+  }
+
+  if (!campanhas.length) {
+    return (
+      <BaseDash>
+        <Container maxWidth="sm" sx={{ mt: 6, textAlign: 'center' }}>
+          <Typography variant="h4" gutterBottom>
+            Nenhuma campanha disponível
+          </Typography>
+          <Typography variant="body1" mb={4}>
+            Verifique se há campanhas vinculadas à sua conta.
+          </Typography>
+        </Container>
+      </BaseDash>
+    );
+  }
+  const getCorStatus = (status: string) => {
+    switch (status) {
+      case 'ativa':
+        return '#BA0100';
+      case 'pausada':
+        return '#e4c160';
+      case 'encerrada':
+        return '#999';
+      default:
+        return '#999';
+    }
+  };
   return (
     <BaseDash>
       <Container maxWidth="md" sx={{ mt: 6 }}>
@@ -93,42 +98,39 @@ export default function JogosAtivos() {
           Campanhas Ativas
         </Typography>
         <Grid container spacing={3}>
-          {campanhas.map((camp) => {
-
-
-            return (
-              <Grid size={{ xs: 12, md: 4 }} key={camp.id}>
-                <ButtonBase
-                  onClick={() => router.push(`/dashboard/campanhas/${camp.id}`)}
-                  sx={{
-                    width: 160,
-                    height: 160,
-                    backgroundColor: '#BA0100',
-                    color: textColor,
-                    borderRadius: 4,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    gap: 1,
-                    boxShadow: 2,
-                    transition: 'transform 0.2s',
-                    '&:hover': {
-                      transform: 'scale(1.05)',
-                    },
-                    padding: 2
-                  }}>
-                  <CardContent>
-                    <Typography variant="h6">{camp.nome}</Typography>
-
-                  </CardContent>
-
-
-
-                </ButtonBase>
-              </Grid>
-            );
-          })}
+          {campanhas.map((camp) => (
+            <Grid size={{ xs: 12, md: 4 }} key={camp.id}>
+              <ButtonBase
+                onClick={() => router.push(`/dashboard/campanhas/${camp.id}`)}
+                sx={{
+                  width: '100%',
+                  height: 160,
+                  backgroundColor: getCorStatus(camp.status),
+                  color: '#FFFFFF',
+                  borderRadius: 4,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  boxShadow: 2,
+                  transition: 'transform 0.2s',
+                  '&:hover': { transform: 'scale(1.05)' },
+                  padding: 2,
+                }}
+              >
+                <CardContent>
+                  <Typography variant="h6">{camp.nome}</Typography>
+                  {/* Exemplo: total de códigos */}
+                  <Typography variant="body2">
+                    Códigos: {codigosMap[camp.id]?.length ?? 0}
+                  </Typography>
+                  <Typography variant="body2">
+                    status: {camp.status?.toUpperCase()}
+                  </Typography>
+                </CardContent>
+              </ButtonBase>
+            </Grid>
+          ))}
         </Grid>
       </Container>
     </BaseDash>

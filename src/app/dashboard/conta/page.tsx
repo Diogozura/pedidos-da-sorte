@@ -20,7 +20,9 @@ import {
   doc,
   getDoc,
   getDocs,
+  query,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import DashboardCard from "@/components/DashboardCard";
@@ -48,42 +50,72 @@ export default function GerenciarConta() {
   const [carregando, setCarregando] = useState(false);
   const router = useRouter();
 
+
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const fetchUsuarios = async () => {
-        onAuthStateChanged(auth, async (user) => {
-          if (!user) return;
+    if (typeof window === 'undefined') return;
 
-          const userRef = doc(db, 'usuarios', user.uid);
-          const userSnap = await getDoc(userRef);
-          const userData = userSnap.data();
-          if (!userData) return;
+    const fetchUsuarios = async () => {
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) return;
 
-          setUsuarioLogado({ uid: user.uid, nivel: userData.nivel });
+        const userRef = doc(db, 'usuarios', user.uid);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.data();
 
-          if (userData.nivel === 'admin' || userData.nivel === 'master') {
-            const querySnapshot = await getDocs(collection(db, 'usuarios'));
-            const lista: Usuario[] = [];
+        if (!userData) return;
 
-            querySnapshot.forEach((doc) => {
-              const data = doc.data();
-              lista.push({
-                uid: doc.id,
-                nome: data.nome || '',
-                email: data.email || '',
-              });
-            });
+        setUsuarioLogado({ uid: user.uid, nivel: userData.nivel });
 
-            setUsuarios(lista);
-          } else {
-            setUsuarios([{ uid: user.uid, nome: userData.nome, email: userData.email }]);
-          }
-        });
-      };
+        if (userData.nivel === 'admin') {
+          const snap = await getDocs(collection(db, 'usuarios'));
+          const lista: Usuario[] = snap.docs.map((doc) => ({
+            uid: doc.id,
+            nome: doc.data().nome || '',
+            email: doc.data().email || '',
+            nivel: doc.data().nivel || '',
+            pizzariaId: doc.data().pizzariaId || '',
+          }));
+          setUsuarios(lista);
+        }
 
-      fetchUsuarios();
-    }
+        else if (userData.nivel === 'empresa') {
+          const funcionariosQuery = query(
+            collection(db, 'usuarios'),
+            where('pizzariaId', '==', user.uid),
+            where('nivel', '==', 'funcionario')
+          );
+          const funcionariosSnap = await getDocs(funcionariosQuery);
+
+          const funcionarios: Usuario[] = funcionariosSnap.docs.map((doc) => ({
+            uid: doc.id,
+            nome: doc.data().nome || '',
+            email: doc.data().email || '',
+          }));
+
+          const contaEmpresa: Usuario = {
+            uid: user.uid,
+            nome: userData.nome,
+            email: userData.email,
+          };
+
+          setUsuarios([contaEmpresa, ...funcionarios]);
+        }
+
+        else {
+          setUsuarios([{
+            uid: user.uid,
+            nome: userData.nome,
+            email: userData.email,
+          }]);
+        }
+      });
+    };
+
+    fetchUsuarios();
   }, []);
+
+
+
 
   const abrirModal = (modo: 'email' | 'senha', usuario: Usuario) => {
     setModoEdicao(modo);
@@ -111,7 +143,7 @@ export default function GerenciarConta() {
       setModalAberto(false);
       setNovoValor('');
       setSenhaAdmin('');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -126,53 +158,84 @@ export default function GerenciarConta() {
           Gerenciar Conta
         </Typography>
 
-        {(usuarioLogado?.nivel === 'admin' || usuarioLogado?.nivel === 'master') && (
+        {(usuarioLogado?.nivel === 'admin' || usuarioLogado?.nivel === 'empresa') && (
           <Grid container spacing={4} sx={{ mb: 6 }}>
-            <Grid size={{xs:12,md:4}} >
+            <Grid size={{ xs: 12, md: 4 }} >
               <DashboardCard
-                title="Cadastrar Empresa"
-                  icon={<FontAwesomeIcon icon={faUserTie } />}
+                title={usuarioLogado?.nivel === 'admin' ? 'Cadastro Empresa/Funcionário' : 'Cadastrar Funcionário'}
+                icon={<FontAwesomeIcon icon={faUserTie} />}
                 onClick={() => router.push('/dashboard/empresa')}
               />
             </Grid>
           </Grid>
         )}
 
-        <Typography variant="h6" gutterBottom>
-          Contas cadastradas
-        </Typography>
-
-        <Grid container spacing={2}>
-          {usuarios.map((usuario) => (
-            <Grid size={{xs:12,md:4}} key={usuario.uid}>
-              <Card variant="outlined">
-                <CardContent>
-                  <Typography variant="subtitle1" fontWeight="bold">
-                    {usuario.nome}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {usuario.email}
-                  </Typography>
-
-                  {(usuarioLogado?.nivel === 'admin' || usuarioLogado?.nivel === 'master') ? (
-                    <>
-                      <Button size="small" onClick={() => abrirModal('email', usuario)}>
-                        Alterar Email
-                      </Button>
-                      <Button size="small" onClick={() => abrirModal('senha', usuario)}>
-                        Alterar Senha
-                      </Button>
-                    </>
-                  ) : (
-                    <Typography variant="caption" color="text.secondary">
-                      Para alterar seus dados de acesso, entre em contato com o administrador.
-                    </Typography>
-                  )}
-                </CardContent>
-              </Card>
+        {usuarioLogado?.nivel === 'admin' ? (
+          <>
+            <Typography variant="h6" gutterBottom>Empresas</Typography>
+            <Grid container spacing={2} sx={{ mb: 4 }}>
+              {usuarios 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .filter((u: any) => u.nivel === 'empresa')
+                .map((usuario) => (
+                  <Grid size={{xs:12, md:4}}  key={usuario.uid}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="subtitle1" fontWeight="bold">{usuario.nome}</Typography>
+                        <Typography variant="body2" color="text.secondary">{usuario.email}</Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
             </Grid>
-          ))}
-        </Grid>
+
+            <Typography variant="h6" gutterBottom>Funcionários</Typography>
+            <Grid container spacing={2}>
+              {usuarios
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .filter((u: any) => u.nivel === 'funcionario')
+                .map((usuario) => (
+                  <Grid size={{xs:12, md:4}}  key={usuario.uid}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="subtitle1" fontWeight="bold">{usuario.nome}</Typography>
+                        <Typography variant="body2" color="text.secondary">{usuario.email}</Typography>
+                        <Button size="small" onClick={() => abrirModal('email', usuario)}>Alterar Email</Button>
+                        <Button size="small" onClick={() => abrirModal('senha', usuario)}>Alterar Senha</Button>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+            </Grid>
+          </>
+        ) : (
+          <>
+            <Typography variant="h6" gutterBottom>Contas cadastradas</Typography>
+            <Grid container spacing={2}>
+              {usuarios.map((usuario) => (
+                <Grid size={{xs:12, md:4}} key={usuario.uid}>
+                  <Card variant="outlined">
+                    <CardContent>
+                      <Typography variant="subtitle1" fontWeight="bold">{usuario.nome}</Typography>
+                      <Typography variant="body2" color="text.secondary">{usuario.email}</Typography>
+                      {usuarioLogado?.nivel === 'empresa' ? (
+                        <Typography variant="caption" color="text.secondary">
+                          A edição deve ser feita pelo administrador.
+                        </Typography>
+                      ) : (
+                        <>
+                          <Button size="small" onClick={() => abrirModal('email', usuario)}>Alterar Email</Button>
+                          <Button size="small" onClick={() => abrirModal('senha', usuario)}>Alterar Senha</Button>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </>
+        )}
+
 
         {/* MODAL DE ALTERAÇÃO */}
         <Dialog open={modalAberto} onClose={() => setModalAberto(false)}>
