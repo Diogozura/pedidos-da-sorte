@@ -11,10 +11,16 @@ import Head from 'next/head';
 import PremiosResgatados from './PremiosResgatados';
 import BaseDash from '../../base';
 import { toast } from 'react-toastify';
+import PremiosNaoResgatados from '@/components/PremiosNaoResgatados';
+import NumerosPremiados from '@/components/NumerosPremiados';
+import RelatorioEnvioCampanha from '@/components/RelatorioEnvioCampanha';
 
 export default function DetalhesCampanhaPage() {
     const { id } = useParams();
     const [campanha, setCampanha] = useState<any>(null);
+    const [aba, setAba] = useState<'premiados' | 'naoPremiados'>('premiados');
+    const [abaSelecionada, setAbaSelecionada] = useState<'resgatados' | 'naoResgatados'>('resgatados');
+
     // const router = useRouter();
 
 
@@ -134,15 +140,45 @@ export default function DetalhesCampanhaPage() {
 
                         <Grid size={{ xs: 12, md: 6 }}>
                             <Box display="flex" flexDirection="column" gap={2}>
-                                <Button variant="contained" color="inherit" >Prêmios Resgatados</Button>
-                                <Button variant="contained" color="inherit">Prêmios NÃO Resgatados</Button>
-                                <Button variant="contained" color="error">Números Premiados</Button>
-                                <Button variant="contained" color="error">Números NÃO Premiados</Button>
+                                <Button
+                                    variant={abaSelecionada === 'resgatados' ? 'contained' : 'outlined'}
+                                    onClick={() => setAbaSelecionada('resgatados')}
+                                >
+                                    Prêmios Resgatados
+                                </Button>
+                                <Button
+                                    variant={abaSelecionada === 'naoResgatados' ? 'contained' : 'outlined'}
+                                    onClick={() => setAbaSelecionada('naoResgatados')}
+                                >
+                                    Prêmios NÃO Resgatados
+                                </Button>
+                                <Button
+                                    variant={aba === 'premiados' ? 'contained' : 'outlined'}
+                                    color="error"
+                                    onClick={() => setAba('premiados')}
+                                >
+                                    Números Premiados
+                                </Button>
+                                <Button
+                                    variant={aba === 'naoPremiados' ? 'contained' : 'outlined'}
+                                    color="error"
+                                    onClick={() => setAba('naoPremiados')}
+                                >
+                                    Números NÃO Premiados
+                                </Button>
                                 <Button variant="contained" color="error">Relatório de Envio</Button>
                             </Box>
                         </Grid>
                         <Grid size={{ xs: 12, md: 6 }}>
-                            <PremiosResgatados campanhaId={campanhaId} />
+                            {abaSelecionada === 'resgatados' && <PremiosResgatados campanhaId={campanha.id} />}
+                            {abaSelecionada === 'naoResgatados' && <PremiosNaoResgatados campanhaId={campanha.id} />}
+
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <NumerosPremiados campanhaId={campanha.id} mostrar={aba} />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <RelatorioEnvioCampanha campanhaId={campanha.id} />
                         </Grid>
                     </Grid>
                 </Container>
