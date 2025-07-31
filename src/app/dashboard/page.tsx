@@ -3,7 +3,7 @@
 
 import DashboardCard from '@/components/DashboardCard';
 import { useAuth } from '@/context/AuthContext';
-import { CircularProgress, Container, Grid, Typography } from '@mui/material';
+import { Container, Grid, Typography } from '@mui/material';
 
 
 import { useRouter } from 'next/navigation';
@@ -12,6 +12,7 @@ import BaseDash from './base';
 import ComPermissao from '@/components/ComPermissao';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faPlus, faShare, faUser } from '@fortawesome/free-solid-svg-icons';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 
 export default function DashboardPage() {
@@ -29,10 +30,7 @@ export default function DashboardPage() {
 
   if (loading || !user) {
     return (
-      <Container sx={{ mt: 4, textAlign: 'center' }}>
-        <CircularProgress />
-        <Typography>Verificando acesso...</Typography>
-      </Container>
+     <LoadingOverlay texto="Carregando..." />
     );
   }
 
@@ -41,7 +39,7 @@ export default function DashboardPage() {
   return (
     <BaseDash>
       {/* Conteúdo */}
-      <Container sx={{ mt: 6 }}>
+      <Container sx={{ mt: 6, display:'grid',  height:'60vh'}}>
         <Typography variant="h4" component={'h1'} textAlign={'center'} gutterBottom>
           Painel de controle
         </Typography>
@@ -55,7 +53,7 @@ export default function DashboardPage() {
                 icon={<FontAwesomeIcon icon={faPlus} />}
                 color='vermelho'
                 title=" Criar nova campanha"
-                onClick={() => router.push('/dashboard/criar-sorteio')}
+                onClick={() => router.push('/dashboard/escolher-jogo')}
               />
             </Grid>
           </ComPermissao>
@@ -91,7 +89,7 @@ export default function DashboardPage() {
               />
             </Grid>
           </ComPermissao>
-
+    
           {/* <ComPermissao permitido={['admin', 'empresa']}>
             <Grid size={{ xs: 12, md: 12 }}>
               <ResumoCampanha />

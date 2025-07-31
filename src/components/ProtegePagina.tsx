@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { ReactNode, useEffect } from 'react';
-import { CircularProgress, Container, Typography } from '@mui/material';
 import { NivelPermissao, useUsuarioLogado } from '@/hook/useUsuarioLogado';
+import LoadingOverlay from './LoadingOverlay';
 
 interface Props {
   permitido: NivelPermissao[];
@@ -22,10 +22,7 @@ export default function ProtegePagina({ permitido, children }: Props) {
 
   if (carregando || !usuario) {
     return (
-      <Container sx={{ mt: 4, textAlign: 'center' }}>
-        <CircularProgress />
-        <Typography>Verificando acesso...</Typography>
-      </Container>
+        <LoadingOverlay texto="Verificando acesso..." />
     );
   }
 
