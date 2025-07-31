@@ -124,12 +124,17 @@ export default function RaspadinhaJogo({
       }
     };
 
+    const touchMoveHandler = (e: TouchEvent) => {
+      e.preventDefault();
+      draw(e);
+    };
+
     canvas.addEventListener('mousedown', start);
     canvas.addEventListener('mousemove', draw);
     canvas.addEventListener('mouseup', end);
     canvas.addEventListener('mouseleave', end);
     canvas.addEventListener('touchstart', start);
-    canvas.addEventListener('touchmove', draw);
+  canvas.addEventListener('touchmove', touchMoveHandler, { passive: false });
     canvas.addEventListener('touchend', end);
 
     return () => {
@@ -138,7 +143,7 @@ export default function RaspadinhaJogo({
       canvas.removeEventListener('mouseup', end);
       canvas.removeEventListener('mouseleave', end);
       canvas.removeEventListener('touchstart', start);
-      canvas.removeEventListener('touchmove', draw);
+      canvas.removeEventListener('touchmove', touchMoveHandler);
       canvas.removeEventListener('touchend', end);
     };
   }, [radius, width, height, overlayColor, percentToFinish, isCompleted, onComplete]);
