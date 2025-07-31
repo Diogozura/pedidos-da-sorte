@@ -61,7 +61,8 @@ export default function CriarCampanha() {
   const [modo, setModo] = useState<'raspadinha' | 'prazo'>('raspadinha');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
-  const hoje = new Date().toISOString().split('T')[0]; // ex: "2025-07-21"
+  const hoje = new Date().toISOString().split('T')[0];
+   const router = useRouter();
   const [premios, setPremios] = useState<Premio[]>([
     { nome: '', imagem: '', quantidadeTotais: 1 },
   ]);
@@ -78,7 +79,7 @@ export default function CriarCampanha() {
       // .then(urls => setImagensDisponiveis(urls))
       .catch(err => {
         console.error(err);
-        toast.error('Erro ao carregar imagens de prêmios.');
+        // toast.error('Erro ao carregar imagens de prêmios.');
       });
   }, []);
   // const handleSelectImagem = (idx: number, value: string) => {
@@ -262,7 +263,7 @@ export default function CriarCampanha() {
     }
   };
 
-  const router = useRouter();
+ 
 
   const handleCancelar = () => {
     toast.info('Cadastro cancelado.');
@@ -272,9 +273,9 @@ export default function CriarCampanha() {
   return (
     <ProtegePagina permitido={['admin', 'empresa']}>
       <BaseDash>
-        <Head>
+        <head>
           <title>Criar campanha - Pedidos da sorte </title>
-        </Head>
+        </head>
         <Container maxWidth="lg" sx={{ mt: 6 }}>
           <Typography component={'h1'} variant="h4" textAlign={'center'} gutterBottom>
             Criar nova campanha

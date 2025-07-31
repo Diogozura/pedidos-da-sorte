@@ -93,8 +93,8 @@ export default function JogosAtivos() {
   };
   return (
     <BaseDash>
-      <Container maxWidth="md" sx={{ mt: 6 }}>
-        <Typography variant="h4" gutterBottom>
+      <Container maxWidth="md" sx={{ mt: 6, display:'grid',  height:'60vh' }}>
+        <Typography component={'h1'} textAlign={'center'} variant="h4" gutterBottom>
           Campanhas Ativas
         </Typography>
         <Grid container spacing={3}>
