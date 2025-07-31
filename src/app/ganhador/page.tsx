@@ -3,9 +3,10 @@
 import { useRouter } from 'next/navigation';
 import { useFormContext } from '@/config/FormContext';
 import { Button, Container, TextField, Typography, Box } from '@mui/material';
-
 import { BaseSorteio } from '@/components/baseSorteio';
-
+import { db } from '@/lib/firebase';
+import { addDoc, collection, Timestamp } from 'firebase/firestore';
+import { toast } from 'react-toastify';
 
 export default function GanhadorPage() {
   const router = useRouter();
@@ -21,21 +22,42 @@ export default function GanhadorPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    router.replace('/pagBank');
+    try {
+      if (!values.nome || !values.telefone) {
+        toast.error('Preencha todos os campos');
+        return;
+      }
 
+      await addDoc(collection(db, 'cliente_interessados'), {
+        nome: values.nome,
+        telefone: values.telefone,
+        cupom: 'PEDIDO10',
+        data: Timestamp.now(),
+      });
+
+      toast.success('Dados enviados com sucesso!');
+      router.replace('/pagBank');
+    } catch (err) {
+      console.error('Erro ao salvar dados:', err);
+      toast.error('Erro ao enviar dados. Tente novamente.');
+    }
   };
 
   return (
     <BaseSorteio>
-      <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignItems: 'center', justifyContent: 'center' }}>
-
-
+      <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
         <Typography component={'h1'} variant="h4" gutterBottom>
           🎉 Parabéns! pelos 10% desconto.
         </Typography>
-        <Typography component={'p'} textAlign={'center'} variant="body1" gutterBottom>
-          Preencha seus dados para entrar em contato pelo whatsApp:
+
+        <Typography component={'h2'} textAlign={'center'} variant="h4" gutterBottom>
+          PEDIDO10
         </Typography>
+
+        <Typography component={'p'} textAlign={'center'} variant="body1" gutterBottom>
+          Preencha seus dados para entrar em contato pelo WhatsApp:
+        </Typography>
+
         <Box
           component="form"
           onSubmit={handleSubmit}
@@ -86,11 +108,10 @@ export default function GanhadorPage() {
             }}
           />
 
-          <Button type="submit" color="primary" variant="contained" >
-            continuar
+          <Button type="submit" color="primary" variant="contained">
+            Continuar
           </Button>
         </Box>
-
       </Container>
     </BaseSorteio>
   );

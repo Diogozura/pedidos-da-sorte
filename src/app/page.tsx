@@ -29,6 +29,7 @@ export default function CodigoPage() {
           justifyContent: 'center',
           textAlign: 'center',
           mt: 6,
+          color: '#fff'
         }}
       >
         <Typography variant="h4" component="h1">
