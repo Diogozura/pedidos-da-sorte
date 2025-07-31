@@ -89,7 +89,6 @@ export default function CodigoPage() {
 
       // Redireciona conforme status (novo ou existente)
       const nextStatus = status === 'ativo' ? 'validado' : status;
-      console.log('nextStatus', nextStatus)
       const redirectUrl = getRedirectUrlByStatus(
         nextStatus,
         upperCode,

@@ -1,18 +1,32 @@
-import ThemeToggleButton from "@/components/ThemeToggleButton";
-import { Box, useTheme } from "@mui/material";
+'use client';
+
+import { darkTheme } from "@/theme/theme";
+import { Box } from "@mui/material";
 import Image from "next/image";
+import { useEffect } from "react";
+
+
+
 
 export function BaseSorteio({ children }: { children: React.ReactNode }) {
-    const theme = useTheme();
-    const isDark = theme.palette.mode === 'dark';
-
-    const logoSrc = isDark ? '/Logo-preto.png' : '/Logo-original.png';
+    useEffect(() => {
+    // Aplica o fundo do body manualmente (opcional, mas ajuda se tiver conteúdo fora do MUI)
+    document.body.style.backgroundColor = darkTheme.palette.background.default;
+    return () => {
+      document.body.style.backgroundColor = '';
+    };
+  }, []);
     return (
-        <> <Box display="flex" justifyContent="space-between" alignItems="center" px={2} py={1}> <Image width={100} height={40} src={logoSrc} alt="Logo principal , Pedidos da sorte" /> <ThemeToggleButton /></Box>
+        <>
+            <Box display="flex" justifyContent="center" alignItems="center" px={2} py={1}>
+                <Image width={100} height={40} src={'/Logo-preto.png'} alt="Logo principal , Pedidos da sorte" />
+            </Box>
 
             {children}
-            <Box textAlign="center" mt={4}><Image width={100} height={40} src={logoSrc} alt="Logo principal , Pedidos da sorte" /></Box>
 
+            <Box textAlign="center" mt={4}>
+                <Image width={100} height={40} src={'/Logo-preto.png'} alt="Logo principal , Pedidos da sorte" />
+            </Box>
         </>
-    )
+    );
 }

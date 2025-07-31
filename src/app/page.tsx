@@ -1,16 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+
+import { useRouter } from 'next/navigation';
 import { Container, Typography } from '@mui/material';
 
 import { BaseSorteio } from '@/components/baseSorteio';
 import RaspadinhaJogo from '@/components/Raspadinha';
+import { toast } from 'react-toastify';
 ;
 
 
 export default function CodigoPage() {
-
-
+ const router = useRouter();
+  const handleComplete = async () => {
+  
+   toast.success('🎉 Você ganhou! 10% de desconto');
+  router.replace('/ganhador');
+  };
 
   return (
     <BaseSorteio>
@@ -28,11 +35,11 @@ export default function CodigoPage() {
         <Typography variant="h4" component="h1">
           Raspe e descubra
         </Typography>
-        <RaspadinhaJogo 
+        <RaspadinhaJogo
           width={300}
           height={300}
           backgroundImage={'/premio.png'}
-          // onComplete={handleComplete}
+          onComplete={handleComplete}
         />
 
       </Container>
