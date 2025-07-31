@@ -24,7 +24,6 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import BaseDash from '../base';
-import Head from 'next/head';
 import ProtegePagina from '@/components/ProtegePagina';
 import { useUsuarioLogado } from '@/hook/useUsuarioLogado';
 import { useRouter } from 'next/navigation';

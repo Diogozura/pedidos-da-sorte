@@ -18,8 +18,14 @@ import RelatorioEnvioCampanha from '@/components/RelatorioEnvioCampanha';
 export default function DetalhesCampanhaPage() {
     const { id } = useParams();
     const [campanha, setCampanha] = useState<any>(null);
-    const [aba, setAba] = useState<'premiados' | 'naoPremiados'>('premiados');
-    const [abaSelecionada, setAbaSelecionada] = useState<'resgatados' | 'naoResgatados'>('resgatados');
+    type Aba =
+        | 'resgatados'
+        | 'naoResgatados'
+        | 'premiados'
+        | 'naoPremiados'
+        | 'envio';
+
+    const [abaAtual, setAbaAtual] = useState<Aba>('resgatados');
 
     // const router = useRouter();
 
@@ -65,7 +71,7 @@ export default function DetalhesCampanhaPage() {
         if (!confirmar) return;
 
         try {
-            await updateDoc(doc(db, 'campanhas', campanhaId), {
+            await updateDoc(doc(db, 'campanhas', campanha.id), {
                 status: 'encerrada',
             });
             toast.success('Campanha encerrada com sucesso!');
@@ -114,7 +120,7 @@ export default function DetalhesCampanhaPage() {
                                         const novoStatus = campanha.status === 'pausada' ? 'ativa' : 'pausada';
 
                                         try {
-                                            await updateDoc(doc(db, 'campanhas', campanhaId), {
+                                            await updateDoc(doc(db, 'campanhas', campanha.id), {
                                                 status: novoStatus,
                                             });
                                             toast.success(`Campanha ${novoStatus === 'ativa' ? 'ativada' : 'pausada'} com sucesso!`);
@@ -141,45 +147,49 @@ export default function DetalhesCampanhaPage() {
                         <Grid size={{ xs: 12, md: 6 }}>
                             <Box display="flex" flexDirection="column" gap={2}>
                                 <Button
-                                    variant={abaSelecionada === 'resgatados' ? 'contained' : 'outlined'}
-                                    onClick={() => setAbaSelecionada('resgatados')}
+                                    variant={abaAtual === 'resgatados' ? 'contained' : 'outlined'}
+                                    onClick={() => setAbaAtual('resgatados')}
                                 >
                                     Prêmios Resgatados
                                 </Button>
                                 <Button
-                                    variant={abaSelecionada === 'naoResgatados' ? 'contained' : 'outlined'}
-                                    onClick={() => setAbaSelecionada('naoResgatados')}
+                                    variant={abaAtual === 'naoResgatados' ? 'contained' : 'outlined'}
+                                    onClick={() => setAbaAtual('naoResgatados')}
                                 >
                                     Prêmios NÃO Resgatados
                                 </Button>
                                 <Button
-                                    variant={aba === 'premiados' ? 'contained' : 'outlined'}
+                                    variant={abaAtual === 'premiados' ? 'contained' : 'outlined'}
                                     color="error"
-                                    onClick={() => setAba('premiados')}
+                                    onClick={() => setAbaAtual('premiados')}
                                 >
                                     Números Premiados
                                 </Button>
                                 <Button
-                                    variant={aba === 'naoPremiados' ? 'contained' : 'outlined'}
+                                    variant={abaAtual === 'naoPremiados' ? 'contained' : 'outlined'}
                                     color="error"
-                                    onClick={() => setAba('naoPremiados')}
+                                    onClick={() => setAbaAtual('naoPremiados')}
                                 >
                                     Números NÃO Premiados
                                 </Button>
-                                <Button variant="contained" color="error">Relatório de Envio</Button>
+                                <Button
+                                    variant={abaAtual === 'envio' ? 'contained' : 'outlined'}
+                                    color="error"
+                                    onClick={() => setAbaAtual('envio')}
+                                >
+                                    Relatório de Envio
+                                </Button>
+
                             </Box>
                         </Grid>
-                        <Grid size={{ xs: 12, md: 6 }}>
-                            {abaSelecionada === 'resgatados' && <PremiosResgatados campanhaId={campanha.id} />}
-                            {abaSelecionada === 'naoResgatados' && <PremiosNaoResgatados campanhaId={campanha.id} />}
+                        <Grid size={12}>
+                            {abaAtual === 'resgatados' && <PremiosResgatados campanhaId={campanha.id} />}
+                            {abaAtual === 'naoResgatados' && <PremiosNaoResgatados campanhaId={campanha.id} />}
+                            {abaAtual === 'premiados' && <NumerosPremiados campanhaId={campanha.id} mostrar="premiados" />}
+                            {abaAtual === 'naoPremiados' && <NumerosPremiados campanhaId={campanha.id} mostrar="naoPremiados" />}
+                            {abaAtual === 'envio' && <RelatorioEnvioCampanha campanhaId={campanha.id} />}
+                        </Grid>
 
-                        </Grid>
-                        <Grid size={{ xs: 12, md: 6 }}>
-                            <NumerosPremiados campanhaId={campanha.id} mostrar={aba} />
-                        </Grid>
-                        <Grid size={{ xs: 12, md: 6 }}>
-                            <RelatorioEnvioCampanha campanhaId={campanha.id} />
-                        </Grid>
                     </Grid>
                 </Container>
             </BaseDash>
