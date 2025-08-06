@@ -8,7 +8,8 @@ import { useEffect } from "react";
 
 
 
-export function BaseSorteio({ children }: { children: React.ReactNode }) {
+export function BaseSorteio({ children , logoUrl }: { children: React.ReactNode , logoUrl?: string }) {
+    console.log('BaseSorteio', logoUrl);
     useEffect(() => {
     // Aplica o fundo do body manualmente (opcional, mas ajuda se tiver conteúdo fora do MUI)
     document.body.style.backgroundColor = darkTheme.palette.background.default;
@@ -19,7 +20,7 @@ export function BaseSorteio({ children }: { children: React.ReactNode }) {
     return (
         <>
             <Box display="flex" justifyContent="center" alignItems="center" px={2} py={1}>
-                <Image width={120} height={120} src={'/sua-logo.png'} alt="Logo principal , Pedidos da sorte" />
+                <Image width={120} height={120} src={ logoUrl || '/sua-logo.png'} alt="Logo principal , Pedidos da sorte" />
             </Box>
 
             {children}

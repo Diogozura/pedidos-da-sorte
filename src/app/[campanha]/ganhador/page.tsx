@@ -10,6 +10,8 @@ import { toast } from 'react-toastify';
 import { BaseSorteio } from '@/components/BaseSorteio';
 
 
+
+
 export default function GanhadorPage() {
   const router = useRouter();
   const searchParams = useSearchParams();

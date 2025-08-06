@@ -1,8 +1,8 @@
 'use client';
 
 import { Container, Typography, } from '@mui/material';
-
 import { BaseSorteio } from '@/components/BaseSorteio';
+
 
 
 export default function GanhadorPage() {

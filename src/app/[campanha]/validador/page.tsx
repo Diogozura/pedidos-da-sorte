@@ -2,7 +2,7 @@
 'use client';
 
 import { Button, Container, FormControl, TextField, Typography } from '@mui/material';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { db } from '@/lib/firebase';
@@ -15,6 +15,7 @@ import {
   doc,
   updateDoc,
   Timestamp,
+  getDoc,
 } from 'firebase/firestore';
 import { getRedirectUrlByStatus } from '@/utils/redirectByStatus';
 import { BaseSorteio } from '@/components/BaseSorteio';
@@ -24,16 +25,60 @@ import { verificarEEncerrarCampanha } from '@/lib/campanhaUtils';
 
 export default function CodigoPage() {
   const [codigo, setCodigo] = useState('');
-  const router = useRouter();
+  const [campanha, setCampanha] = useState<any | null>(null);
 
+  const router = useRouter();
+  const params = useParams();
+  const campanhaId = params?.campanha as string;
+
+  // Pega o código da URL (?MXI5VL) e busca campanha
   useEffect(() => {
-    const search = window.location.search; // ex: "?Q56LSV"
-    if (search.startsWith('?') && search.length > 1) {
-      const valor = search.substring(1); // remove o "?"
-      setCodigo(valor);
+    const search = window.location.search;
+
+    if (!search.startsWith('?')) {
+      toast.error('Código não informado na URL.');
+      return;
     }
+
+    const parsedCodigo = search.substring(1).toUpperCase();
+    setCodigo(parsedCodigo);
+    buscarDados(parsedCodigo);
   }, []);
 
+  const buscarDados = async (codigo: string) => {
+    if (!campanhaId) {
+      toast.error('Campanha inválida na URL.');
+      return;
+    }
+
+    try {
+      const q = query(collection(db, 'codigos'), where('codigo', '==', codigo));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        toast.error('Código não encontrado');
+        return;
+      }
+
+      const codeDoc = snapshot.docs[0];
+      const data = codeDoc.data();
+
+      if (data.campanhaId !== campanhaId) {
+        toast.warning('Código não pertence a essa campanha.');
+        return;
+      }
+
+      const campanhaSnap = await getDoc(doc(db, 'campanhas', campanhaId));
+      if (!campanhaSnap.exists()) {
+        toast.error('Campanha não encontrada.');
+        return;
+      }
+
+      setCampanha(campanhaSnap.data());
+    } catch (err: any) {
+      toast.error('Erro ao buscar dados: ' + err.message);
+    }
+  };
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const upperCode = codigo.trim().toUpperCase();
@@ -99,9 +144,9 @@ export default function CodigoPage() {
       toast.error('Erro ao validar código: ' + err.message);
     }
   };
-
+  console.log('campanha', campanha)
   return (
-    <BaseSorteio>
+    <BaseSorteio logoUrl={campanha?.logoUrl}>
       <Container
         maxWidth="md"
         sx={{
@@ -132,7 +177,7 @@ export default function CodigoPage() {
               color="primary"
               variant="contained"
               sx={{ mt: 2 }}
-              disabled={codigo.trim().length < 5}
+              disabled={codigo.length < 5}
             >
               Validar
             </Button>

@@ -19,7 +19,7 @@ export interface Premio {
 
 interface Props {
   premios: Premio[];
-  setPremios: (premios: Premio[]) => void;
+  setPremios: React.Dispatch<React.SetStateAction<Premio[]>>;
   imagensDisponiveis: string[];
   setImagensDisponiveis: (imgs: string[]) => void;
   usuarioId: string;
@@ -29,7 +29,10 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const adicionarPremio = () => {
-    setPremios(prev => [...prev, { nome: '', imagem: '', quantidadeTotais: 1, file: null, preview: '' }]);
+    setPremios((prev: Premio[]) => [
+      ...prev,
+      { nome: '', imagem: '', quantidadeTotais: 1, file: null, preview: '' }
+    ]);
   };
 
   const removerPremio = (index: number) => {
@@ -41,7 +44,8 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
     if (field === 'quantidadeTotais') {
       novos[index].quantidadeTotais = parseInt(value) || 1;
     } else {
-      novos[index][field] = value;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      novos[index][field] = value as any;
     }
     setPremios(novos);
   };
@@ -63,7 +67,7 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
         toast.error('A imagem precisa ter exatamente 500×500 px.');
         return;
       }
-      setPremios(prev => {
+      setPremios((prev: Premio[]) => {
         const copia = [...prev];
         copia[index].file = file;
         copia[index].preview = previewUrl;
@@ -87,7 +91,7 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
       {premios.map((p, index) => (
         <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={5}>
+            <Grid size={{xs:12, sm:5}}>
               <TextField
                 label="Nome do prêmio"
                 value={p.nome}
@@ -95,7 +99,7 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
                 fullWidth
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{xs:12, sm:4}}>
               <TextField
                 label="Quantidade"
                 type="number"
@@ -105,7 +109,7 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
                 fullWidth
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Typography variant="subtitle2" mb={1}>Imagem selecionada</Typography>
               {p.preview ? (
                 <Box component="img" src={p.preview} sx={{ width: 80, height: 80, borderRadius: 1 }} />
@@ -120,7 +124,7 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
               </Box>
             </Grid>
             {premios.length >= 3 && (
-              <Grid item xs={12} sm={1}>
+              <Grid size={{xs:12, sm:1}}>
                 <IconButton onClick={() => removerPremio(index)}>
                   <FontAwesomeIcon icon={faMinus} />
                 </IconButton>
