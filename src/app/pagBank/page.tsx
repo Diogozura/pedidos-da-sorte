@@ -7,10 +7,6 @@ import { BaseSorteio } from '@/components/BaseSorteio';
 
 export default function GanhadorPage() {
 
-
-
-
-
     return (
         <BaseSorteio >
             <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>

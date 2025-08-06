@@ -1,13 +1,13 @@
 'use client';
 
-
+import { BaseSorteio } from '@/components/BaseSorteio';
 import { useRouter } from 'next/navigation';
 import { Container, Typography } from '@mui/material';
 
 
 import { toast } from 'react-toastify';
 import dynamic from 'next/dynamic';
-import { BaseSorteio } from '../components/BaseSorteio';
+
 
 
 const RaspadinhaJogo = dynamic(() => import('@/components/Raspadinha'));

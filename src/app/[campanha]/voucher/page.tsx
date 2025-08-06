@@ -1,5 +1,5 @@
 'use client';
-
+import { BaseSorteio } from '@/components/BaseSorteio';
 import { useEffect, useState } from 'react';
 import { db } from "@/lib/firebase";
 import {
@@ -19,7 +19,7 @@ import {
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
-import { BaseSorteio } from '@/components/BaseSorteio';
+
 
 // Função para gerar código aleatório
 const gerarCodigoVoucher = (): string => {

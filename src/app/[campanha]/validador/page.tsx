@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
-
+import { BaseSorteio } from '@/components/BaseSorteio';
 import { Button, Container, FormControl, TextField, Typography } from '@mui/material';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -18,9 +18,9 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import { getRedirectUrlByStatus } from '@/utils/redirectByStatus';
-import { BaseSorteio } from '@/components/BaseSorteio';
+
 import { verificarEEncerrarCampanha } from '@/lib/campanhaUtils';
-;
+
 
 
 export default function CodigoPage() {
