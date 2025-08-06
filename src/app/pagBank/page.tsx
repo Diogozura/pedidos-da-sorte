@@ -2,7 +2,7 @@
 
 import { Container, Typography, } from '@mui/material';
 
-import { BaseSorteio } from '@/components/baseSorteio';
+import { BaseSorteio } from '@/components/BaseSorteio';
 
 
 export default function GanhadorPage() {

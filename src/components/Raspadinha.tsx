@@ -17,7 +17,7 @@ export default function RaspadinhaJogo({
   width,
   height,
   backgroundImage,
-  overlayColor = '#961f1f8f',
+  overlayColor = '#961f1f0',
   radius = 25,
   percentToFinish = 50,
   onComplete,
@@ -39,7 +39,7 @@ export default function RaspadinhaJogo({
 
     // Cobrir completamente o canvas com cor
     const overlay = new Image();
-    overlay.src = '/overlay-image.png';
+    overlay.src = '/raspe.png';
     if (!canvas || !container) return;
 
     const ctx = canvas.getContext('2d');

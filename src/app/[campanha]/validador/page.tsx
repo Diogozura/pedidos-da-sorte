@@ -17,7 +17,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { getRedirectUrlByStatus } from '@/utils/redirectByStatus';
-import { BaseSorteio } from '@/components/baseSorteio';
+import { BaseSorteio } from '@/components/BaseSorteio';
 import { verificarEEncerrarCampanha } from '@/lib/campanhaUtils';
 ;
 

@@ -4,11 +4,11 @@
 import { useRouter } from 'next/navigation';
 import { Container, Typography } from '@mui/material';
 
-import { BaseSorteio } from '@/components/baseSorteio';
-import RaspadinhaJogo from '@/components/Raspadinha';
-import { toast } from 'react-toastify';
-;
 
+import { toast } from 'react-toastify';
+import dynamic from 'next/dynamic';
+import { BaseSorteio } from '@/components/BaseSorteio';
+const RaspadinhaJogo = dynamic(() => import('@/components/Raspadinha'));
 
 export default function CodigoPage() {
  const router = useRouter();
@@ -38,7 +38,7 @@ export default function CodigoPage() {
         <RaspadinhaJogo
           width={300}
           height={300}
-          backgroundImage={'/premio.png'}
+          backgroundImage={'/premio-10.jpeg'}
           onComplete={handleComplete}
         />
 

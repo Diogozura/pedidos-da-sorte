@@ -18,7 +18,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import Link from 'next/link';
-import { BaseSorteio } from '@/components/baseSorteio';
+import { BaseSorteio } from '@/components/BaseSorteio';
 
 
 export default function RaspadinhaPage() {
