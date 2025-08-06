@@ -47,7 +47,8 @@ const fileInputRef = useRef<HTMLInputElement>(null);
             component="label"
 
             sx={{
-              display: 'inline-block',
+              display: 'grid',
+              textAlign: 'center',
               border: '1px dashed #ccc',
               borderRadius: 2,
               width: 200,
