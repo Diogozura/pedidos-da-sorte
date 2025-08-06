@@ -7,7 +7,7 @@ import { Container, Typography } from '@mui/material';
 
 import { toast } from 'react-toastify';
 import dynamic from 'next/dynamic';
-import { BaseSorteio } from '@/components/BaseSorteio';
+import { BaseSorteio } from '../components/BaseSorteio';
 
 
 const RaspadinhaJogo = dynamic(() => import('@/components/Raspadinha'));

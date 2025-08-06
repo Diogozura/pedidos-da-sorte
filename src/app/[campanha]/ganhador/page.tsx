@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, updateDoc, doc, getDocs, query, where } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-import { BaseSorteio } from '@/components/BaseSorteio';
+import { BaseSorteio } from '../../../components/BaseSorteio';
 
 
 

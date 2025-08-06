@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useFormContext } from '@/config/FormContext';
 import { Button, Container, TextField, Typography, Box } from '@mui/material';
-import { BaseSorteio } from '@/components/BaseSorteio';
+import { BaseSorteio } from '../../components/BaseSorteio';
 import { db } from '@/lib/firebase';
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
