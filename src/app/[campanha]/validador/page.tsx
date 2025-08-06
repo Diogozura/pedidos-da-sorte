@@ -18,7 +18,7 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import { getRedirectUrlByStatus } from '@/utils/redirectByStatus';
-import { BaseSorteio } from '../../../components/BaseSorteio';
+import { BaseSorteio } from '@/components/BaseSorteio';
 import { verificarEEncerrarCampanha } from '@/lib/campanhaUtils';
 ;
 

@@ -9,7 +9,6 @@ import { useEffect } from "react";
 
 
 export function BaseSorteio({ children , logoUrl }: { children: React.ReactNode , logoUrl?: string }) {
-    console.log('BaseSorteio', logoUrl);
     useEffect(() => {
     // Aplica o fundo do body manualmente (opcional, mas ajuda se tiver conteúdo fora do MUI)
     document.body.style.backgroundColor = darkTheme.palette.background.default;
