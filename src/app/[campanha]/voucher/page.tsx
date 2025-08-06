@@ -111,7 +111,7 @@ export default function VoucherPage() {
   };
 
   return (
-    <BaseSorteio>
+    <BaseSorteio >
       <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignContent: 'center', justifyContent: 'center' }}>
         <h2>🎉 Seu voucher foi gerado!</h2>
         <p>Use esse voucher na loja ou envie para a equipe.</p>
