@@ -88,82 +88,85 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
   return (
     <>
       <Typography variant="h6" gutterBottom>Prêmios</Typography>
-      {premios.map((p, index) => (
-        <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid size={{xs:12, sm:5}}>
-              <TextField
-                label="Nome do prêmio"
-                value={p.nome}
-                onChange={(e) => handleChangePremio(index, 'nome', e.target.value)}
-                fullWidth
-              />
-            </Grid>
-            <Grid size={{xs:12, sm:4}}>
-              <TextField
-                label="Quantidade"
-                type="number"
-                value={p.quantidadeTotais}
-                onChange={(e) => handleChangePremio(index, 'quantidadeTotais', e.target.value)}
-                InputProps={{ endAdornment: <InputAdornment position="end">x</InputAdornment> }}
-                fullWidth
-              />
-            </Grid>
-            <Grid size={12}>
-              <Typography variant="subtitle2" mb={1}>Imagem selecionada</Typography>
-              {p.preview ? (
-                <Box component="img" src={p.preview} sx={{ width: 80, height: 80, borderRadius: 1 }} />
-              ) : p.imagem ? (
-                <Box component="img" src={p.imagem} sx={{ width: 80, height: 80, borderRadius: 1 }} />
-              ) : (
-                <Typography variant="body2" color="text.secondary">Nenhuma imagem selecionada</Typography>
-              )}
-              <Box display="flex" gap={2} mt={1}>
-                <Button variant="outlined" onClick={() => setModalIndex(index)}>Escolher imagem</Button>
+      <Box height={300} overflow="auto" sx={{ mb: 2 }}>
 
-              </Box>
-            </Grid>
-            {premios.length >= 3 && (
-              <Grid size={{xs:12, sm:1}}>
-                <IconButton onClick={() => removerPremio(index)}>
-                  <FontAwesomeIcon icon={faMinus} />
-                </IconButton>
-              </Grid>
-            )}
-          </Grid>
 
-          {/* Modal de seleção de imagem */}
-          <Dialog open={modalIndex === index} onClose={() => setModalIndex(null)} fullWidth maxWidth="xs">
-            <DialogTitle>Selecionar imagem do prêmio</DialogTitle>
-            <DialogContent>
-              <ListaImagens
-                imagens={imagensDisponiveis}
-                imagemSelecionada={p.imagem}
-                onSelecionar={(url) => handleSelecionarImagem(url, index)}
-                tamanho={80}
-              />
-              <Box mt={2}>
-                <Button variant="outlined" onClick={() => inputRef.current?.click()}>
-                  Enviar nova imagem
-                </Button>
-                <input
-                  ref={inputRef}
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={(e) => {
-                    if (modalIndex !== null) {
-                      handleUploadImagem(e, modalIndex);
-                      if (inputRef.current) inputRef.current.value = ''; // limpa valor anterior
-                    }
-                  }}
+        {premios.map((p, index) => (
+          <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid size={{ xs: 12, sm: 5 }}>
+                <TextField
+                  label="Nome do prêmio"
+                  value={p.nome}
+                  onChange={(e) => handleChangePremio(index, 'nome', e.target.value)}
+                  fullWidth
                 />
-              </Box>
-            </DialogContent>
-          </Dialog>
-        </Box>
-      ))}
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  label="Quantidade"
+                  type="number"
+                  value={p.quantidadeTotais}
+                  onChange={(e) => handleChangePremio(index, 'quantidadeTotais', e.target.value)}
+                  InputProps={{ endAdornment: <InputAdornment position="end">x</InputAdornment> }}
+                  fullWidth
+                />
+              </Grid>
+              <Grid size={12}>
+                <Typography variant="subtitle2" mb={1}>Imagem selecionada</Typography>
+                {p.preview ? (
+                  <Box component="img" src={p.preview} sx={{ width: 80, height: 80, borderRadius: 1 }} />
+                ) : p.imagem ? (
+                  <Box component="img" src={p.imagem} sx={{ width: 80, height: 80, borderRadius: 1 }} />
+                ) : (
+                  <Typography variant="body2" color="text.secondary">Nenhuma imagem selecionada</Typography>
+                )}
+                <Box display="flex" gap={2} mt={1}>
+                  <Button variant="outlined" onClick={() => setModalIndex(index)}>Escolher imagem</Button>
 
+                </Box>
+              </Grid>
+              {premios.length >= 2 && (
+                <Grid size={{ xs: 12, sm: 1 }}>
+                  <IconButton onClick={() => removerPremio(index)}>
+                    <FontAwesomeIcon icon={faMinus} />
+                  </IconButton>
+                </Grid>
+              )}
+            </Grid>
+
+            {/* Modal de seleção de imagem */}
+            <Dialog open={modalIndex === index} onClose={() => setModalIndex(null)} fullWidth maxWidth="xs">
+              <DialogTitle>Selecionar imagem do prêmio</DialogTitle>
+              <DialogContent>
+                <ListaImagens
+                  imagens={imagensDisponiveis}
+                  imagemSelecionada={p.imagem}
+                  onSelecionar={(url) => handleSelecionarImagem(url, index)}
+                  tamanho={80}
+                />
+                <Box mt={2}>
+                  <Button variant="outlined" onClick={() => inputRef.current?.click()}>
+                    Enviar nova imagem
+                  </Button>
+                  <input
+                    ref={inputRef}
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (modalIndex !== null) {
+                        handleUploadImagem(e, modalIndex);
+                        if (inputRef.current) inputRef.current.value = ''; // limpa valor anterior
+                      }
+                    }}
+                  />
+                </Box>
+              </DialogContent>
+            </Dialog>
+          </Box>
+        ))}
+      </Box>
       <Button
         onClick={adicionarPremio}
         variant="outlined"

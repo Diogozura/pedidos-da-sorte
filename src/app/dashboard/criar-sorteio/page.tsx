@@ -185,6 +185,12 @@ export default function CriarCampanhaPage() {
     }
   };
 
+
+  const handleCancelar = () => {
+    toast.info('Cadastro cancelado.');
+    router.push('/dashboard');
+  };
+
   return (
     <ProtegePagina permitido={['admin', 'empresa']}>
       <BaseDash>
@@ -250,7 +256,7 @@ export default function CriarCampanhaPage() {
               )}
             </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }} >
+            <Grid size={{ xs: 12, md: 6 }}  >
               <PremiosForm
                 premios={premios}
                 setPremios={setPremios}
@@ -270,8 +276,9 @@ export default function CriarCampanhaPage() {
               />
             </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }} >
-              <Button variant="contained" onClick={criarCampanha}>Cadastrar</Button>
+            <Grid size={{ xs: 12, md: 6 }}  >
+              <Button variant="contained" sx={{ m: 2 }} onClick={criarCampanha}>Cadastrar</Button>
+              <Button variant="contained" color='secondary' onClick={handleCancelar}>Cancelar</Button>
             </Grid>
           </Grid>
 
