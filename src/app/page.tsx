@@ -19,7 +19,7 @@ export default function CodigoPage() {
    toast.success('🎉 Você ganhou! 10% de desconto');
      setTimeout(() => {
             router.replace('/ganhador');
-          }, 6000); //
+          }, 3000); //
   
   };
 
@@ -33,11 +33,11 @@ export default function CodigoPage() {
           alignContent: 'center',
           justifyContent: 'center',
           textAlign: 'center',
-          mt: 6,
+          mt: 2,
           color: '#fff'
         }}
       >
-        <Typography variant="h4" component="h1">
+        <Typography variant="h5" component="h1">
           Raspe e descubra
         </Typography>
         <RaspadinhaJogo

@@ -36,7 +36,7 @@ export default function GanhadorPage() {
       });
 
       toast.success('Dados enviados com sucesso!');
-      router.replace('/pagBank');
+      router.replace('https://pag.ae/7_W8tQKKn');
     } catch (err) {
       console.error('Erro ao salvar dados:', err);
       toast.error('Erro ao enviar dados. Tente novamente.');
@@ -45,17 +45,17 @@ export default function GanhadorPage() {
 
   return (
     <BaseSorteio>
-      <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-        <Typography component={'h1'} variant="h4" gutterBottom>
+      <Container maxWidth="md" sx={{ height: '50vh', display: 'grid', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+        {/* <Typography component={'h1'} variant="h4" gutterBottom>
           🎉 Parabéns! pelos 10% desconto.
         </Typography>
 
         <Typography component={'h2'} textAlign={'center'} variant="h4" gutterBottom>
           PEDIDO10
-        </Typography>
+        </Typography> */}
 
-        <Typography component={'p'} textAlign={'center'} variant="body1" gutterBottom>
-          Preencha seus dados para entrar em contato pelo WhatsApp:
+        <Typography component={'p'} variant="h5" textAlign={'center'}  gutterBottom>
+          Preencha os dados abaixo e receba o seu voucher de desconto
         </Typography>
 
         <Box
@@ -108,8 +108,14 @@ export default function GanhadorPage() {
             }}
           />
 
-          <Button type="submit" color="primary" variant="contained">
-            Continuar
+          <Button type="submit" color="inherit" sx={{
+            backgroundColor: '#ffffff',
+            color: '#000000',
+            '&:hover': {
+              backgroundColor: '#000000',
+            },
+          }} variant="contained">
+            Validar meu desconto
           </Button>
         </Box>
       </Container>
