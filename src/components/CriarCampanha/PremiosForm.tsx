@@ -4,7 +4,7 @@
 import { Box, Button, Grid, IconButton, InputAdornment, TextField, Typography, Dialog, DialogContent, DialogTitle } from '@mui/material';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
-import { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import ListaImagens from '../shared/ListaImagens';
 import { useRef } from 'react';
@@ -85,10 +85,25 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
     setModalIndex(null);
   };
 
+  useEffect(() => {
+  if (premios.length === 0) {
+    setPremios([
+      {
+        nome: '',
+        imagem: '',
+        quantidadeTotais: 1,
+        file: null,
+        preview: ''
+      }
+    ]);
+  }
+}, []);
+
+
   return (
     <>
       <Typography variant="h6" gutterBottom>Prêmios</Typography>
-      <Box height={300} overflow="auto" sx={{ mb: 2 }}>
+      <Box height={220} overflow="auto" sx={{ mb: 2 }}>
 
 
         {premios.map((p, index) => (

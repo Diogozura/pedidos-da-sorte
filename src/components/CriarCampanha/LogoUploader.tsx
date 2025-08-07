@@ -17,7 +17,7 @@ interface Props {
 
 export default function LogoUploader({ preview, setPreview, setFile, logosDisponiveis }: Props) {
   const [modalAberto, setModalAberto] = useState(false);
-const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -92,17 +92,20 @@ const fileInputRef = useRef<HTMLInputElement>(null);
           <Typography variant="body2" color="text.secondary" mb={1}>
             Logo atual selecionada abaixo. Você pode trocar, se desejar:
           </Typography>
+          <Box display='grid' justifyItems={'start'}>
 
-          <Box
-            component="img"
-            src={preview}
-            alt="Logo preview"
-            sx={{ width: 200, height: 200, objectFit: 'contain', borderRadius: 2, border: '1px solid #ccc' }}
-          />
 
-          <Button onClick={() => setModalAberto(true)} sx={{ mt: 2 }}>
-            Trocar logo
-          </Button>
+            <Box
+              component="img"
+              src={preview}
+              alt="Logo preview"
+              sx={{ width: 200, height: 200, objectFit: 'contain', borderRadius: 2, border: '1px solid #ccc' }}
+            />
+
+            <Button onClick={() => setModalAberto(true)} sx={{ mt: 2 }}>
+              Trocar logo
+            </Button>
+          </Box>
           <Dialog open={modalAberto} onClose={() => setModalAberto(false)} fullWidth maxWidth="xs">
             <DialogTitle>Selecionar outra logo</DialogTitle>
             <DialogContent>

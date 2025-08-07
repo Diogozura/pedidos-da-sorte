@@ -43,7 +43,7 @@ export default function BaseDash({ children }: { children: React.ReactNode }) {
             {/* Header */}
             <AppBar position="static" color="default">
                 <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                   <Box textAlign="center" mt={4}> <Link href={'/dashboard'}><Image width={100} height={40} src={logoSrc} alt="Logo principal , Pedidos da sorte" /></Link></Box>
+                   <Box textAlign="center" mt={4}> <Link href={'/dashboard'}><Image width={150} height={51} src={logoSrc} alt="Logo principal , Pedidos da sorte" /></Link></Box>
                     <Box display="flex" gap={2}>
                         <Button color="inherit" onClick={handleLogout}>
                             Sair
@@ -53,7 +53,7 @@ export default function BaseDash({ children }: { children: React.ReactNode }) {
                 </Toolbar>
             </AppBar>
             {children}
-            <Box textAlign="center" mt={4}><Image width={100} height={40} src={logoSrc} alt="Logo principal , Pedidos da sorte" /></Box>
+            <Box textAlign="center" mt={4}><Image width={150} height={51} src={logoSrc} alt="Logo principal , Pedidos da sorte" /></Box>
 
         </ProtectedRoute>
     )

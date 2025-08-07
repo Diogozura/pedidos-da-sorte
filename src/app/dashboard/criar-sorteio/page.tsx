@@ -222,6 +222,7 @@ export default function CriarCampanhaPage() {
                 <InputLabel id="modo-label">Modo da campanha</InputLabel>
                 <Select
                   labelId="modo-label"
+                  label="Modo da campanha"
                   value={modo}
                   onChange={(e) => setModo(e.target.value as any)}
                 >
