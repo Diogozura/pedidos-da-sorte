@@ -17,7 +17,10 @@ export default function CodigoPage() {
   const handleComplete = async () => {
   
    toast.success('🎉 Você ganhou! 10% de desconto');
-  router.replace('/ganhador');
+     setTimeout(() => {
+            router.replace('/ganhador');
+          }, 6000); //
+  
   };
 
   return (
@@ -25,7 +28,7 @@ export default function CodigoPage() {
       <Container
         maxWidth="md"
         sx={{
-          height: '70vh',
+          height: '50vh',
           display: 'grid',
           alignContent: 'center',
           justifyContent: 'center',
