@@ -9,6 +9,8 @@ import EnviarCodigoManual from './EnviarCodigoManual';
 import { useState } from 'react';
 import { useCampanhasPermitidas } from '@/hook/useCampanhasPermitidas';
 import { useRouter } from 'next/navigation';
+import AppBreadcrumbs from '@/components/shared/AppBreadcrumbs';
+import { faHome } from '@fortawesome/free-solid-svg-icons';
 
 export default function GerenciarCodigos() {
   const router = useRouter();
@@ -24,7 +26,7 @@ export default function GerenciarCodigos() {
   if (loading) return <p>Carregando campanhas...</p>;
 
   if (campanhas.length == 0) {
-    
+
     return (
       <BaseDash>
         <Container maxWidth="sm" sx={{ mt: 6, textAlign: 'center' }}>
@@ -45,7 +47,13 @@ export default function GerenciarCodigos() {
   return (
     <BaseDash>
       <Container maxWidth="lg" sx={{ mt: 6 }}>
-        <Typography component={'h1'} textAlign={'center'} py={2} variant="h2">
+        <AppBreadcrumbs
+          items={[
+            { label: 'Início', href: '/dashboard', icon: faHome },
+            { label: 'Gerenciar Códigos', },
+          ]}
+        />
+        <Typography component={'h1'} textAlign={'center'} py={2} variant="h4">
           Gerenciador de Códigos
         </Typography>
 
@@ -75,13 +83,13 @@ export default function GerenciarCodigos() {
         </Box>
 
         <Grid container spacing={4} justifyContent="center" alignItems="stretch">
-          <Grid size={{xs:12, md:6}}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <EnviarCodigoManual campanhaId={campanha?.id || ''} />
           </Grid>
-          <Grid  size={{xs:12, md:6}}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <ValidateVoucherPanel />
           </Grid>
-          <Grid  size={{xs:12, md:6}}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <EnviarCodigoAutomatico onSend={handleEnvio} />
           </Grid>
         </Grid>

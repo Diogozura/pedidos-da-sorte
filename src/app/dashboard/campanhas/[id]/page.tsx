@@ -14,6 +14,8 @@ import { toast } from 'react-toastify';
 import PremiosNaoResgatados from '@/components/PremiosNaoResgatados';
 import NumerosPremiados from '@/components/NumerosPremiados';
 import RelatorioEnvioCampanha from '@/components/RelatorioEnvioCampanha';
+import AppBreadcrumbs from '@/components/shared/AppBreadcrumbs';
+import { faHome } from '@fortawesome/free-solid-svg-icons';
 
 export default function DetalhesCampanhaPage() {
     const { id } = useParams();
@@ -89,8 +91,18 @@ export default function DetalhesCampanhaPage() {
                 <title>Campanha</title>
             </Head>
             <BaseDash>
+                <Container maxWidth="md" sx={{ mt: 6 }}>
+
+                </Container>
 
                 <Container maxWidth="lg" sx={{ mt: 6 }}>
+                    <AppBreadcrumbs
+                        items={[
+                            { label: 'Início', href: '/dashboard', icon: faHome },
+                            { label: 'Campanhas', href: '/dashboard/campanhas' },
+                            { label: 'minha campanha', },
+                        ]}
+                    />
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
                         <Typography variant="h4">Campanha: {campanha.nome}</Typography>
                         <Chip

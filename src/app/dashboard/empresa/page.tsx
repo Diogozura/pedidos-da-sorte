@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
+import { faEye, faEyeSlash, faHome } from "@fortawesome/free-solid-svg-icons";
 import { auth, db } from "@/lib/firebase";
 import {
   createUserWithEmailAndPassword,
@@ -28,6 +28,7 @@ import BaseDash from "../base";
 
 import ProtegePagina from '@/components/ProtegePagina';
 import { useUsuarioLogado } from "@/hook/useUsuarioLogado";
+import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs";
 
 export default function GerenciarConta() {
   const { usuario } = useUsuarioLogado();
@@ -110,7 +111,17 @@ export default function GerenciarConta() {
   return (
     <ProtegePagina permitido={['admin', 'empresa']}>
       <BaseDash>
+        <Container maxWidth="md" sx={{ mt: 6 }}>
+          <AppBreadcrumbs
+            items={[
+              { label: 'Início', href: '/dashboard', icon: faHome },
+              { label: 'Gerenciar Códigos', href: '/dashboard/conta' },
+              { label: 'Cadastrar novo usuário', },
+            ]}
+          />
+        </Container>
         <Container maxWidth="sm" sx={{ mt: 6 }}>
+
           <Typography variant="h4" gutterBottom>
             Cadastrar novo usuário
           </Typography>

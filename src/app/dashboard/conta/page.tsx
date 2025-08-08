@@ -30,8 +30,9 @@ import { useRouter } from "next/navigation";
 import { EmailAuthProvider, onAuthStateChanged, reauthenticateWithCredential, updateEmail, updatePassword } from 'firebase/auth';
 import BaseDash from '../base';
 import { toast } from 'react-toastify';
-import { faUserTie } from '@fortawesome/free-solid-svg-icons';
+import { faHome, faUserTie } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import AppBreadcrumbs from '@/components/shared/AppBreadcrumbs';
 
 interface Usuario {
   uid: string;
@@ -154,6 +155,12 @@ export default function GerenciarConta() {
   return (
     <BaseDash>
       <Container maxWidth="md" sx={{ mt: 6 }}>
+        <AppBreadcrumbs
+          items={[
+            { label: 'Início', href: '/dashboard', icon: faHome },
+            { label: 'Gerenciar conta', },
+          ]}
+        />
         <Typography variant="h4" gutterBottom>
           Gerenciar Conta
         </Typography>
@@ -174,11 +181,11 @@ export default function GerenciarConta() {
           <>
             <Typography variant="h6" gutterBottom>Empresas</Typography>
             <Grid container spacing={2} sx={{ mb: 4 }}>
-              {usuarios 
+              {usuarios
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .filter((u: any) => u.nivel === 'empresa')
                 .map((usuario) => (
-                  <Grid size={{xs:12, md:4}}  key={usuario.uid}>
+                  <Grid size={{ xs: 12, md: 4 }} key={usuario.uid}>
                     <Card variant="outlined">
                       <CardContent>
                         <Typography variant="subtitle1" fontWeight="bold">{usuario.nome}</Typography>
@@ -195,7 +202,7 @@ export default function GerenciarConta() {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .filter((u: any) => u.nivel === 'funcionario')
                 .map((usuario) => (
-                  <Grid size={{xs:12, md:4}}  key={usuario.uid}>
+                  <Grid size={{ xs: 12, md: 4 }} key={usuario.uid}>
                     <Card variant="outlined">
                       <CardContent>
                         <Typography variant="subtitle1" fontWeight="bold">{usuario.nome}</Typography>
@@ -213,7 +220,7 @@ export default function GerenciarConta() {
             <Typography variant="h6" gutterBottom>Contas cadastradas</Typography>
             <Grid container spacing={2}>
               {usuarios.map((usuario) => (
-                <Grid size={{xs:12, md:4}} key={usuario.uid}>
+                <Grid size={{ xs: 12, md: 4 }} key={usuario.uid}>
                   <Card variant="outlined">
                     <CardContent>
                       <Typography variant="subtitle1" fontWeight="bold">{usuario.nome}</Typography>

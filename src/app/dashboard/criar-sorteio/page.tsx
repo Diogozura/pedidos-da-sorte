@@ -15,6 +15,8 @@ import ProtegePagina from '@/components/ProtegePagina';
 import { useUsuarioLogado } from '@/hook/useUsuarioLogado';
 import PremiosForm, { Premio } from '@/components/CriarCampanha/PremiosForm';
 import LogoUploader from '@/components/CriarCampanha/LogoUploader';
+import AppBreadcrumbs from '@/components/shared/AppBreadcrumbs';
+import { faHome, faTrophy } from '@fortawesome/free-solid-svg-icons';
 
 export default function CriarCampanhaPage() {
   const { usuario } = useUsuarioLogado();
@@ -193,14 +195,23 @@ export default function CriarCampanhaPage() {
 
   return (
     <ProtegePagina permitido={['admin', 'empresa']}>
+
       <BaseDash>
+
         <Container maxWidth="lg" sx={{ mt: 6 }}>
+          <AppBreadcrumbs
+            items={[
+              { label: 'Início', href: '/dashboard', icon: faHome },
+              { label: 'escolher jogo', href: '/dashboard/escolher-jogo' },
+              { label: 'Criar campanha', icon: faTrophy },
+            ]}
+          />
           <Typography variant="h4" textAlign="center" gutterBottom>
             Criar nova campanha
           </Typography>
 
           <Grid container spacing={4}>
-              <Grid size={{ xs: 12, md: 4 }} >
+            <Grid size={{ xs: 12, md: 4 }} >
               <LogoUploader
                 preview={logoPreview}
                 setPreview={setLogoPreview}

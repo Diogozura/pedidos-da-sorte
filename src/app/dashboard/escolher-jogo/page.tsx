@@ -1,6 +1,6 @@
 'use client'
 import DashboardCard from '@/components/DashboardCard';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faHome, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter } from 'next/navigation';
 import BaseDash from '../base';
@@ -8,6 +8,7 @@ import ProtegePagina from '@/components/ProtegePagina';
 import { Container, Grid, Typography } from '@mui/material';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { useState } from 'react';
+import AppBreadcrumbs from '@/components/shared/AppBreadcrumbs';
 
 
 export default function EscolherJogo() {
@@ -31,13 +32,19 @@ export default function EscolherJogo() {
 
 
 
-                    <Container maxWidth="lg" sx={{ mt: 6 , display:'grid',  height:'60vh' }} >
+                    <Container maxWidth="lg" sx={{ mt: 6, display: 'grid', height: '60vh' }} >
+                        <AppBreadcrumbs
+                            items={[
+                                { label: 'Início', href: '/dashboard', icon: faHome },
+                                { label: 'escolher jogo', href: '/dashboard/escolher-jogo' },
+                            ]}
+                        />
                         <Typography component={'h1'} variant="h4" textAlign={'center'} gutterBottom>
                             Criar nova campanha
                         </Typography>
                         <Grid container spacing={2} sx={{
-                            justifyContent:'center'
-                        }}> 
+                            justifyContent: 'center'
+                        }}>
 
                             <Grid size={{ xs: 12, md: 3 }} display={'flex'} justifyContent='center' >
                                 <DashboardCard

@@ -15,6 +15,8 @@ import {
 import BaseDash from '../base';
 import { useRouter } from 'next/navigation';
 import { useCampanhasPermitidas } from '@/hook/useCampanhasPermitidas';
+import AppBreadcrumbs from '@/components/shared/AppBreadcrumbs';
+import { faHome } from '@fortawesome/free-solid-svg-icons';
 
 interface Codigo {
   id: string;
@@ -92,7 +94,13 @@ export default function JogosAtivos() {
   };
   return (
     <BaseDash>
-      <Container maxWidth="md" sx={{ mt: 6, display:'grid',  height:'60vh' }}>
+      <Container maxWidth="md" sx={{ mt: 6, display: 'grid', height: '60vh' }}>
+        <AppBreadcrumbs
+          items={[
+            { label: 'Início', href: '/dashboard', icon: faHome },
+            { label: 'Campanhas', },
+          ]}
+        />
         <Typography component={'h1'} textAlign={'center'} variant="h4" gutterBottom>
           Campanhas Ativas
         </Typography>
