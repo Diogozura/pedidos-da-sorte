@@ -46,15 +46,8 @@ export default function GanhadorPage() {
   return (
     <BaseSorteio>
       <Container maxWidth="md" sx={{ height: '50vh', display: 'grid', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-        {/* <Typography component={'h1'} variant="h4" gutterBottom>
-          🎉 Parabéns! pelos 10% desconto.
-        </Typography>
 
-        <Typography component={'h2'} textAlign={'center'} variant="h4" gutterBottom>
-          PEDIDO10
-        </Typography> */}
-
-        <Typography component={'p'} variant="h5" textAlign={'center'}  gutterBottom>
+        <Typography component={'p'} variant="h5" textAlign={'center'} gutterBottom>
           Preencha os dados abaixo e receba o seu voucher de desconto
         </Typography>
 
@@ -79,9 +72,11 @@ export default function GanhadorPage() {
             required
             value={values.nome || ''}
             onChange={handleInputChange}
+
             sx={{
-              input: { color: 'white' },
-              label: { color: 'white' },
+              input: { color: 'white' }, // texto digitado
+              '& .MuiInputLabel-root': { color: 'white' }, // label padrão
+              '& .MuiInputLabel-root.Mui-focused': { color: 'white' }, // label focado
               '& .MuiOutlinedInput-root': {
                 '& fieldset': { borderColor: 'white' },
                 '&:hover fieldset': { borderColor: 'white' },
@@ -98,8 +93,9 @@ export default function GanhadorPage() {
             value={values.telefone || ''}
             onChange={handleInputChange}
             sx={{
-              input: { color: 'white' },
-              label: { color: 'white' },
+              input: { color: 'white' }, // texto digitado
+              '& .MuiInputLabel-root': { color: 'white' }, // label padrão
+              '& .MuiInputLabel-root.Mui-focused': { color: 'white' }, // label focado
               '& .MuiOutlinedInput-root': {
                 '& fieldset': { borderColor: 'white' },
                 '&:hover fieldset': { borderColor: 'white' },
@@ -112,7 +108,7 @@ export default function GanhadorPage() {
             backgroundColor: '#ffffff',
             color: '#000000',
             '&:hover': {
-              backgroundColor: '#000000',
+              backgroundColor: '#f7f7f7b9',
             },
           }} variant="contained">
             Validar meu desconto
