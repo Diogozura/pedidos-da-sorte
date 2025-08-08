@@ -103,9 +103,7 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
   return (
     <>
       {/* <Typography variant="h6" gutterBottom>Prêmios</Typography> */}
-      <Box height={220} overflow="auto" sx={{ mb: 2 }}>
-
-
+      <Box height={premios.length == 1 ? 150 : 250} overflow="auto" sx={{ mb: 2 }}>
         {premios.map((p, index) => (
           <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
             <Grid container spacing={2} alignItems="center">
@@ -113,6 +111,7 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
                 <TextField
                   label="Nome do prêmio"
                   value={p.nome}
+                  required
                   onChange={(e) => handleChangePremio(index, 'nome', e.target.value)}
                   fullWidth
                 />
@@ -127,8 +126,7 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
                   fullWidth
                 />
               </Grid>
-              <Grid size={12}>
-                <Typography variant="subtitle2" mb={1}>Imagem selecionada</Typography>
+              <Grid size={2}>
                 {p.preview ? (
                   <Box component="img" src={p.preview} sx={{ width: 80, height: 80, borderRadius: 1 }} />
                 ) : p.imagem ? (

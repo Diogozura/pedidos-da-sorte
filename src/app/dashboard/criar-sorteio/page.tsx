@@ -200,7 +200,18 @@ export default function CriarCampanhaPage() {
           </Typography>
 
           <Grid container spacing={4}>
-            <Grid size={{ xs: 12, md: 6 }} >
+              <Grid size={{ xs: 12, md: 4 }} >
+              <LogoUploader
+                preview={logoPreview}
+                setPreview={setLogoPreview}
+                setFile={setLogoFile}
+                usuarioId={usuario?.uid || ''}
+                logosDisponiveis={logosDisponiveis}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 8 }} >
+              <Typography variant="h6" gutterBottom>Dados da Campanha</Typography>
               <TextField
                 label="Nome da campanha"
                 fullWidth
@@ -257,7 +268,7 @@ export default function CriarCampanhaPage() {
               )}
             </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}  >
+            <Grid size={12}  >
               <PremiosForm
                 premios={premios}
                 setPremios={setPremios}
@@ -267,17 +278,7 @@ export default function CriarCampanhaPage() {
               />
             </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }} >
-              <LogoUploader
-                preview={logoPreview}
-                setPreview={setLogoPreview}
-                setFile={setLogoFile}
-                usuarioId={usuario?.uid || ''}
-                logosDisponiveis={logosDisponiveis}
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }}  >
+            <Grid size={12}  >
               <Button variant="contained" sx={{ m: 2 }} onClick={criarCampanha}>Cadastrar</Button>
               <Button variant="contained" color='secondary' onClick={handleCancelar}>Cancelar</Button>
             </Grid>
