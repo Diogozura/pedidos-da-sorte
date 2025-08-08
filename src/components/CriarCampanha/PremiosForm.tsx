@@ -102,7 +102,7 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
 
   return (
     <>
-      <Typography variant="h6" gutterBottom>Prêmios</Typography>
+      {/* <Typography variant="h6" gutterBottom>Prêmios</Typography> */}
       <Box height={220} overflow="auto" sx={{ mb: 2 }}>
 
 

@@ -162,7 +162,7 @@ export default function GerenciarConta() {
           <Grid container spacing={4} sx={{ mb: 6 }}>
             <Grid size={{ xs: 12, md: 4 }} >
               <DashboardCard
-                title={usuarioLogado?.nivel === 'admin' ? 'Cadastro Empresa/Funcionário' : 'Cadastrar Funcionário'}
+                title={usuarioLogado?.nivel === 'admin' ? 'Cadastro Empresa' : 'Cadastrar Funcionário'}
                 icon={<FontAwesomeIcon icon={faUserTie} />}
                 onClick={() => router.push('/dashboard/empresa')}
               />
