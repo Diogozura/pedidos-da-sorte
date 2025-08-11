@@ -34,9 +34,10 @@ export default function LogoUploader({ preview, setPreview, setFile, logosDispon
     img.onload = () => {
       setFile(file);
       setPreview(previewUrl);
+      setModalAberto(false);
     };
   };
-  console.log('preview', preview)
+
   return (
     <>
       <Typography variant="h6" gutterBottom>Logo da Campanha</Typography>
@@ -83,7 +84,29 @@ export default function LogoUploader({ preview, setPreview, setFile, logosDispon
                 }}
                 tamanho={80}
               />
-              <Button>Adicionar nova logo</Button>
+              <Box
+                component="label"
+                htmlFor="upload-logo"
+                sx={{
+                  display: 'grid',
+                  textAlign: 'center',
+                  border: '1px dashed #ccc',
+                  borderRadius: 2,
+                  width: '100%',
+                  height: 120,
+                  cursor: 'pointer',
+                  bgcolor: 'grey.100',
+                  mt: 3,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Typography fontSize={14} color="text.secondary">
+                  Adicionar nova logo
+                </Typography>
+              </Box>
             </DialogContent>
           </Dialog>
         </>
