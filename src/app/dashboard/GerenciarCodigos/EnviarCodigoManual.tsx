@@ -49,7 +49,8 @@ export default function EnviarCodigoManual({ campanhaId, onCodigoGerado }: Props
       return;
     }
      setLoading(true);
-    console.log('campanhaId', campanhaId)
+
+         toast.success('Codigo enviado com sucesso!');
     try {
       const posicoesSnap = await getDocs(
         query(
@@ -90,11 +91,11 @@ export default function EnviarCodigoManual({ campanhaId, onCodigoGerado }: Props
       toast.success(`Código gerado: ${novoCodigo}`);
       navigator.clipboard.writeText(novoCodigo);
 
-      const siteLink = `${window.location.origin}/${campanhaId}/validador?${novoCodigo}`;
-      const message = `Parabéns! Você ganhou uma ficha para jogar no *Pedidos da Sorte*! 🎉\n\nSeu código é *${novoCodigo}*\nAcesse: ${siteLink}`;
-      const whatsappURL = `https://api.whatsapp.com/send?phone=55${rawPhone}&text=${encodeURIComponent(message)}`;
+      // const siteLink = `${window.location.origin}/${campanhaId}/validador?${novoCodigo}`;
+      // const message = `Parabéns! Você ganhou uma ficha para jogar no *Pedidos da Sorte*! 🎉\n\nSeu código é *${novoCodigo}*\nAcesse: ${siteLink}`;
+      // const whatsappURL = `https://api.whatsapp.com/send?phone=55${rawPhone}&text=${encodeURIComponent(message)}`;
 
-      window.open(whatsappURL, '_blank');
+      // window.open(whatsappURL, '_blank');
 
       if (onCodigoGerado) onCodigoGerado(novoCodigo);
     } catch (err: any) {
