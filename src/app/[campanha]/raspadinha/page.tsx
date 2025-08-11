@@ -29,6 +29,7 @@ export default function RaspadinhaPage() {
   const [codigoDocId, setCodigoDocId] = useState<string | null>(null);
   const [campanhaId, setCampanhaId] = useState<string | null>(null);
   const [premiado, setPremiado] = useState<boolean>(false);
+  const [logoCampanha, setLogoCampanha] = useState('');
 
   const validarCodigo = useCallback(async (code: string) => {
     try {
@@ -101,6 +102,7 @@ export default function RaspadinhaPage() {
     const campRef = doc(db, 'campanhas', campId);
     const campSnap = await getDoc(campRef);
     const campData = campSnap.data();
+      setLogoCampanha(campData?.logoUrl);
     if (!campData) return;
     const prizeObj = campData.premios?.find((p: any) => p.nome === prizeName);
     if (prizeObj) {
@@ -118,7 +120,7 @@ export default function RaspadinhaPage() {
       const refCod = doc(db, 'codigos', codigoDocId);
       const snapCod = await getDoc(refCod);
       const dataCod = snapCod.data();
-      console.log('dataCod?.premiado', dataCod?.premiado)
+    
       if (dataCod?.status === 'aguardando raspagem' && dataCod?.premiado !== 'nenhum') {
         await updateDoc(refCod, {
           status: 'aguardando dados ganhador',
@@ -148,9 +150,8 @@ export default function RaspadinhaPage() {
       toast.error('Erro ao finalizar: ' + err.message);
     }
   };
-
   return (
-    <BaseSorteio>
+    <BaseSorteio logoUrl={logoCampanha}>
       <Container
         maxWidth="md"
         sx={{

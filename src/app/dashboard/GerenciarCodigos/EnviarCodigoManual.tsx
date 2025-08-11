@@ -90,7 +90,7 @@ export default function EnviarCodigoManual({ campanhaId, onCodigoGerado }: Props
       toast.success(`Código gerado: ${novoCodigo}`);
       navigator.clipboard.writeText(novoCodigo);
 
-      const siteLink = `${window.location.origin}/${campanhaId}?${novoCodigo}`;
+      const siteLink = `${window.location.origin}/${campanhaId}/validador?${novoCodigo}`;
       const message = `Parabéns! Você ganhou uma ficha para jogar no *Pedidos da Sorte*! 🎉\n\nSeu código é *${novoCodigo}*\nAcesse: ${siteLink}`;
       const whatsappURL = `https://api.whatsapp.com/send?phone=55${rawPhone}&text=${encodeURIComponent(message)}`;
 

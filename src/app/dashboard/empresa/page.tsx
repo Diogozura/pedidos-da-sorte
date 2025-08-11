@@ -136,7 +136,7 @@ export default function GerenciarConta() {
               disabled={usuario?.nivel === 'empresa'}
             >
               {usuario?.nivel === 'admin' && <MenuItem value="empresa">Empresa</MenuItem>}
-              <MenuItem value="funcionario">Funcionário</MenuItem>
+              <MenuItem value="funcionario">Colaborador</MenuItem>
             </Select>
           </FormControl>
 

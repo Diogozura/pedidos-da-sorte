@@ -34,6 +34,10 @@ export default function CriarCampanhaPage() {
   const [imagensDisponiveis, setImagensDisponiveis] = useState<string[]>([]);
   const [logosDisponiveis, setLogosDisponiveis] = useState<string[]>([]);
 
+  console.log('usuario', usuario);
+  console.log('logoPreview', logoPreview);
+  console.log('logoFile', logoFile);
+
   useEffect(() => {
     const carregarLogos = async () => {
       try {
@@ -122,17 +126,22 @@ export default function CriarCampanhaPage() {
       return;
     }
 
+    // >>>> AQUI ESTÁ O AJUSTE DA LOGO <<<<
     let logoUrl = '';
-    if (logoFile) {
-      try {
+    try {
+      if (logoFile) {
         const path = `logos/${usuario?.uid}/${Date.now()}_${logoFile.name}`;
         const ref = storageRef(storage, path);
         await uploadBytes(ref, logoFile);
         logoUrl = await getDownloadURL(ref);
-      } catch (err: any) {
-        toast.error('Erro ao enviar logo: ' + err.message);
-        return;
+      } else if (logoPreview && /^https?:\/\//i.test(logoPreview)) {
+        // Selecionou uma logo existente da biblioteca
+        logoUrl = logoPreview;
       }
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      toast.error('Erro ao enviar logo: ' + (e.message ?? 'desconhecido'));
+      return;
     }
 
     try {
@@ -153,7 +162,7 @@ export default function CriarCampanhaPage() {
           dataFim: new Date(`${dataFim}T23:59:59`),
         })
       };
-
+      console.log('novaCampanha', novaCampanha);
       const campanhaRef = await addDoc(collection(db, 'campanhas'), novaCampanha);
 
       const slots: (string | null)[] = [];

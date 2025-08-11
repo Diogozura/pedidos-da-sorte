@@ -1,30 +1,111 @@
 'use client';
 
 import { darkTheme } from "@/theme/theme";
-import { Box } from "@mui/material";
+import { Box, Skeleton } from "@mui/material";
 import Image from "next/image";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+type Props = {
+  children: React.ReactNode;
+  logoUrl?: string;
+  width?: number;
+  height?: number;
+};
+
+export function BaseSorteio({
+  children,
+  logoUrl,
+  width = 200,
+  height = 200,
+}: Props) {
+  const [resolvedSrc, setResolvedSrc] = useState<string | null>(null);
 
 
-
-
-export function BaseSorteio({ children , logoUrl }: { children: React.ReactNode , logoUrl?: string }) {
-    useEffect(() => {
-    // Aplica o fundo do body manualmente (opcional, mas ajuda se tiver conteúdo fora do MUI)
+  useEffect(() => {
     document.body.style.backgroundColor = darkTheme.palette.background.default;
     return () => {
       document.body.style.backgroundColor = '';
     };
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+
+    if (!logoUrl) {
+      setResolvedSrc(null);
+      return;
+    }
+
+    
+    const img = new window.Image();
+    img.onload = () => {
+      if (isMounted) {
+        
+        setResolvedSrc(logoUrl);
+       
+      }
+    };
+    img.onerror = () => {
+      if (isMounted) {
+        
+        setResolvedSrc(null); // mantém placeholder
+       
+      }
+    };
+    img.src = logoUrl;
+
+    // Se demorar mais que 2s, mantém placeholder
+    
+
+    return () => {
+      isMounted = false;
+     
+    };
+  }, [logoUrl]);
+
+  const topLogoContent = useMemo(() => {
+    if (!resolvedSrc) {
+      // Placeholder elegante
+      return (
+        <Skeleton
+          variant="rounded"
+          width={width}
+          height={height}
+          animation="wave"
+        />
+      );
+    }
     return (
-        <>
-            <Box display="flex" justifyContent="center" alignItems="center">
-                <Image width={200} height={200} src={ logoUrl || '/sua-logo.png'} alt="Logo principal , Pedidos da sorte" />
-            </Box>
-            {children}
-            <Box textAlign="center" mt={4}>
-                <Image width={150} height={78} src={'/logo-site.png'} alt="Logo principal , Pedidos da sorte" />
-            </Box>
-        </>
+      <Image
+        src={resolvedSrc}
+        alt="Logo da campanha"
+        width={width}
+        height={height}
+        priority
+        fetchPriority="high"
+        style={{ display: 'block' }}
+      />
     );
+  }, [resolvedSrc, width, height]);
+
+  return (
+    <>
+      <Box display="flex" justifyContent="center" alignItems="center" mt={1}>
+        {topLogoContent}
+      </Box>
+
+      {children}
+
+      <Box textAlign="center" mt={4}>
+        <Image
+          width={150}
+          height={78}
+          src={'/logo-site.png'}
+          alt="Logo do site Pedidos da Sorte"
+          loading="lazy"
+        />
+      </Box>
+    </>
+  );
 }

@@ -22,7 +22,10 @@ import { getRedirectUrlByStatus } from '@/utils/redirectByStatus';
 import { verificarEEncerrarCampanha } from '@/lib/campanhaUtils';
 
 
-
+type Campanha = {
+  logoUrl?: string;
+  // ...outros campos se quiser tipar
+};
 export default function CodigoPage() {
   const [codigo, setCodigo] = useState('');
   const [campanha, setCampanha] = useState<any | null>(null);
@@ -44,7 +47,30 @@ export default function CodigoPage() {
     setCodigo(parsedCodigo);
     buscarDados(parsedCodigo);
   }, []);
+  useEffect(() => {
+    const carregarCampanha = async () => {
+      if (!campanhaId) return;
+      try {
+        const snap = await getDoc(doc(db, 'campanhas', campanhaId));
+        if (!snap.exists()) {
+          toast.error('Campanha não encontrada.');
+          return;
+        }
+        const data = snap.data() as Campanha;
+        setCampanha(data);
 
+        // 2) Pré-carregar a imagem do logo para evitar flicker
+        if (data.logoUrl) {
+          const img = new Image();
+          img.src = data.logoUrl; // pré-carrega no cache do navegador
+        }
+      } catch (e: unknown) {
+        const err = e as { message?: string };
+        toast.error('Erro ao carregar campanha: ' + (err.message ?? 'desconhecido'));
+      }
+    };
+    carregarCampanha();
+  }, [campanhaId]);
   const buscarDados = async (codigo: string) => {
     if (!campanhaId) {
       toast.error('Campanha inválida na URL.');
@@ -150,7 +176,7 @@ export default function CodigoPage() {
       <Container
         maxWidth="md"
         sx={{
-          height: '70vh',
+          height: '40vh',
           display: 'grid',
           alignContent: 'center',
           justifyContent: 'center',
@@ -171,6 +197,16 @@ export default function CodigoPage() {
               required
               inputProps={{ minLength: 5 }}
               onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+              sx={{
+                input: { color: 'white' }, // texto digitado
+                '& .MuiInputLabel-root': { color: 'white' }, // label padrão
+                '& .MuiInputLabel-root.Mui-focused': { color: 'white' }, // label focado
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': { borderColor: 'white' },
+                  '&:hover fieldset': { borderColor: 'white' },
+                  '&.Mui-focused fieldset': { borderColor: 'white' },
+                },
+              }}
             />
             <Button
               type="submit"

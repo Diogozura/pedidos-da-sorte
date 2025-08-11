@@ -24,7 +24,7 @@ export default function CodigoPage() {
   };
 
   return (
-    <BaseSorteio>
+    <BaseSorteio logoUrl="/sua-logo.png">
       <Container
         maxWidth="md"
         sx={{

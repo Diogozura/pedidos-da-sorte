@@ -196,7 +196,7 @@ export default function GerenciarConta() {
                 ))}
             </Grid>
 
-            <Typography variant="h6" gutterBottom>Funcionários</Typography>
+            <Typography variant="h6" gutterBottom>Colaborador</Typography>
             <Grid container spacing={2}>
               {usuarios
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
