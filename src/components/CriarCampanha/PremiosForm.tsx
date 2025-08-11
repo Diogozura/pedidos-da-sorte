@@ -73,6 +73,7 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
         copia[index].preview = previewUrl;
         return copia;
       });
+       setModalIndex(null);
     };
   };
 
