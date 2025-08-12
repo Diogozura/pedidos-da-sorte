@@ -44,7 +44,7 @@ export default function GanhadorPage() {
   };
 
   return (
-    <BaseSorteio>
+    <BaseSorteio logoUrl="/sua-logo.png">
       <Container maxWidth="md" sx={{ height: '50vh', display: 'grid', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
 
         <Typography component={'p'} variant="h5" textAlign={'center'} gutterBottom>
