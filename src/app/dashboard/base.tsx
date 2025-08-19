@@ -36,7 +36,7 @@ export default function BaseDash({ children }: { children: React.ReactNode }) {
 
     const handleLogout = async () => {
         await logout();
-        router.push('/');
+        router.push('/auth/login');
     };
     return (
         <ProtectedRoute>

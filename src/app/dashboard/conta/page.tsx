@@ -33,7 +33,7 @@ import { toast } from 'react-toastify';
 import { faHome, faUserTie } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import AppBreadcrumbs from '@/components/shared/AppBreadcrumbs';
-
+import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 interface Usuario {
   uid: string;
   nome: string;
@@ -172,6 +172,17 @@ export default function GerenciarConta() {
                 title={usuarioLogado?.nivel === 'admin' ? 'Cadastro Empresa' : 'Cadastrar Funcionário'}
                 icon={<FontAwesomeIcon icon={faUserTie} />}
                 onClick={() => router.push('/dashboard/empresa')}
+              />
+            </Grid>
+          </Grid>
+        )}
+        {(usuarioLogado?.nivel === 'admin') && (
+          <Grid container spacing={4} sx={{ mb: 6 }}>
+            <Grid size={{ xs: 12, md: 4 }} >
+              <DashboardCard
+                title='WhatsApp'
+                icon={<FontAwesomeIcon icon={faWhatsapp} />}
+                onClick={() => router.push('/dashboard/whatsApp')}
               />
             </Grid>
           </Grid>
