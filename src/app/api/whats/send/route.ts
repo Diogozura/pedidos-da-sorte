@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { botSend } from '@/lib/whats-server';
-
-type Body = { tenantId: string; phone: string; message: string };
+import { sendMessage } from '@/lib/whats-server';
 
 export async function POST(req: NextRequest) {
-  try {
-    const { tenantId, phone, message } = (await req.json()) as Body;
-    if (!tenantId || !phone || !message) {
-      return NextResponse.json({ error: 'invalid_payload' }, { status: 400 });
-    }
-    const r = await botSend({ tenantId, phone, message });
-    const data = await r.json().catch(() => ({}));
-    return NextResponse.json(data, { status: r.status });
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
-  }
+  const url = new URL(req.url);
+  const tenantId = url.searchParams.get('tenantId') ?? undefined;
+  const body = (await req.json()) as { to: string; message: string; tenantId?: string };
+  const t = body.tenantId ?? tenantId;
+  if (!t) return NextResponse.json({ error: 'tenantId ausente' }, { status: 400 });
+  const data = await sendMessage(t, body.to, body.message);
+  return NextResponse.json(data);
 }

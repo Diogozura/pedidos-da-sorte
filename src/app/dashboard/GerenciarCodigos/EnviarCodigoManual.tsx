@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import {
@@ -7,8 +6,9 @@ import {
   CardContent,
   TextField,
   Typography,
+  Stack,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useTheme } from '@mui/material/styles';
 import { db } from '@/lib/firebase';
@@ -27,84 +27,131 @@ import { formatPhone } from '@/utils/formatPhone';
 
 type Props = {
   campanhaId: string;
+  /** Nome da campanha para derivar o tenantId (slug).
+   * Se não vier, cai no campanhaId. Se vier `tenantId`, ele prevalece. */
+  campanhaNome?: string;
+  /** Tenant opcional. Se informado, prevalece sobre campanhaNome. */
+  tenantId?: string;
   onCodigoGerado?: (codigo: string) => void;
 };
 
-export default function EnviarCodigoManual({ campanhaId, onCodigoGerado }: Props) {
+function slugify(input: string): string {
+  return input
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-');
+}
+
+export default function EnviarCodigoManual({
+  campanhaId,
+  campanhaNome,
+  tenantId: tenantIdProp,
+  onCodigoGerado,
+}: Props) {
   const [telefone, setTelefone] = useState('');
   const [loading, setLoading] = useState(false);
+  const [derivedTenantId, setDerivedTenantId] = useState<string>('');
   const theme = useTheme();
   const user = getAuth().currentUser;
+
+  // Resolve tenantId: prop > campanhaNome (slug) > campanhaId (slug)
+  useEffect(() => {
+    if (tenantIdProp) setDerivedTenantId(tenantIdProp);
+    else if (campanhaNome) setDerivedTenantId(slugify(campanhaNome));
+    else setDerivedTenantId(slugify(campanhaId));
+  }, [tenantIdProp, campanhaNome, campanhaId]);
+
+  const tenantId = useMemo(() => derivedTenantId, [derivedTenantId]);
 
   const validatePhone = (value: string): boolean => {
     const onlyDigits = value.replace(/\D/g, '');
     return /^[0-9]{10,11}$/.test(onlyDigits);
   };
 
-  const gerarCodigo = async () => {
+  async function enviarWhatsapp(phoneDigits: string, message: string): Promise<void> {
+    const res = await fetch('/api/whats/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify({ tenantId, phone: phoneDigits, message }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const detail = typeof (data as { error?: string })?.error === 'string'
+        ? (data as { error: string }).error
+        : JSON.stringify(data);
+      throw new Error(detail || 'Falha no envio');
+    }
+  }
+
+  const gerarCodigo = async (): Promise<void> => {
     const rawPhone = telefone.replace(/\D/g, '');
 
-    if (!validatePhone(telefone)) {
-      toast.error('Por favor, informe um número de telefone válido.');
+    if (!tenantId) {
+      toast.error('Tenant não resolvido. Verifique o nome/ID da campanha.');
       return;
     }
-     setLoading(true);
+    if (!validatePhone(telefone)) {
+      toast.error('Por favor, informe um número de telefone válido (10–11 dígitos).');
+      return;
+    }
 
-         toast.success('Codigo enviado com sucesso!');
+    setLoading(true);
     try {
+      // pega 1 posição livre
       const posicoesSnap = await getDocs(
-        query(
-          collection(db, 'campanhas', campanhaId, 'posicoes'),
-          where('usado', '==', false)
-        )
+        query(collection(db, 'campanhas', campanhaId, 'posicoes'), where('usado', '==', false))
       );
       if (posicoesSnap.empty) {
         toast.warning('Sem posições disponíveis para essa campanha.');
         return;
       }
-      
+
       const posDoc = posicoesSnap.docs[0];
-      const posData = posDoc.data();
+      const posData = posDoc.data() as { prize?: string };
       const posId = posDoc.id;
 
       const novoCodigo = Math.random().toString(36).substring(2, 8).toUpperCase();
-     
+
+      // grava o código
       const codigoRef = await addDoc(collection(db, 'codigos'), {
         codigo: novoCodigo,
         campanhaId,
         telefone: rawPhone,
-        userId: user?.uid,
+        userId: user?.uid ?? null,
         posicao: posId,
         criadoEm: Timestamp.now(),
         status: 'ativo',
         usado: false,
-        premiado: posData.prize || 'nenhum',
+        premiado: posData?.prize || 'nenhum',
       });
 
-      await updateDoc(
-        doc(db, 'campanhas', campanhaId, 'posicoes', posId),
-        { usado: true }
-      );
-      if (onCodigoGerado) {
-        onCodigoGerado(codigoRef.id); // envia o ID do código
-      }
-      toast.success(`Código gerado: ${novoCodigo}`);
-      navigator.clipboard.writeText(novoCodigo);
+      // marca posição como usada
+      await updateDoc(doc(db, 'campanhas', campanhaId, 'posicoes', posId), { usado: true });
 
-      // const siteLink = `${window.location.origin}/${campanhaId}/validador?${novoCodigo}`;
-      // const message = `Parabéns! Você ganhou uma ficha para jogar no *Pedidos da Sorte*! 🎉\n\nSeu código é *${novoCodigo}*\nAcesse: ${siteLink}`;
-      // const whatsappURL = `https://api.whatsapp.com/send?phone=55${rawPhone}&text=${encodeURIComponent(message)}`;
+      onCodigoGerado?.(codigoRef.id);
 
-      // window.open(whatsappURL, '_blank');
+      // ===== Formato de mensagem + link (como solicitado) =====
+      const siteLink = `${window.location.origin}/${campanhaId}/validador?${novoCodigo}`;
+      const message =
+        `Parabéns! Você ganhou uma ficha para jogar no *Pedidos da Sorte*! 🎉\n\n` +
+        `Seu código é *${novoCodigo}*\n` +
+        `Acesse: ${siteLink}`;
 
-      if (onCodigoGerado) onCodigoGerado(novoCodigo);
-    } catch (err: any) {
-      toast.error('Erro ao gerar código: ' + err.message);
+      // envia via WhatsApp (Next → Bot) COM tenantId
+      await enviarWhatsapp(rawPhone, message);
+
+      toast.success(`Código ${novoCodigo} enviado com sucesso!`);
+      try { await navigator.clipboard.writeText(novoCodigo); } catch { /* ignore */ }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error('Erro: ' + msg);
     } finally {
       setLoading(false);
     }
   };
-
 
   return (
     <Card
@@ -120,15 +167,14 @@ export default function EnviarCodigoManual({ campanhaId, onCodigoGerado }: Props
       }}
     >
       <CardContent>
-        <Typography
-          variant="h6"
-          component="h2"
-          align="center"
-          fontWeight="bold"
-          gutterBottom
-        >
-          Envio Manual de Código
-        </Typography>
+        <Stack spacing={1} alignItems="center" sx={{ mb: 1 }}>
+          <Typography variant="h6" component="h2" fontWeight="bold">
+            Envio Manual de Código
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Tenant: <b>{tenantId || '—'}</b>
+          </Typography>
+        </Stack>
 
         <TextField
           fullWidth
@@ -142,7 +188,8 @@ export default function EnviarCodigoManual({ campanhaId, onCodigoGerado }: Props
         <Button
           fullWidth
           disabled={loading}
-          onClick={gerarCodigo}
+          onClick={() => void gerarCodigo()}
+          size="large"
           sx={{
             bgcolor: theme.palette.primary.main,
             color: 'white',
@@ -150,7 +197,7 @@ export default function EnviarCodigoManual({ campanhaId, onCodigoGerado }: Props
             '&:hover': { bgcolor: '#c70000' },
           }}
         >
-          {loading ? 'Enviando…' : 'Enviar via WhatsApp'}
+          {loading ? 'Enviando…' : 'Gerar e enviar via WhatsApp'}
         </Button>
       </CardContent>
     </Card>

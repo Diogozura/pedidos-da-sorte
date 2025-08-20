@@ -1,5 +1,6 @@
 'use client';
 
+import useTenantEmpresa from '@/hook/useTenantEmpresa';
 
 import {
     Alert,
@@ -10,10 +11,6 @@ import {
     Container,
 
     Grid,
-
-    IconButton,
-
-    InputAdornment,
 
     Stack,
 
@@ -48,9 +45,11 @@ type GlobalStatus =
     | 'desconhecido'
     | 'iniciando'
     | 'aguardando_qr'
-    | 'reconectando'
-    | 'deslogado'
-    | 'conectado';
+    | 'conectando'
+    | 'conectado'
+    | 'desconectado'
+    | 'erro';
+
 
 type StatusResponse = {
     status: GlobalStatus;
@@ -73,7 +72,7 @@ type TenantLogsResponse = {
 
 type ReconnectResp = { ok: boolean; hard?: boolean; status?: StatusResponse; error?: string };
 
-const API_BASE = 'http://localhost:3001';
+
 
 
 export default function GerenciarConta() {
@@ -84,7 +83,6 @@ export default function GerenciarConta() {
     const [loadingStatus, setLoadingStatus] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
-    const [tenantId, setTenantId] = useState<string>('pizzaria-x');
     const [logs, setLogs] = useState<MessageLog[]>([]);
     const [loadingLogs, setLoadingLogs] = useState<boolean>(false);
 
@@ -98,7 +96,10 @@ export default function GerenciarConta() {
         if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
         return (await res.json()) as T;
     };
+    const { loading, isEmpresa, tenantId } = useTenantEmpresa();
 
+    if (loading) return null;
+    if (!isEmpresa) return <div>Somente contas do tipo empresa</div>;
     const postJSON = async <T,>(url: string, body: unknown): Promise<T> => {
         const res = await fetch(url, {
             method: 'POST',
@@ -113,7 +114,7 @@ export default function GerenciarConta() {
     const refreshStatus = async () => {
         try {
             setLoadingStatus(true);
-            const data = await fetchJSON<StatusResponse>(`/api/whats/status`);
+            const data = await fetchJSON<StatusResponse>(`/api/whats/status?tenantId=${encodeURIComponent(tenantId ?? '')}`);
             setStatus(data.status);
 
             // se saiu de aguardando_qr para outro estado != conectado → pisca "escaneando…"
@@ -123,7 +124,7 @@ export default function GerenciarConta() {
                 data.status !== 'conectado'
             ) {
                 setShowScanning(true);
-                setTimeout(() => setShowScanning(false), 4000);
+                setTimeout(() => setShowScanning(false), 20000);
             }
             lastStatusRef.current = data.status;
 
@@ -140,7 +141,7 @@ export default function GerenciarConta() {
         if (!tenantId) return;
         try {
             setLoadingLogs(true);
-            const data = await fetchJSON<TenantLogsResponse>(`/api/whats/logs/${encodeURIComponent(tenantId)}`);
+            const data = await fetchJSON<TenantLogsResponse>(`/api/whats/logs/${encodeURIComponent(tenantId ?? '')}`);
             const normalized = data.logs.map((l) => ({ ...l, ts: new Date(l.ts).toISOString() }));
             setLogs(normalized);
         } catch (err) {
@@ -152,23 +153,16 @@ export default function GerenciarConta() {
 
     const doReconnect = async (hard = false) => {
         try {
-            await postJSON<ReconnectResp>(`/api/whats/reconnect`, { hard });
+            await postJSON<ReconnectResp>(`/api/whats/reconnect?tenantId=${encodeURIComponent(tenantId ?? '')}&hard=${hard ? 1 : 0}`, { hard });
             await refreshStatus();
         } catch (e) {
             setError(`reconnect: ${(e as Error).message}`);
         }
     };
 
-    // --------- polling do status -----------
-    useEffect(() => {
-        void refreshStatus();
-        void doReconnect(false);
-        const id = setInterval(() => void refreshStatus(), 2500);
-        return () => clearInterval(id);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     // --------- polling dos logs quando conectado -----------
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
         if (status !== 'conectado') return;
         void refreshLogs();
@@ -176,10 +170,13 @@ export default function GerenciarConta() {
         return () => clearInterval(id);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [status, tenantId]);
+    // --------- init ------------
+
 
     const isWaitingQR = status === 'aguardando_qr';
     const isConnected = status === 'conectado';
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const statusChip = useMemo(() => {
         if (showScanning) {
             return (
@@ -237,7 +234,7 @@ export default function GerenciarConta() {
                 {error && (
                     <Alert severity="warning" sx={{ mb: 2 }}>
                         <FontAwesomeIcon icon={faTriangleExclamation} style={{ marginRight: 8 }} />
-                        Falha ao consultar status ({error}). Verifique se a API em {API_BASE} está ativa.
+                        Falha ao consultar status ({error}). Verifique se a API está ativa e sua sessão está válida.
                     </Alert>
                 )}
 
@@ -287,8 +284,10 @@ export default function GerenciarConta() {
                                 <Grid size={{ xs: 12, sm: 4, md: 3 }}>
                                     <Box
                                         component="img"
-                                        src={`${API_BASE}/api/qr/image?cb=${qrBuster}`}
+                                        // usa o proxy do Next para servir a imagem (com cache-buster)
+                                        src={`/api/whats/qr-image?tenantId=${encodeURIComponent(tenantId ?? '')}&cb=${qrBuster}`} // sempre via Next
                                         alt="QR Code WhatsApp"
+                                        onError={() => setTimeout(() => setQrBuster(Date.now()), 2000)}
                                         sx={{
                                             width: '100%',
                                             maxWidth: 240,
@@ -321,22 +320,8 @@ export default function GerenciarConta() {
                             <TextField
                                 size="small"
                                 label="Tenant ID"
-                                value={tenantId}
-                                onChange={(e) => setTenantId(e.target.value)}
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => void refreshLogs()}
-                                                disabled={loadingLogs || !isConnected}
-                                                aria-label="Recarregar"
-                                            >
-                                                <FontAwesomeIcon icon={faArrowsRotate} />
-                                            </IconButton>
-                                        </InputAdornment>
-                                    ),
-                                }}
+                                value={tenantId ?? ''}
+                                InputProps={{ readOnly: true }}
                                 sx={{ width: { xs: '100%', sm: 280 } }}
                             />
                             <Button
