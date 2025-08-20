@@ -3,7 +3,7 @@
 import { Box, Button, Chip, Container, FormControl, Grid, InputLabel, MenuItem, Select, Typography } from '@mui/material';
 import BaseDash from '../base';
 import ValidateVoucherPanel from './ValidateVoucher';
-import { toast } from 'react-toastify';
+
 import EnviarCodigoAutomatico from './EnviarCodigoAutomatico';
 import EnviarCodigoManual from './EnviarCodigoManual';
 import { useState } from 'react';
@@ -17,10 +17,6 @@ export default function GerenciarCodigos() {
   const { campanhas, loading } = useCampanhasPermitidas();
   const [campanhaSelecionada, setCampanhaSelecionada] = useState<string>('');
   const campanha = campanhas.find((c) => c.id === campanhaSelecionada);
-
-  const handleEnvio = (telefone: string) => {
-    toast.success(`Enviar código para ${telefone}`);
-  };
 
 
   if (loading) return <p>Carregando campanhas...</p>;
@@ -90,7 +86,7 @@ export default function GerenciarCodigos() {
             <ValidateVoucherPanel />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
-            <EnviarCodigoAutomatico onSend={handleEnvio} />
+            <EnviarCodigoAutomatico campanhaId={campanha?.id || ''} />
           </Grid>
         </Grid>
       </Container>

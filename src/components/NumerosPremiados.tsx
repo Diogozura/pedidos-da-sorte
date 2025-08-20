@@ -64,7 +64,6 @@ export default function NumerosPremiados({ campanhaId, mostrar }: Props) {
 
     if (carregando) return <Typography>Carregando...</Typography>;
 
-    console.log('dados.length', dados)
 
     if (!dados.length) {
         return (

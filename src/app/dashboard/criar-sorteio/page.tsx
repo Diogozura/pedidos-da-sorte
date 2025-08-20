@@ -33,10 +33,7 @@ export default function CriarCampanhaPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [imagensDisponiveis, setImagensDisponiveis] = useState<string[]>([]);
   const [logosDisponiveis, setLogosDisponiveis] = useState<string[]>([]);
-
-  console.log('usuario', usuario);
-  console.log('logoPreview', logoPreview);
-  console.log('logoFile', logoFile);
+;
 
   useEffect(() => {
     const carregarLogos = async () => {
@@ -162,7 +159,6 @@ export default function CriarCampanhaPage() {
           dataFim: new Date(`${dataFim}T23:59:59`),
         })
       };
-      console.log('novaCampanha', novaCampanha);
       const campanhaRef = await addDoc(collection(db, 'campanhas'), novaCampanha);
 
       const slots: (string | null)[] = [];

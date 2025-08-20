@@ -39,7 +39,7 @@ import { faArrowsRotate, faCircleCheck, faCircleNotch, faHome, faTriangleExclama
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
+import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 
 type GlobalStatus =
     | 'desconhecido'
@@ -75,31 +75,34 @@ type ReconnectResp = { ok: boolean; hard?: boolean; status?: StatusResponse; err
 
 
 
-export default function GerenciarConta() {
-
-
+export default function WhatsApp() {
     const [status, setStatus] = useState<GlobalStatus>('desconhecido');
     const [qrBuster, setQrBuster] = useState<number>(Date.now());
     const [loadingStatus, setLoadingStatus] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-
     const [logs, setLogs] = useState<MessageLog[]>([]);
     const [loadingLogs, setLoadingLogs] = useState<boolean>(false);
-
     const lastStatusRef = useRef<GlobalStatus>('desconhecido');
     const [showScanning, setShowScanning] = useState<boolean>(false);
 
-    // --------- helpers de fetch (sem cache) ----------
+    const { loading, isEmpresa, tenantId } = useTenantEmpresa();
+
+
     // --------- helpers de fetch (sem cache) ----------
     const fetchJSON = async <T,>(url: string): Promise<T> => {
         const res = await fetch(url, { cache: 'no-store' });
         if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
         return (await res.json()) as T;
     };
-    const { loading, isEmpresa, tenantId } = useTenantEmpresa();
+    useEffect(() => {
+        if (!tenantId) return;
+        void refreshStatus();
+        const id = setInterval(() => void refreshStatus(), 6000);
+        return () => clearInterval(id);
+    }, [tenantId]);
 
-    if (loading) return null;
-    if (!isEmpresa) return <div>Somente contas do tipo empresa</div>;
+
+
     const postJSON = async <T,>(url: string, body: unknown): Promise<T> => {
         const res = await fetch(url, {
             method: 'POST',
@@ -214,7 +217,26 @@ export default function GerenciarConta() {
         );
     }, [isConnected, isWaitingQR, showScanning, status]);
 
+    // >>> Decida o que renderizar SÓ AQUI (depois de todos hooks)
+    if (loading) {
+        return (
+            <BaseDash>
+                <Container maxWidth="lg" sx={{ py: 3 }}>
+                    <Typography variant="body2">Carregando…</Typography>
+                </Container>
+            </BaseDash>
+        );
+    }
 
+    if (!isEmpresa) {
+        return (
+            <BaseDash>
+                <Container maxWidth="lg" sx={{ py: 3 }}>
+                    <Alert severity="info">Somente contas do tipo empresa</Alert>
+                </Container>
+            </BaseDash>
+        );
+    }
 
 
     return (

@@ -170,7 +170,6 @@ export default function CodigoPage() {
       toast.error('Erro ao validar código: ' + err.message);
     }
   };
-  console.log('campanha', campanha)
   return (
     <BaseSorteio logoUrl={campanha?.logoUrl}>
       <Container

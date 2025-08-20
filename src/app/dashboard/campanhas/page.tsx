@@ -31,8 +31,7 @@ export default function JogosAtivos() {
   const { campanhas, loading } = useCampanhasPermitidas();
   const [codigosMap, setCodigosMap] = useState<Record<string, Codigo[]>>({});
   const router = useRouter();
-  console.log('campanhas', campanhas);
-  console.log('codigosMap', codigosMap);
+ 
   useEffect(() => {
     const fetchCodigos = async () => {
       const map: Record<string, Codigo[]> = {};

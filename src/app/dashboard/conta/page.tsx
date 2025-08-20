@@ -14,6 +14,7 @@ import {
   DialogActions,
   TextField,
   CircularProgress,
+  Box,
 } from "@mui/material";
 import {
   collection,
@@ -164,29 +165,31 @@ export default function GerenciarConta() {
         <Typography variant="h4" gutterBottom>
           Gerenciar Conta
         </Typography>
+        <Box display={'flex'} justifyContent="space-evenly" alignItems="center" mb={4}>
+          {(usuarioLogado?.nivel === 'admin' || usuarioLogado?.nivel === 'empresa') && (
+            <Grid container spacing={4} sx={{ mb: 6 }}>
+              <Grid size={{ xs: 12, md: 4 }} >
+                <DashboardCard
+                  title={usuarioLogado?.nivel === 'admin' ? 'Cadastro Empresa' : 'Cadastrar Funcionário'}
+                  icon={<FontAwesomeIcon icon={faUserTie} />}
+                  onClick={() => router.push('/dashboard/empresa')}
+                />
+              </Grid>
+            </Grid>
+          )}
+          {(usuarioLogado?.nivel === 'empresa') && (
+            <Grid container spacing={4} sx={{ mb: 6 }}>
+              <Grid size={{ xs: 12, md: 4 }} >
+                <DashboardCard
+                  title='WhatsApp'
+                  icon={<FontAwesomeIcon icon={faWhatsapp} />}
+                  onClick={() => router.push('/dashboard/whatsApp')}
+                />
+              </Grid>
+            </Grid>
+          )}
+        </Box>
 
-        {(usuarioLogado?.nivel === 'admin' || usuarioLogado?.nivel === 'empresa') && (
-          <Grid container spacing={4} sx={{ mb: 6 }}>
-            <Grid size={{ xs: 12, md: 4 }} >
-              <DashboardCard
-                title={usuarioLogado?.nivel === 'admin' ? 'Cadastro Empresa' : 'Cadastrar Funcionário'}
-                icon={<FontAwesomeIcon icon={faUserTie} />}
-                onClick={() => router.push('/dashboard/empresa')}
-              />
-            </Grid>
-          </Grid>
-        )}
-        {( usuarioLogado?.nivel === 'empresa') && (
-          <Grid container spacing={4} sx={{ mb: 6 }}>
-            <Grid size={{ xs: 12, md: 4 }} >
-              <DashboardCard
-                title='WhatsApp'
-                icon={<FontAwesomeIcon icon={faWhatsapp} />}
-                onClick={() => router.push('/dashboard/whatsApp')}
-              />
-            </Grid>
-          </Grid>
-        )}
 
         {usuarioLogado?.nivel === 'admin' ? (
           <>
