@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { reconnect } from '@/lib/whats-server';
+import { reconnectTenant } from '@/lib/whats-server';
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
-  const url = new URL(req.url);
-  const tenantId = url.searchParams.get('tenantId') ?? undefined;
-  const hard = (url.searchParams.get('hard') ?? '0') === '1';
-  const data = await reconnect(tenantId, hard);
+  const { tenantId } = await req.json();
+  if (!tenantId) return NextResponse.json({ error: 'tenantId obrigatório' }, { status: 400 });
+  const data = await reconnectTenant(tenantId);
   return NextResponse.json(data);
 }

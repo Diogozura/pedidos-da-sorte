@@ -1,105 +1,81 @@
 'use client';
 
 import {
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  LinearProgress,
-  List,
-  ListItem,
-  ListItemText,
-  Stack,
+  Button, Card, CardContent, Typography, Box, LinearProgress, Stack,
 } from '@mui/material';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useTheme } from '@mui/material/styles';
 import { db } from '@/lib/firebase';
 import {
-  collection,
-  doc,
-  getDocs,
-  addDoc,
-  query,
-  where,
-  Timestamp,
-  updateDoc,
+  collection, doc, getDocs, getDoc, addDoc, query, where, Timestamp, updateDoc, onSnapshot, limit 
 } from 'firebase/firestore';
 
 type Props = {
   campanhaId: string;
-  /** Nome da campanha para derivar tenantId (slug). */
-  campanhaNome?: string;
-  /** Tenant opcional. Se informado, prevalece. */
-  tenantId?: string;
-  /** Delay entre envios (ms). Default: 1500ms */
-  delayMs?: number;
+  delayMs?: number; // delay sugerido entre mensagens no sender
 };
 
-type EnvioResultado = { phone: string; ok: boolean; error?: string };
+type CampanhaDoc = { tenantId?: string; nome?: string };
 
-function slugify(input: string): string {
-  return input
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-');
-}
+type BatchDoc = {
+  batchId: string;
+  tenantId: string;
+  status: 'queued' | 'running' | 'done' | 'cancelled' | 'error';
+  total: number;
+  sent: number;
+  failed: number;
+  message?: string;
+  delayMsBetween?: number;
+};
 
-export default function EnviarCodigoAutomatico({
-  campanhaId,
-  campanhaNome,
-  tenantId: tenantIdProp,
-  delayMs = 1500,
-}: Props) {
+const PHONE_RE = /^\d{10,15}$/;
+const onlyDigits = (v: string): string => v.replace(/\D/g, '');
+
+export default function EnviarCodigoAutomatico({ campanhaId, delayMs = 800 }: Props) {
   const theme = useTheme();
+  const [tenantId, setTenantId] = useState<string>('');
+  const [campanhaNome, setCampanhaNome] = useState<string>('');
   const [telefones, setTelefones] = useState<string[]>([]);
-  const [resultados, setResultados] = useState<EnvioResultado[]>([]);
-  const [loading, setLoading] = useState(false);
-  const cancelRef = useRef(false);
-  const [derivedTenantId, setDerivedTenantId] = useState<string>('');
+  const [batchId, setBatchId] = useState<string>('');
+  const [batch, setBatch] = useState<BatchDoc | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const unsubRef = useRef<() => void>();
 
-  // Resolve tenantId: prop > campanhaNome (slug) > campanhaId (slug)
+  // carrega tenantId REAL da campanha
   useEffect(() => {
-    if (tenantIdProp) setDerivedTenantId(tenantIdProp);
-    else if (campanhaNome) setDerivedTenantId(slugify(campanhaNome));
-    else setDerivedTenantId(slugify(campanhaId));
-  }, [tenantIdProp, campanhaNome, campanhaId]);
+    let mounted = true;
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, 'campanhas', campanhaId));
+        if (!snap.exists()) { toast.error('Campanha não encontrada.'); return; }
+        const data = snap.data() as CampanhaDoc;
+        if (!data.tenantId) { toast.error('Campanha sem tenantId.'); return; }
+        if (mounted) { setTenantId(data.tenantId); setCampanhaNome(data.nome ?? ''); }
+      } catch {
+        toast.error('Falha ao carregar campanha.');
+      }
+    })();
+    return () => { mounted = false; };
+  }, [campanhaId]);
 
-  const tenantId = useMemo(() => derivedTenantId, [derivedTenantId]);
-
-  const handleCSVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // leitura CSV
+  async function handleCSVUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const txt = await file.text();
+    const numeros = txt.split(/\r?\n/)
+      .map(l => onlyDigits(l))
+      .filter(n => PHONE_RE.test(n));
+    if (!numeros.length) { toast.warning('Nenhum telefone válido no CSV.'); return; }
+    setTelefones(numeros);
+    toast.info(`Carregados ${numeros.length} números válidos.`);
+  }
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const text = String(event.target?.result ?? '');
-      const linhas = text.split('\n').map((l) => l.trim().replace(/\r/g, '')).filter(Boolean);
-
-      // extrai apenas dígitos por linha, aceita 10–11 dígitos
-      const numeros = linhas
-        .map((l) => l.replace(/\D/g, ''))
-        .filter((l) => /^[0-9]{10,11}$/.test(l));
-
-      if (numeros.length === 0) {
-        toast.warning('Nenhum telefone válido encontrado no CSV.');
-        return;
-      }
-
-      setTelefones(numeros);
-      setResultados([]);
-      toast.info(`Carregados ${numeros.length} números válidos`);
-    };
-    reader.readAsText(file);
-  };
-
+  // gera 1 código e marca posição como usada
   async function gerarCodigoParaTelefone(phoneDigits: string): Promise<string> {
-    // pega uma posição livre
     const posicoesSnap = await getDocs(
-      query(collection(db, 'campanhas', campanhaId, 'posicoes'), where('usado', '==', false))
+      query(collection(db, 'campanhas', campanhaId, 'posicoes'), where('usado', '==', false), limit(1))
     );
     if (posicoesSnap.empty) throw new Error('Sem posições disponíveis na campanha');
 
@@ -126,96 +102,95 @@ export default function EnviarCodigoAutomatico({
     return novoCodigo;
   }
 
-  async function enviarWhatsapp(phoneDigits: string, message: string): Promise<void> {
-    const res = await fetch('/api/whats/send', {
+  // inicia o lote no sender (via rota do Next)
+  async function startBatch(items: Array<{ number: string; message: string }>) {
+    const res = await fetch('/api/whats/batch/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       cache: 'no-store',
-      body: JSON.stringify({ tenantId, phone: phoneDigits, message }),
+      body: JSON.stringify({ tenantId, items, delayMsBetween: delayMs }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const detail = typeof (data as { error?: string })?.error === 'string'
-        ? (data as { error: string }).error
-        : JSON.stringify(data);
-      throw new Error(detail || 'Falha no envio');
+      const err = (data && typeof data.error === 'string') ? data.error : `Erro ${res.status}`;
+      throw new Error(err);
+    }
+    return data.batchId as string;
+  }
+
+  // observar batch no Firestore
+  function subscribeBatch(id: string) {
+    unsubRef.current?.();
+    const unsub = onSnapshot(doc(db, 'waBatches', id), (snap) => {
+      const d = snap.data() as BatchDoc | undefined;
+      if (d) setBatch(d);
+    });
+    unsubRef.current = unsub;
+  }
+
+  // cancelar lote
+  async function cancelBatch() {
+    if (!batchId) return;
+    const res = await fetch(`/api/whats/batch/${batchId}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenantId }),
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      toast.error(j?.error ?? `Erro ${res.status}`);
     }
   }
 
-  const cancelar = () => {
-    cancelRef.current = true;
-  };
-
-  const processarEnvio = async (): Promise<void> => {
-    if (!tenantId) {
-      toast.error('Tenant não resolvido. Verifique o nome/ID da campanha.');
-      return;
-    }
-    if (telefones.length === 0) {
-      toast.warning('Nenhum telefone válido carregado.');
-      return;
-    }
+  // processar: gera códigos + abre o batch
+  async function processarEnvio(): Promise<void> {
+    if (!tenantId) { toast.error('Tenant não resolvido.'); return; }
+    if (!telefones.length) { toast.warning('Nenhum telefone válido carregado.'); return; }
 
     setLoading(true);
-    cancelRef.current = false;
-    const res: EnvioResultado[] = [];
-
-    for (let i = 0; i < telefones.length; i += 1) {
-      if (cancelRef.current) break;
-      const tel = telefones[i];
-
-      try {
-        const codigo = await gerarCodigoParaTelefone(tel);
-
-        // ===== Formato de mensagem + link (como solicitado) =====
-        const siteLink = `${window.location.origin}/${campanhaId}/validador?${codigo}`;
-        const message =
-          `Parabéns! Você ganhou uma ficha para jogar no *Pedidos da Sorte*! 🎉\n\n` +
-          `Seu código é *${codigo}*\n` +
-          `Acesse: ${siteLink}`;
-
-        await enviarWhatsapp(tel, message);
-        res.push({ phone: tel, ok: true });
-      } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error);
-        res.push({ phone: tel, ok: false, error: msg });
+    try {
+      // 1) gera mensagens por telefone
+      const items: Array<{ number: string; message: string }> = [];
+      for (const tel of telefones) {
+        try {
+          const codigo = await gerarCodigoParaTelefone(tel);
+          const link = `${window.location.origin}/${campanhaId}/validador?${codigo}`;
+          const message =
+            `Parabéns! Você ganhou uma ficha para jogar no *Pedidos da Sorte*! 🎉\n\n` +
+            `Seu código é *${codigo}*\n` +
+            `Acesse: ${link}`;
+          items.push({ number: tel, message });
+        } catch (e) {
+          // se não tiver posição pra alguém, apenas pula esse número
+          toast.error(`Falha ao gerar código para ${tel}: ${(e as Error).message}`);
+        }
       }
 
-      setResultados([...res]); // atualiza progresso
+      if (!items.length) { toast.error('Nenhuma mensagem gerada.'); return; }
 
-      if (i < telefones.length - 1) {
-        await new Promise((r) => setTimeout(r, delayMs));
-      }
+      // 2) inicia o lote
+      const id = await startBatch(items);
+      setBatchId(id);
+      subscribeBatch(id);
+      toast.success(`Lote iniciado: ${id}`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    setLoading(false);
+  const progresso = batch?.total ? Math.round(((batch.sent + batch.failed) / batch.total) * 100) : 0;
 
-    const ok = res.filter((r) => r.ok).length;
-    const fail = res.length - ok;
-    if (ok) toast.success(`${ok} enviados com sucesso`);
-    if (fail) toast.error(`${fail} falharam`);
-  };
-
-  const enviados = resultados.filter((r) => r.ok).length;
-  const falhas = resultados.filter((r) => !r.ok).length;
-  const progresso = telefones.length ? Math.round((resultados.length / telefones.length) * 100) : 0;
+  useEffect(() => () => { unsubRef.current?.(); }, []);
 
   return (
-    <Card
-      sx={{
-        borderRadius: 2,
-        backgroundColor: theme.palette.background.paper,
-        color: theme.palette.text.primary,
-        p: 4,
-      }}
-    >
+    <Card sx={{ borderRadius: 2, backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, p: 4 }}>
       <CardContent>
         <Stack spacing={0.5} alignItems="center" sx={{ mb: 2 }}>
-          <Typography variant="h6" align="center" fontWeight="bold">
-            Envio Automático por CSV
-          </Typography>
+          <Typography variant="h6" fontWeight="bold">Envio Automático por CSV</Typography>
           <Typography variant="caption" color="text.secondary">
-            Tenant: <b>{tenantId || '—'}</b>
+            Campanha: <b>{campanhaNome || campanhaId}</b> · Tenant: <b>{tenantId || '—'}</b>
           </Typography>
         </Stack>
 
@@ -225,45 +200,27 @@ export default function EnviarCodigoAutomatico({
             <input type="file" accept=".csv" hidden onChange={handleCSVUpload} />
           </Button>
 
-          {telefones.length > 0 && !loading && (
+          {telefones.length > 0 && !batchId && !loading && (
             <Button variant="contained" color="primary" size="small" onClick={() => void processarEnvio()}>
-              Enviar {telefones.length} números
+              Iniciar envio ({telefones.length} números)
             </Button>
           )}
 
-          {loading && (
+          {loading && <LinearProgress />}
+
+          {batch && (
             <Box>
               <LinearProgress variant="determinate" value={progresso} />
               <Box display="flex" justifyContent="space-between" mt={1}>
-                <Typography variant="caption">Progresso: {progresso}%</Typography>
-                <Button size="small" color="warning" onClick={cancelar}>
-                  Cancelar
-                </Button>
+                <Typography variant="caption">
+                  Status: {batch.status} — {batch.sent}/{batch.total} enviados, {batch.failed} falhas
+                </Typography>
+                {batch.status === 'running' && (
+                  <Button size="small" color="warning" onClick={() => void cancelBatch()}>
+                    Cancelar
+                  </Button>
+                )}
               </Box>
-            </Box>
-          )}
-
-          {(enviados > 0 || falhas > 0) && !loading && (
-            <Typography variant="body2">
-              ✅ Enviados: {enviados} &nbsp; • &nbsp; ⚠️ Falhas: {falhas}
-            </Typography>
-          )}
-
-          {falhas > 0 && (
-            <Box>
-              <Typography variant="body2" color="error">
-                Erros (primeiros 10):
-              </Typography>
-              <List dense>
-                {resultados
-                  .filter((r) => !r.ok)
-                  .slice(0, 10)
-                  .map((r) => (
-                    <ListItem key={r.phone}>
-                      <ListItemText primary={`${r.phone} — ${r.error ?? 'erro'}`} />
-                    </ListItem>
-                  ))}
-              </List>
             </Box>
           )}
         </Box>

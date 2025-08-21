@@ -1,21 +1,26 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import {
   Button,
   Card,
   CardContent,
+  CircularProgress,
+  Grid,
   TextField,
   Typography,
   Stack,
 } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
-import { toast } from 'react-toastify';
 import { useTheme } from '@mui/material/styles';
+import { toast } from 'react-toastify';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 import { db } from '@/lib/firebase';
 import {
   collection,
   doc,
   getDocs,
+  getDoc,
   addDoc,
   query,
   where,
@@ -27,47 +32,70 @@ import { formatPhone } from '@/utils/formatPhone';
 
 type Props = {
   campanhaId: string;
-  /** Nome da campanha para derivar o tenantId (slug).
-   * Se não vier, cai no campanhaId. Se vier `tenantId`, ele prevalece. */
-  campanhaNome?: string;
-  /** Tenant opcional. Se informado, prevalece sobre campanhaNome. */
-  tenantId?: string;
   onCodigoGerado?: (codigo: string) => void;
 };
 
-function slugify(input: string): string {
-  return input
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-');
+type CampanhaDoc = {
+  pizzariaId?: string;
+  nome?: string;
+};
+
+const PHONE_RE = /^\d{10,15}$/;
+
+function onlyDigits(v: string): string {
+  return v.replace(/\D/g, '');
 }
 
 export default function EnviarCodigoManual({
   campanhaId,
-  campanhaNome,
-  tenantId: tenantIdProp,
   onCodigoGerado,
 }: Props) {
-  const [telefone, setTelefone] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [derivedTenantId, setDerivedTenantId] = useState<string>('');
   const theme = useTheme();
   const user = getAuth().currentUser;
 
-  // Resolve tenantId: prop > campanhaNome (slug) > campanhaId (slug)
-  useEffect(() => {
-    if (tenantIdProp) setDerivedTenantId(tenantIdProp);
-    else if (campanhaNome) setDerivedTenantId(slugify(campanhaNome));
-    else setDerivedTenantId(slugify(campanhaId));
-  }, [tenantIdProp, campanhaNome, campanhaId]);
+  const [telefone, setTelefone] = useState<string>('');
+  const [isSending, setIsSending] = useState<boolean>(false);
+  const [tenantId, setTenantId] = useState<string>('');
+  const [campanhaNome, setCampanhaNome] = useState<string>('');
+  const abortRef = useRef<AbortController | null>(null);
 
-  const tenantId = useMemo(() => derivedTenantId, [derivedTenantId]);
+  // 1) Carrega o tenantId REAL da campanha (nada de slug)
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, 'campanhas', campanhaId));
+        if (!snap.exists()) {
+          toast.error('Campanha não encontrada.');
+          return;
+        }
+        const data = snap.data() as CampanhaDoc;
+        if (!data.pizzariaId) {
+          toast.error('Campanha sem tenantId configurado.');
+          return;
+        }
+        if (mounted) {
+          setTenantId(data.pizzariaId);
+          setCampanhaNome(data.nome ?? '');
+        }
+      } catch {
+        toast.error('Falha ao carregar a campanha.');
+        // opcional: console.error(e);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [campanhaId]);
+
+  // 2) Cancela qualquer fetch pendente ao desmontar
+  useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
 
   const validatePhone = (value: string): boolean => {
-    const onlyDigits = value.replace(/\D/g, '');
-    return /^[0-9]{10,11}$/.test(onlyDigits);
+    const digits = onlyDigits(value);
+    return PHONE_RE.test(digits);
   };
 
   async function enviarWhatsapp(phoneDigits: string, message: string): Promise<void> {
@@ -76,29 +104,36 @@ export default function EnviarCodigoManual({
       headers: { 'Content-Type': 'application/json' },
       cache: 'no-store',
       body: JSON.stringify({ tenantId, phone: phoneDigits, message }),
+      signal: abortRef.current?.signal ?? undefined,
     });
-    const data = await res.json().catch(() => ({}));
+
+    // Propaga erro legível do backend
+    const data: unknown = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const detail = typeof (data as { error?: string })?.error === 'string'
-        ? (data as { error: string }).error
-        : JSON.stringify(data);
-      throw new Error(detail || 'Falha no envio');
+      const err =
+        (typeof data === 'object' && data && 'error' in data && typeof (data as { error: unknown }).error === 'string')
+          ? (data as { error: string }).error
+          : `Erro ${res.status}`;
+      throw new Error(err);
     }
   }
 
   const gerarCodigo = async (): Promise<void> => {
-    const rawPhone = telefone.replace(/\D/g, '');
+    const rawPhone = onlyDigits(telefone);
 
     if (!tenantId) {
-      toast.error('Tenant não resolvido. Verifique o nome/ID da campanha.');
+      toast.error('Tenant não resolvido para esta campanha.');
       return;
     }
     if (!validatePhone(telefone)) {
-      toast.error('Por favor, informe um número de telefone válido (10–11 dígitos).');
+      toast.error('Telefone inválido (somente dígitos, 10–15).');
       return;
     }
+    if (isSending) return; // evita duplo envio
 
-    setLoading(true);
+    setIsSending(true);
+    abortRef.current = new AbortController();
+
     try {
       // pega 1 posição livre
       const posicoesSnap = await getDocs(
@@ -113,6 +148,7 @@ export default function EnviarCodigoManual({
       const posData = posDoc.data() as { prize?: string };
       const posId = posDoc.id;
 
+      // gera código
       const novoCodigo = Math.random().toString(36).substring(2, 8).toUpperCase();
 
       // grava o código
@@ -133,23 +169,27 @@ export default function EnviarCodigoManual({
 
       onCodigoGerado?.(codigoRef.id);
 
-      // ===== Formato de mensagem + link (como solicitado) =====
+      // monta mensagem (mantive o link com campanhaId; ajuste se preferir por tenantId)
       const siteLink = `${window.location.origin}/${campanhaId}/validador?${novoCodigo}`;
       const message =
         `Parabéns! Você ganhou uma ficha para jogar no *Pedidos da Sorte*! 🎉\n\n` +
         `Seu código é *${novoCodigo}*\n` +
         `Acesse: ${siteLink}`;
 
-      // envia via WhatsApp (Next → Bot) COM tenantId
+      // envia via WhatsApp (Next → Sender)
       await enviarWhatsapp(rawPhone, message);
 
       toast.success(`Código ${novoCodigo} enviado com sucesso!`);
-      try { await navigator.clipboard.writeText(novoCodigo); } catch { /* ignore */ }
+      try {
+        await navigator.clipboard.writeText(novoCodigo);
+      } catch {/* ignore */}
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      toast.error('Erro: ' + msg);
+      toast.error(msg);
+      console.error('[EnviarCodigoManual] erro:', msg);
     } finally {
-      setLoading(false);
+      setIsSending(false);
+      abortRef.current = null;
     }
   };
 
@@ -167,38 +207,44 @@ export default function EnviarCodigoManual({
       }}
     >
       <CardContent>
-        <Stack spacing={1} alignItems="center" sx={{ mb: 1 }}>
+        <Stack spacing={1} alignItems="center" sx={{ mb: 2 }}>
           <Typography variant="h6" component="h2" fontWeight="bold">
             Envio Manual de Código
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Tenant: <b>{tenantId || '—'}</b>
+            Campanha: <b>{campanhaNome || campanhaId}</b> · Tenant: <b>{tenantId || '—'}</b>
           </Typography>
         </Stack>
 
-        <TextField
-          fullWidth
-          placeholder="(44) 91234-5678"
-          value={telefone}
-          onChange={(e) => setTelefone(formatPhone(e.target.value))}
-          sx={{ mb: 2 }}
-          inputProps={{ style: { textAlign: 'center' } }}
-        />
+        <Grid container spacing={2} alignItems="center">
+          <Grid size={{xs:12, md:5}} >
+            <TextField
+              size="small"
+              fullWidth
+              placeholder="(11) 99124-9136"
+              value={telefone}
+              onChange={(e) => setTelefone(formatPhone(e.target.value))}
+              inputProps={{ inputMode: 'numeric', pattern: '\\d*', maxLength: 15, style: { textAlign: 'center' } }}
+              helperText="Somente dígitos (10–15). Ex.: 11991249136"
+            />
+          </Grid>
 
-        <Button
-          fullWidth
-          disabled={loading}
-          onClick={() => void gerarCodigo()}
-          size="large"
-          sx={{
-            bgcolor: theme.palette.primary.main,
-            color: 'white',
-            fontWeight: 'bold',
-            '&:hover': { bgcolor: '#c70000' },
-          }}
-        >
-          {loading ? 'Enviando…' : 'Gerar e enviar via WhatsApp'}
-        </Button>
+          <Grid size={{xs:12, md:7}}>
+            <Button
+              size="medium"
+              variant="contained"
+              color="primary"
+              fullWidth
+              onClick={() => void gerarCodigo()}
+              disabled={isSending}
+              startIcon={
+                isSending ? <CircularProgress size={18} /> : <FontAwesomeIcon icon={faPaperPlane} />
+              }
+            >
+              {isSending ? 'Enviando…' : 'Gerar e enviar via WhatsApp'}
+            </Button>
+          </Grid>
+        </Grid>
       </CardContent>
     </Card>
   );
