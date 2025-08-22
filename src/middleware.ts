@@ -28,7 +28,7 @@ export function middleware(req: NextRequest) {
     host.startsWith('dashboard.') && host.endsWith('pedidodasorte.com.br');
 
   if (isDashboardHost) {
-    if (pathname.startsWith('/api')) return NextResponse.next();
+    if (pathname.startsWith('/api')|| pathname.startsWith('/auth')) return NextResponse.next();
     if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
       return NextResponse.next();
     }
