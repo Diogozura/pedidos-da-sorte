@@ -40,7 +40,7 @@ export default function EnviarCodigoAutomatico({ campanhaId, delayMs = 800 }: Pr
   const [batchId, setBatchId] = useState<string>('');
   const [batch, setBatch] = useState<BatchDoc | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const unsubRef = useRef<() => void>();
+  const unsubRef = useRef<(() => void) | undefined>(undefined);
 
   // carrega tenantId REAL da campanha
   useEffect(() => {
