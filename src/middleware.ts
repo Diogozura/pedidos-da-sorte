@@ -1,56 +1,47 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-const DASHBOARD_HOSTS = new Set([
-  'dashboard.pedidodasorte.com.br',
-  // Adicione variações se usar sem WWW ou ambientes de preview
-  // 'dashboard-<seu-projeto>.vercel.app'
-]);
-
-// Se tiver deploy na Vercel, ela envia x-vercel-deployment-url.
-// Em outros hosts, use req.headers.get('host').
-function getHost(req: NextRequest) {
-  return req.headers.get('x-forwarded-host')
-    ?? req.headers.get('host')
-    ?? '';
+function getHost(req: NextRequest): string {
+  // Em Vercel normalmente é 'host'
+  return (req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '')
+    .toLowerCase()
+    .trim();
 }
 
-export function middleware(req: NextRequest) {
-  const host = getHost(req).toLowerCase();
-  const { pathname, search } = req.nextUrl;
-
-  // Bypass para assets/next e arquivos estáticos
-  if (
+function isStatic(pathname: string) {
+  return (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||
     pathname.startsWith('/static') ||
-    pathname.startsWith('/assets')
-  ) {
-    return NextResponse.next();
-  }
+    pathname.startsWith('/assets') ||
+    pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|ico|txt|xml|json)$/)
+  );
+}
 
-  // Se for o subdomínio do dashboard, reescreve tudo para /dashboard
-  if (DASHBOARD_HOSTS.has(host)) {
-    // Mantém chamadas de API no mesmo caminho (ex.: /api/*)
-    if (pathname.startsWith('/api')) {
-      return NextResponse.next();
-    }
+export function middleware(req: NextRequest) {
+  const host = getHost(req);
+  const { pathname, search } = req.nextUrl;
 
-    // Evita dupla prefixação
+  if (isStatic(pathname)) return NextResponse.next();
+
+  // ✅ qualquer dashboard.*.pedidodasorte.com.br
+  const isDashboardHost =
+    host.startsWith('dashboard.') && host.endsWith('pedidodasorte.com.br');
+
+  if (isDashboardHost) {
+    if (pathname.startsWith('/api')) return NextResponse.next();
     if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
       return NextResponse.next();
     }
-
-    const target = pathname === '/' ? '/dashboard' : `/dashboard${pathname}`;
     const url = req.nextUrl.clone();
-    url.pathname = target;
+    url.pathname = pathname === '/' ? '/dashboard' : `/dashboard${pathname}`;
     url.search = search;
     return NextResponse.rewrite(url);
   }
 
-  // Demais hosts (ex.: sorteio.pedidodasorte.com.br) seguem normal
   return NextResponse.next();
 }
 
+// matcher que pega tudo exceto _next e favicon (mais robusto)
 export const config = {
-  matcher: ['/(:path*)'],
+  matcher: ['/((?!_next|favicon.ico).*)'],
 };
