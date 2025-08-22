@@ -179,8 +179,8 @@ export const getQrText = async (tenantId: string) =>
 export const getQrImage = async (tenantId: string) =>
   callSenderRaw(`/api/${tenantId}/qr/image`, { tenantId });
 
-export const reconnectTenant = async (tenantId: string) =>
-  callSenderJson(`/api/${tenantId}/reconnect`, { method: 'POST', tenantId });
+export const reconnectTenant = async (tenantId: string, hard = false) =>
+  callSenderJson(`/api/${tenantId}/reconnect`, { method: 'POST', tenantId, body: { hard } });
 
 export const disconnectTenant = async (tenantId: string) =>
   callSenderJson(`/api/${tenantId}/disconnect`, { method: 'POST', tenantId });
