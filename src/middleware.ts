@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 function getHost(req: NextRequest): string {
-  // Em Vercel normalmente é 'host'
   return (req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '')
     .toLowerCase()
     .trim();
@@ -23,17 +22,33 @@ export function middleware(req: NextRequest) {
 
   if (isStatic(pathname)) return NextResponse.next();
 
-  // ✅ qualquer dashboard.*.pedidodasorte.com.br
   const isDashboardHost =
     host.startsWith('dashboard.') && host.endsWith('pedidodasorte.com.br');
 
   if (isDashboardHost) {
-    if (pathname.startsWith('/api')|| pathname.startsWith('/auth')) return NextResponse.next();
-    if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
+    // 1) Deixa /api e /auth na raiz do subdomínio
+    if (pathname.startsWith('/api') || pathname.startsWith('/auth')) {
       return NextResponse.next();
     }
+
+    // 2) Canonicaliza: se vier /dashboard ou /dashboard/*, redireciona sem o prefixo
+    if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
+      const url = req.nextUrl.clone();
+      url.pathname = pathname.replace(/^\/dashboard/, '') || '/';
+      return NextResponse.redirect(url, 308);
+    }
+
+    // 3) Home "limpa": / → rewrite para /dashboard (URL permanece /)
+    if (pathname === '/') {
+      const url = req.nextUrl.clone();
+      url.pathname = '/dashboard';
+      url.search = search;
+      return NextResponse.rewrite(url);
+    }
+
+    // 4) Qualquer outra rota: /algo → rewrite para /dashboard/algo (URL permanece /algo)
     const url = req.nextUrl.clone();
-    url.pathname = pathname === '/' ? '/dashboard' : `/dashboard${pathname}`;
+    url.pathname = `/dashboard${pathname}`;
     url.search = search;
     return NextResponse.rewrite(url);
   }
@@ -41,7 +56,7 @@ export function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-// matcher que pega tudo exceto _next e favicon (mais robusto)
+// pega tudo, exceto estáticos básicos
 export const config = {
   matcher: ['/((?!_next|favicon.ico).*)'],
 };
