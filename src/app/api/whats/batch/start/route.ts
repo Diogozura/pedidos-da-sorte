@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mintToken } from '@/lib/whats-server';
 
-const BASE = (process.env.WHATS_SENDER_BASEURL ?? 'http://localhost:3001').replace(/\/+$/,'');
+const BASE = (process.env.BOT_BASE_URL ?? 'http://localhost:3001').replace(/\/+$/,'');
 
 export async function POST(req: NextRequest) {
   try {
