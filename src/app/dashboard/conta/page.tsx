@@ -170,9 +170,9 @@ export default function GerenciarConta() {
             <Grid container spacing={4} sx={{ mb: 6 }}>
               <Grid size={{ xs: 12, md: 4 }} >
                 <DashboardCard
-                  title={usuarioLogado?.nivel === 'admin' ? 'Cadastro Empresa' : 'Cadastrar Funcionário'}
+                  title={usuarioLogado?.nivel === 'admin' ? 'Cadastro Empresa' : 'Cadastrar Colaborador'}
                   icon={<FontAwesomeIcon icon={faUserTie} />}
-                  onClick={() => router.push('/dashboard/empresa')}
+                  onClick={() => router.push('/dashboard/cadastrar-usuario')}
                 />
               </Grid>
             </Grid>
@@ -182,6 +182,7 @@ export default function GerenciarConta() {
               <Grid size={{ xs: 12, md: 4 }} >
                 <DashboardCard
                   title='WhatsApp'
+                  color='vermelho'
                   icon={<FontAwesomeIcon icon={faWhatsapp} />}
                   onClick={() => router.push('/dashboard/whatsApp')}
                 />

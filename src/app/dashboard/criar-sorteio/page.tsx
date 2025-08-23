@@ -199,7 +199,7 @@ export default function CriarCampanhaPage() {
     }
   };
 
-console.log('Cores selecionadas:', cores);
+
   const handleCancelar = () => {
     toast.info('Cadastro cancelado.');
     router.push('/dashboard');

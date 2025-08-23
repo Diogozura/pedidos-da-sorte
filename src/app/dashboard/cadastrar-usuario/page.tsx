@@ -15,6 +15,7 @@ import {
   SelectChangeEvent,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash, faHome } from "@fortawesome/free-solid-svg-icons";
 import { auth, db } from "@/lib/firebase";
@@ -40,9 +41,9 @@ export default function GerenciarConta() {
   const [nivel, setNivel] = useState<'empresa' | 'funcionario'>('empresa');
   const [pizzarias, setPizzarias] = useState<{ id: string, nome: string }[]>([]);
   const [pizzariaSelecionada, setPizzariaSelecionada] = useState<string>('');
-
+   const router = useRouter();
   useEffect(() => {
-    const buscarPizzarias = async () => {
+    const buscarEmpresas = async () => {
       const snap = await getDocs(collection(db, 'usuarios'));
       const lista = snap.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
@@ -52,7 +53,7 @@ export default function GerenciarConta() {
       setPizzarias(lista);
     };
 
-    if (usuario?.nivel === 'admin') buscarPizzarias();
+    if (usuario?.nivel === 'admin') buscarEmpresas();
   }, [usuario]);
 
   useEffect(() => {
@@ -103,6 +104,7 @@ export default function GerenciarConta() {
       await setDoc(doc(db, 'usuarios', result.user.uid), novoUsuario);
 
       toast.success(`Usuário ${nivel === 'empresa' ? 'empresa' : 'funcionário'} criado com sucesso!`);
+       router.push('/dashboard');
     } catch (err: any) {
       toast.error('Erro ao cadastrar: ' + err.message);
     }
