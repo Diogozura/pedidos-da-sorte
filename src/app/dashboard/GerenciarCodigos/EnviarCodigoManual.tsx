@@ -199,7 +199,7 @@ export default function EnviarCodigoManual({
       // envia via WhatsApp (Next → Sender)
       await enviarWhatsapp(rawPhone, message);
 
-      toast.success(`Código ${novoCodigo} enviado com sucesso!`);
+      toast.success(`Código enviado com sucesso!`);
       try {
         await navigator.clipboard.writeText(novoCodigo);
       } catch {/* ignore */ }
