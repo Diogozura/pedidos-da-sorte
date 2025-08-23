@@ -170,20 +170,20 @@ export default function DetalhesCampanhaPage() {
                                 >
                                     Prêmios NÃO Resgatados
                                 </Button>
-                                <Button
+                                {/* <Button
                                     variant={abaAtual === 'premiados' ? 'contained' : 'outlined'}
                                     color="error"
                                     onClick={() => setAbaAtual('premiados')}
                                 >
                                     Números Premiados
-                                </Button>
-                                <Button
+                                </Button> */}
+                                {/* <Button
                                     variant={abaAtual === 'naoPremiados' ? 'contained' : 'outlined'}
                                     color="error"
                                     onClick={() => setAbaAtual('naoPremiados')}
                                 >
                                     Números NÃO Premiados
-                                </Button>
+                                </Button> */}
                                 <Button
                                     variant={abaAtual === 'envio' ? 'contained' : 'outlined'}
                                     color="error"
