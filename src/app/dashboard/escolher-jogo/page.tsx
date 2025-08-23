@@ -51,6 +51,8 @@ export default function EscolherJogo() {
                                     icon={<FontAwesomeIcon icon={faPlus} />}
                                     color='vermelho'
                                     title="Caixa surpresa"
+                                    subtext="Em breve"
+                                    disabled
                                     onClick={handleClick}
                                 />
                             </Grid>
@@ -68,6 +70,8 @@ export default function EscolherJogo() {
                                     icon={<FontAwesomeIcon icon={faPlus} />}
                                     color='vermelho'
                                     title="Roleta da sorte"
+                                    subtext="Em breve"
+                                    disabled
                                     onClick={handleClick}
                                 />
                             </Grid>
