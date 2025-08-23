@@ -1,28 +1,37 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useFormContext } from '@/config/FormContext';
 import { Button, Container, TextField, Typography, Box } from '@mui/material';
 import { useState } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, updateDoc, doc, getDocs, query, where } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { BaseSorteio } from '@/components/BaseSorteio';
+import { useCampaignTheme } from '@/hook/useCampaignTheme';
 
-
-
+type RespOk = { ok: true; campanhaId: string; ganhadorId: string };
+type RespErr = { ok: false; error: string };
 
 export default function GanhadorPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const codigo = searchParams.get('codigo');
+  const codigo = searchParams.get('codigo') ?? '';
   const { formValues, setFormValues } = useFormContext();
   const [loading, setLoading] = useState(false);
-  const values = formValues['ganhador'] || {};
+  const values = (formValues['ganhador'] as Record<string, string>) || {};
+
+    const params = useParams<{ campanha: string }>();
+  const campanhaId = params?.campanha;
+  const theme = useCampaignTheme(campanhaId);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormValues('ganhador', { [name]: value });
+  };
+
+  const parseJsonSafe = async <T,>(res: Response): Promise<T> => {
+    const text = await res.text();
+    try { return JSON.parse(text) as T; }
+    catch { throw new Error(`Resposta inválida (${res.status}): ${text.slice(0,180)}`); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,56 +40,43 @@ export default function GanhadorPage() {
       toast.error('Código inválido.');
       return;
     }
-
     setLoading(true);
 
     try {
-      // Buscar o documento do código
-      const q = query(collection(db, 'codigos'), where('codigo', '==', codigo));
-      const snapshot = await getDocs(q);
-      if (snapshot.empty) {
-        toast.error('Código não encontrado.');
-        return;
+      const res = await fetch('/api/sorteio/ganhador/salvar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codigo,
+          nome: values.nome ?? '',
+          telefone: values.telefone ?? '',
+          endereco: values.endereco ?? '',
+        }),
+      });
+      const json = await parseJsonSafe<RespOk | RespErr>(res);
+
+      if (!res.ok || 'ok' in json && json.ok === false) {
+        throw new Error(('error' in json && json.error) || 'Falha ao salvar dados');
       }
 
-      const codigoDoc = snapshot.docs[0];
-      const codigoId = codigoDoc.id;
-      const codigoData = codigoDoc.data();
-
-
-      // Salvar dados do ganhador
-      await addDoc(collection(db, 'ganhadores'), {
-        nome: values.nome,
-        telefone: values.telefone,
-        endereco: values.endereco,
-        codigoId,
-        campanhaId: codigoData.campanhaId,
-        criadoEm: new Date(),
-      });
-
-      // Atualizar status do código
-      await updateDoc(doc(db, 'codigos', codigoId), {
-        status: 'coleta de dados do ganhador',
-      });
-
+      const ok = json as RespOk;
       toast.success('Dados enviados com sucesso!');
-      router.push(`/${codigoData.campanhaId}/voucher?codigo=${codigo}`);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      toast.error('Erro ao salvar dados: ' + err.message);
+      router.push(`/${ok.campanhaId}/voucher?codigo=${codigo}`);
+    } catch (err) {
+      toast.error('Erro ao salvar dados: ' + (err as Error).message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <BaseSorteio>
+    <BaseSorteio backgroundColor={theme.backgroundColor ?? undefined}
+      textColor={theme.textColor ?? undefined}>
       <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignItems: 'center', justifyContent: 'center' }}>
-
-
         <Typography variant="h4" gutterBottom>
           🎉 Parabéns! Preencha seus dados:
         </Typography>
+
         <Box
           component="form"
           onSubmit={handleSubmit}
@@ -126,7 +122,6 @@ export default function GanhadorPage() {
             {loading ? 'Enviando...' : 'Validar'}
           </Button>
         </Box>
-
       </Container>
     </BaseSorteio>
   );

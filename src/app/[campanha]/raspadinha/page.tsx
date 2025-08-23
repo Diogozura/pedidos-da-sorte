@@ -1,167 +1,119 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import RaspadinhaJogo from '@/components/Raspadinha';
 import { toast } from 'react-toastify';
 import { Container, Typography } from '@mui/material';
-import { db } from '@/lib/firebase';
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  getDoc,
-  updateDoc,
-  Timestamp,
-} from 'firebase/firestore';
 import Link from 'next/link';
 import { BaseSorteio } from '@/components/BaseSorteio';
+import { useCampaignTheme } from '@/hook/useCampaignTheme';
 
+
+type IniciarOk = {
+  ok: true;
+  campanhaId: string;
+  logoUrl?: string | null;
+  premiado: boolean;
+  imagemPremio?: string;
+};
+type IniciarErr = { ok: false; error: string };
+
+type FinalizarOk = {
+  ok: true;
+  campanhaId: string;
+  proximoStatus: 'aguardando dados ganhador' | 'encerrado';
+};
+type FinalizarErr = { ok: false; error: string };
 
 export default function RaspadinhaPage() {
   const router = useRouter();
+  const params = useParams<{ campanha: string }>();
+
+  const campanhaId = params?.campanha;
+  const theme = useCampaignTheme(campanhaId);
   const [codigo, setCodigo] = useState<string | null>(null);
   const [finalizado, setFinalizado] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState('/result.png');
-  const [codigoDocId, setCodigoDocId] = useState<string | null>(null);
-  const [campanhaId, setCampanhaId] = useState<string | null>(null);
+
   const [premiado, setPremiado] = useState<boolean>(false);
-  const [logoCampanha, setLogoCampanha] = useState('');
+  const [logoCampanha, setLogoCampanha] = useState<string>('');
 
-  const validarCodigo = useCallback(async (code: string) => {
+  // parser robusto p/ diagnosticar respostas não-JSON
+  const parseJsonSafe = async <T,>(res: Response): Promise<T> => {
+    const text = await res.text();
+    try { return JSON.parse(text) as T; }
+    catch { throw new Error(`Resposta inválida (${res.status}): ${text.slice(0, 180)}`); }
+  };
+
+  const iniciarRaspadinha = useCallback(async (code: string) => {
     try {
-      const q = query(
-        collection(db, 'codigos'),
-        where('codigo', '==', code)
-      );
-      const snap = await getDocs(q);
-      if (snap.empty) {
-        toast.error('Código inválido');
-        router.replace('/sorteio');
-        return;
-      }
-
-      const docCod = snap.docs[0];
-      const dataCod = docCod.data();
-      const idCod = docCod.id;
-      setCodigoDocId(idCod);
-      const campId = dataCod.campanhaId;
-      setCampanhaId(campId);
-
-      if (['usado', 'encerrado'].includes(dataCod.status)) {
-        toast.error('Este código já foi utilizado.');
-        router.replace('/sorteio');
-        return;
-      }
-
-      if (dataCod.status === 'aguardando raspagem') {
-        const prizeName = dataCod.premiado;
-        setPremiado(Boolean(prizeName));
-        await loadPrize(prizeName, campId);
-        return;
-      }
-
-      if (dataCod.status !== 'validado') {
-        toast.error('Código não está pronto para raspadinha.');
-        router.replace('/sorteio');
-        return;
-      }
-
-      // carrega resultado pré-alocado
-      const prizeName: string | null = dataCod.premiado || null;
-      setPremiado(Boolean(prizeName));
-      await loadPrize(prizeName, campId);
-
-      // marca como aguardando raspagem
-      await updateDoc(doc(db, 'codigos', idCod), {
-        status: 'aguardando raspagem',
+      const res = await fetch('/api/sorteio/raspadinha/iniciar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo: code }),
       });
-    } catch (err: any) {
-      toast.error('Erro na validação: ' + err.message);
+      const json = await parseJsonSafe<IniciarOk | IniciarErr>(res);
+
+      if (!res.ok || 'ok' in json && json.ok === false) {
+        throw new Error(('error' in json && json.error) || 'Falha ao iniciar raspadinha');
+      }
+
+      const ok = json as IniciarOk;
+      setLogoCampanha(ok.logoUrl ?? '');
+      setPremiado(Boolean(ok.premiado));
+      setBackgroundImage(ok.premiado ? (ok.imagemPremio ?? '/result.png') : '/nao-ganhou.png');
+    } catch (e) {
+      toast.error('Erro na validação: ' + (e as Error).message);
+      router.replace('/sorteio');
     }
-  },[router]);
+  }, [router]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('codigo');
     setCodigo(code);
-
     if (!code) {
       router.replace('/sorteio');
       return;
     }
-    validarCodigo(code);
-  }, [router, validarCodigo]);
-
-
-
-  const loadPrize = async (prizeName: string | null, campId: string) => {
-    const campRef = doc(db, 'campanhas', campId);
-    const campSnap = await getDoc(campRef);
-    const campData = campSnap.data();
-      setLogoCampanha(campData?.logoUrl);
-    if (!campData) return;
-    const prizeObj = campData.premios?.find((p: any) => p.nome === prizeName);
-    if (prizeObj) {
-      setBackgroundImage(prizeObj.imagem);
-    } else {
-      setBackgroundImage('/nao-ganhou.png');
-    }
-  };
+    iniciarRaspadinha(code.toUpperCase());
+  }, [router, iniciarRaspadinha]);
 
   const handleComplete = async () => {
-    if (!codigoDocId || !campanhaId) return;
+    if (!codigo) return;
     setFinalizado(true);
-
     try {
-      const refCod = doc(db, 'codigos', codigoDocId);
-      const snapCod = await getDoc(refCod);
-      const dataCod = snapCod.data();
-    
-      if (dataCod?.status === 'aguardando raspagem' && dataCod?.premiado !== 'nenhum') {
-        await updateDoc(refCod, {
-          status: 'aguardando dados ganhador',
-          usado: true,
-          usadoEm: Timestamp.now(),
-        });
-        toast.success('🎉 Você ganhou!');
-        setTimeout(() => {
-          router.replace(
-            `/${campanhaId}/ganhador?codigo=${codigo}`
-          );
-        }, 1500);
-      } else {
-        await updateDoc(refCod, {
-          status: 'encerrado',
-          usado: true,
-          usadoEm: Timestamp.now(),
-        });
-        toast.error('Infelizmente você não ganhou desta vez.');
-         setTimeout(() => {
-          router.replace(
-            `/`
-          );
-        }, 1500);
+      const res = await fetch('/api/sorteio/raspadinha/finalizar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo }),
+      });
+      const json = await parseJsonSafe<FinalizarOk | FinalizarErr>(res);
+
+      if (!res.ok || 'ok' in json && json.ok === false) {
+        throw new Error(('error' in json && json.error) || 'Falha ao finalizar raspadinha');
       }
-    } catch (err: any) {
-      toast.error('Erro ao finalizar: ' + err.message);
+
+      const ok = json as FinalizarOk;
+      if (ok.proximoStatus === 'aguardando dados ganhador') {
+        toast.success('🎉 Você ganhou!');
+        setTimeout(() => router.replace(`/${ok.campanhaId}/ganhador?codigo=${codigo}`), 1200);
+      } else {
+        toast.error('Infelizmente você não ganhou desta vez.');
+        setTimeout(() => router.replace(`/`), 1200);
+      }
+    } catch (e) {
+      toast.error('Erro ao finalizar: ' + (e as Error).message);
     }
   };
+
   return (
-    <BaseSorteio logoUrl={logoCampanha}>
+    <BaseSorteio logoUrl={logoCampanha} backgroundColor={theme.backgroundColor ?? undefined}
+      textColor={theme.textColor ?? undefined} >
       <Container
         maxWidth="md"
-        sx={{
-          textAlign: 'center',
-          mt: 4,
-          height: '60vh',
-          display: 'grid',
-          alignContent: 'center',
-          justifyContent: 'center',
-        }}
+        sx={{ textAlign: 'center', mt: 4, height: '60vh', display: 'grid', alignContent: 'center', justifyContent: 'center' }}
       >
         <Typography variant="h4" gutterBottom>
           Raspe para descobrir se ganhou

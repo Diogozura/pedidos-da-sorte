@@ -1,117 +1,81 @@
 'use client';
+
 import { BaseSorteio } from '@/components/BaseSorteio';
 import { useEffect, useState } from 'react';
-import { db } from "@/lib/firebase";
-import {
-  Box,
-  Container,
-  Typography
-} from "@mui/material";
-import {
-  collection,
-  getDocs,
-  addDoc,
-  query,
-  updateDoc,
-  where,
-  Timestamp,
-} from "firebase/firestore";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { toast } from "react-toastify";
+import { Box, Container, Typography } from '@mui/material';
+import Link from 'next/link';
+import { useParams, useSearchParams } from 'next/navigation';
+import { toast } from 'react-toastify';
+import { useCampaignTheme } from '@/hook/useCampaignTheme';
 
-
-// Função para gerar código aleatório
-const gerarCodigoVoucher = (): string => {
-  const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let codigo = '';
-  for (let i = 0; i < 6; i++) {
-    codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-  }
-  return codigo;
-};
+type RespGerarOk = { ok: true; campanhaId: string; codigoVoucher: string };
+type RespGerarErr = { ok: false; error: string };
+type RespEncerrarOk = { ok: true };
+type RespEncerrarErr = { ok: false; error: string };
 
 export default function VoucherPage() {
   const searchParams = useSearchParams();
-  const codigo = searchParams.get('codigo');
+  const codigo = searchParams.get('codigo') ?? '';
   const [voucherCode, setVoucherCode] = useState<string | null>(null);
-  const campanhaId = searchParams.get('campanhaId') || '';
 
-  // Gera e salva voucher ao montar a página
+  const params = useParams<{ campanha: string }>();
+  const campanhaId = params?.campanha;
+  const theme = useCampaignTheme(campanhaId);
+
+  const parseJsonSafe = async <T,>(res: Response): Promise<T> => {
+    const txt = await res.text();
+    try { return JSON.parse(txt) as T; }
+    catch { throw new Error(`Resposta inválida (${res.status}): ${txt.slice(0, 200)}`); }
+  };
+
   useEffect(() => {
-    const gerarOuRecuperarVoucher = async () => {
+    const gerarOuRecuperar = async () => {
       if (!codigo) return;
-
       try {
-        const q = query(
-          collection(db, 'vouchers'),
-          where('codigoOriginal', '==', codigo)
-        );
-        const snap = await getDocs(q);
-
-        if (!snap.empty) {
-          // Já existe um voucher criado para esse código
-          const voucherExistente = snap.docs[0].data();
-          setVoucherCode(voucherExistente.codigoVoucher);
-          return;
-        }
-
-        // Caso não exista, cria um novo
-        const novoCodigo = gerarCodigoVoucher();
-
-        await addDoc(collection(db, 'vouchers'), {
-          codigoVoucher: novoCodigo,
-          codigoOriginal: codigo,
-          criadoEm: Timestamp.now(),
-          usado: false,
-          status: 'valido',
-          campanhaId,
+        const res = await fetch('/api/sorteio/voucher/gerar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codigo }),
         });
+        const json = await parseJsonSafe<RespGerarOk | RespGerarErr>(res);
 
-        setVoucherCode(novoCodigo);
-      } catch (error) {
-        console.error("Erro ao buscar/criar voucher:", error);
-        toast.error("Erro ao gerar ou recuperar voucher.");
+        if (!res.ok || ('ok' in json && json.ok === false)) {
+          throw new Error(('error' in json && json.error) || 'Falha ao gerar voucher');
+        }
+        const ok = json as RespGerarOk;
+        setVoucherCode(ok.codigoVoucher);
+
+      } catch (e) {
+        toast.error('Erro ao gerar/recuperar voucher: ' + (e as Error).message);
       }
     };
-
-    gerarOuRecuperarVoucher();
-  }, [codigo, campanhaId]);
-
+    gerarOuRecuperar();
+  }, [codigo]);
 
   const handleCopy = async () => {
     if (!voucherCode) return;
-
     try {
       await navigator.clipboard.writeText(voucherCode);
       toast.success('Código copiado com sucesso!');
+      if (!codigo) return;
 
-      if (!codigo) {
-        toast.error('Código não encontrado na URL.');
-        return;
-      }
-
-      const q = query(collection(db, 'codigos'), where('codigo', '==', codigo));
-      const snap = await getDocs(q);
-
-      if (snap.empty) {
-        toast.error('Código não encontrado no banco.');
-        return;
-      }
-
-      const docRef = snap.docs[0].ref;
-
-      await updateDoc(docRef, {
-        status: 'encerrado',
+      const res = await fetch('/api/sorteio/codigo/encerrar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo }),
       });
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
-      toast.error('Erro ao copiar ou atualizar o status.');
+      const json = await parseJsonSafe<RespEncerrarOk | RespEncerrarErr>(res);
+      if (!res.ok || ('ok' in json && json.ok === false)) {
+        throw new Error(('error' in json && json.error) || 'Falha ao encerrar');
+      }
+    } catch (e) {
+      toast.error('Erro ao copiar/encerrar: ' + (e as Error).message);
     }
   };
 
   return (
-    <BaseSorteio >
+    <BaseSorteio backgroundColor={theme.backgroundColor ?? undefined}
+      textColor={theme.textColor ?? undefined}>
       <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignContent: 'center', justifyContent: 'center' }}>
         <h2>🎉 Seu voucher foi gerado!</h2>
         <p>Use esse voucher na loja ou envie para a equipe.</p>
@@ -128,6 +92,8 @@ export default function VoucherPage() {
               fontWeight: 'bold',
               cursor: 'pointer',
             }}
+            aria-label="Clique para copiar o voucher"
+            role="button"
           >
             {voucherCode}
           </Box>

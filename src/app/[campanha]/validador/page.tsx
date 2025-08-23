@@ -5,13 +5,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { getRedirectUrlByStatus } from '@/utils/redirectByStatus';
+import { saveCampaignTheme } from '@/utils/campaignTheme';
 
-type CampanhaUI = { logoUrl?: string | null; corFundo?: string | null; titulo?: string | null };
+type CampanhaUI = { logoUrl?: string | null; backgroundColor?: string | null; textColor?: string | null };
 
 export default function CodigoPage() {
   const [codigo, setCodigo] = useState<string>('');
   const [campanha, setCampanha] = useState<CampanhaUI | null>(null);
-
+  console.log('Campanha:', campanha);
   const router = useRouter();
   const params = useParams<{ campanha: string }>();
   const campanhaId = params?.campanha;
@@ -34,9 +35,17 @@ export default function CodigoPage() {
           body: JSON.stringify({ campanhaId }),
         });
         const json = await res.json();
+        saveCampaignTheme(campanhaId, {
+          logoUrl: json.campanha.logoUrl ?? null,
+          backgroundColor: json.campanha.backgroundColor ?? json.campanha.corFundo ?? null,
+          textColor: json.campanha.textColor ?? null,
+        });
         if (!res.ok) throw new Error(json.error || 'Falha ao carregar campanha');
         setCampanha(json.campanha as CampanhaUI);
+        console.log('Campanha fetch:', json.campanha);
+
         if (json.campanha?.logoUrl) new Image().src = json.campanha.logoUrl;
+
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'desconhecido';
         toast.error('Erro ao carregar campanha: ' + msg);
@@ -76,7 +85,10 @@ export default function CodigoPage() {
   };
 
   return (
-    <BaseSorteio logoUrl={campanha?.logoUrl ?? undefined}>
+    <BaseSorteio logoUrl={campanha?.logoUrl ?? undefined}
+      backgroundColor={campanha?.backgroundColor ?? "#b30000"}
+      textColor={campanha?.textColor ?? "#ffffff"}
+    >
       <Container maxWidth="md" sx={{ height: '40vh', display: 'grid', alignContent: 'center', justifyContent: 'center', textAlign: 'center', mt: 6 }}>
         <Typography variant="h4" component="h1">Digite seu código de sorteio</Typography>
         <form onSubmit={handleSubmit}>
@@ -89,17 +101,17 @@ export default function CodigoPage() {
               inputProps={{ minLength: 5 }}
               onChange={(e) => setCodigo(e.target.value.toUpperCase())}
               sx={{
-                input: { color: 'white' },
-                '& .MuiInputLabel-root': { color: 'white' },
-                '& .MuiInputLabel-root.Mui-focused': { color: 'white' },
+                input: { color: campanha?.textColor ?? "#ffffff" },
+                '& .MuiInputLabel-root': { color: campanha?.textColor },
+                '& .MuiInputLabel-root.Mui-focused': { color: campanha?.textColor },
                 '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: 'white' },
-                  '&:hover fieldset': { borderColor: 'white' },
-                  '&.Mui-focused fieldset': { borderColor: 'white' },
+                  '& fieldset': { borderColor: campanha?.textColor },
+                  '&:hover fieldset': { borderColor: campanha?.textColor },
+                  '&.Mui-focused fieldset': { borderColor: campanha?.textColor },
                 },
               }}
             />
-            <Button type="submit" color="primary" variant="contained" sx={{ mt: 2 }} disabled={codigo.length < 5}>
+            <Button type="submit" color={"primary"} variant="contained" sx={{ mt: 2 }} disabled={codigo.length < 5}>
               Validar
             </Button>
           </FormControl>

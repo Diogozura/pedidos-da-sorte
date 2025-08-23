@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 
 type ReqBody = { campanhaId: string };
-
+export const runtime = 'nodejs';
 export async function POST(req: Request) {
   try {
     const { campanhaId } = (await req.json()) as Partial<ReqBody>;
@@ -18,7 +18,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       campanha: {
         logoUrl: data.logoUrl ?? null,
-        corFundo: data.corFundo ?? null,
+        backgroundColor: data.backgroundColor ?? null,
+        textColor: data.textColor ?? null,
         titulo: data.titulo ?? null,
       },
     });

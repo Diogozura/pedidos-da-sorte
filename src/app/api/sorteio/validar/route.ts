@@ -4,7 +4,7 @@ import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
 type ReqBody = { codigo: string; campanhaId: string };
-
+export const runtime = 'nodejs';
 export async function POST(req: Request) {
   try {
     const { codigo, campanhaId } = (await req.json()) as Partial<ReqBody>;

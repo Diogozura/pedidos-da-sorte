@@ -192,8 +192,7 @@ export default function EnviarCodigoManual({
       // monta mensagem (mantive o link com campanhaId; ajuste se preferir por tenantId)
       const siteLink = `https://sorteio.pedidodasorte.com.br/${campanhaId}/validador?${novoCodigo}`;
       const message =
-        `Parabéns! Você ganhou uma ficha para jogar no *Pedidos da Sorte*! 🎉\n\n` +
-        `Seu código é *${novoCodigo}*\n` +
+        `Oba! O seu código chegou: *${novoCodigo}* Acesse o link abaixo e boa  sorte!  🎉\n\n` +
         `Acesse: ${siteLink}`;
 
       // envia via WhatsApp (Next → Sender)
