@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Container, Typography, Grid, TextField, Button, FormControl, InputLabel, MenuItem, Select, Divider } from '@mui/material';
+import { Container, Typography, Grid, TextField, Button, FormControl, InputLabel, MenuItem, Select, Divider, Box, Stack } from '@mui/material';
 import { getStorage, ref as storageRef, listAll, getDownloadURL, uploadBytes } from 'firebase/storage';
 import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
@@ -17,6 +17,7 @@ import PremiosForm, { Premio } from '@/components/CriarCampanha/PremiosForm';
 import LogoUploader from '@/components/CriarCampanha/LogoUploader';
 import AppBreadcrumbs from '@/components/shared/AppBreadcrumbs';
 import { faHome, faTrophy } from '@fortawesome/free-solid-svg-icons';
+import ColorSelector, { CampanhaColors } from '@/components/CriarCampanha/ColorSelector';
 
 export default function CriarCampanhaPage() {
   const { usuario } = useUsuarioLogado();
@@ -24,6 +25,10 @@ export default function CriarCampanhaPage() {
   const hoje = new Date().toISOString().split('T')[0];
 
   const [nome, setNome] = useState('');
+  const [cores, setCores] = useState<CampanhaColors>({
+    background: '#000000',
+    text: '#FFFFFF',
+  });
   const [totalRaspadinhas, setTotalRaspadinhas] = useState('100');
   const [modo, setModo] = useState<'raspadinha' | 'prazo'>('raspadinha');
   const [dataInicio, setDataInicio] = useState('');
@@ -33,7 +38,7 @@ export default function CriarCampanhaPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [imagensDisponiveis, setImagensDisponiveis] = useState<string[]>([]);
   const [logosDisponiveis, setLogosDisponiveis] = useState<string[]>([]);
-;
+  ;
 
   useEffect(() => {
     const carregarLogos = async () => {
@@ -144,6 +149,8 @@ export default function CriarCampanhaPage() {
     try {
       const novaCampanha = {
         nome,
+        backgroundColor: cores.background,
+        textColor: cores.text,
         modo,
         logoUrl,
         totalRaspadinhas: total,
@@ -192,7 +199,7 @@ export default function CriarCampanhaPage() {
     }
   };
 
-
+console.log('Cores selecionadas:', cores);
   const handleCancelar = () => {
     toast.info('Cadastro cancelado.');
     router.push('/dashboard');
@@ -282,6 +289,25 @@ export default function CriarCampanhaPage() {
                   </Grid>
                 </Grid>
               )}
+              <Box>
+                <Stack spacing={2}>
+                  <TextField
+                    label="Nome da campanha"
+                    size="small"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                  />
+
+                  <ColorSelector
+                    label="Cor de fundo da campanha"
+                    value={cores}
+                    onChange={setCores}
+                    size="small"
+                  />
+
+                  
+                </Stack>
+              </Box>
             </Grid>
 
             <Grid size={12}  >
