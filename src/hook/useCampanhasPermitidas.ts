@@ -109,7 +109,7 @@ export function useCampanhasPermitidas() {
         setCampanhas([...byId.values()]);
       } catch (err) {
         console.error("Erro ao buscar campanhas:", err);
-        toast.error("Erro ao carregar campanhas.");
+   
       } finally {
         setLoading(false);
       }

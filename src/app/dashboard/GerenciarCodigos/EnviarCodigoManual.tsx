@@ -10,6 +10,11 @@ import {
   TextField,
   Typography,
   Stack,
+  Alert,
+  AlertTitle,
+  Box,
+  Collapse,
+  LinearProgress,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { toast } from 'react-toastify';
@@ -29,6 +34,8 @@ import {
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { formatPhone } from '@/utils/formatPhone';
+import { useWaSession } from '@/hook/useWaSession';
+import Link from 'next/link';
 
 type Props = {
   campanhaId: string;
@@ -56,11 +63,12 @@ export default function EnviarCodigoManual({
   const [telefone, setTelefone] = useState<string>('');
   const [isSending, setIsSending] = useState<boolean>(false);
   const [tenantId, setTenantId] = useState<string>('');
-  const [campanhaNome, setCampanhaNome] = useState<string>('');
+  const { conectado, loading: waLoading } = useWaSession(tenantId);
   const abortRef = useRef<AbortController | null>(null);
 
   // 1) Carrega o tenantId REAL da campanha (nada de slug)
   useEffect(() => {
+    if (!campanhaId) { setTenantId(''); return; }
     let mounted = true;
     (async () => {
       try {
@@ -70,17 +78,18 @@ export default function EnviarCodigoManual({
           return;
         }
         const data = snap.data() as CampanhaDoc;
+
         if (!data.pizzariaId) {
           toast.error('Campanha sem tenantId configurado.');
           return;
         }
         if (mounted) {
           setTenantId(data.pizzariaId);
-          setCampanhaNome(data.nome ?? '');
+
         }
-      } catch {
-        toast.error('Falha ao carregar a campanha.');
-        // opcional: console.error(e);
+      } catch (e) {
+
+        console.error(e);
       }
     })();
     return () => {
@@ -92,6 +101,17 @@ export default function EnviarCodigoManual({
   useEffect(() => {
     return () => abortRef.current?.abort();
   }, []);
+
+  const [showLoading, setShowLoading] = useState(false);
+  useEffect(() => {
+    let t: number | undefined;
+    if (waLoading) {
+      t = window.setTimeout(() => setShowLoading(true), 150);
+    } else {
+      setShowLoading(false);
+    }
+    return () => { if (t) window.clearTimeout(t); };
+  }, [waLoading]);
 
   const validatePhone = (value: string): boolean => {
     const digits = onlyDigits(value);
@@ -182,7 +202,7 @@ export default function EnviarCodigoManual({
       toast.success(`Código ${novoCodigo} enviado com sucesso!`);
       try {
         await navigator.clipboard.writeText(novoCodigo);
-      } catch {/* ignore */}
+      } catch {/* ignore */ }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       toast.error(msg);
@@ -211,35 +231,54 @@ export default function EnviarCodigoManual({
           <Typography variant="h6" component="h2" fontWeight="bold">
             Envio Manual de Código
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Campanha: <b>{campanhaNome || campanhaId}</b> · Tenant: <b>{tenantId || '—'}</b>
-          </Typography>
-        </Stack>
 
-        <Grid container spacing={2} alignItems="center">
-          <Grid size={{xs:12, md:5}} >
+        </Stack>
+        {/* LOADING da sessão com transição suave */}
+        <Collapse in={!!tenantId && showLoading} unmountOnExit>
+          <Box sx={{ mb: 2 }}>
+            <LinearProgress />
+            <Typography variant="caption" color="text.secondary">
+              Conferindo conexão do WhatsApp…
+            </Typography>
+          </Box>
+        </Collapse>
+
+        {/* ALERTA quando desconectado */}
+        <Collapse in={!!tenantId && !waLoading && !conectado} unmountOnExit>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <AlertTitle>WhatsApp desconectado</AlertTitle>
+            Para enviar mensagens, é preciso <b>vincular um WhatsApp</b>.
+            <Box mt={1}>
+              <Button size="small" variant="outlined" component={Link} href="/dashboard/whatsApp">
+                Vincular WhatsApp
+              </Button>
+            </Box>
+          </Alert>
+        </Collapse>
+
+        <Grid container spacing={2} alignItems="center" flexDirection={'column'} justifyContent="center">
+          <Grid size={{ xs: 12, md: 5 }} >
             <TextField
               size="small"
               fullWidth
-              placeholder="(11) 99124-9136"
+              // type='number'
+              placeholder="(45) 99999-9999"
               value={telefone}
               onChange={(e) => setTelefone(formatPhone(e.target.value))}
               inputProps={{ inputMode: 'numeric', pattern: '\\d*', maxLength: 15, style: { textAlign: 'center' } }}
-              helperText="Somente dígitos (10–15). Ex.: 11991249136"
+
             />
           </Grid>
 
-          <Grid size={{xs:12, md:7}}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Button
               size="medium"
               variant="contained"
               color="primary"
               fullWidth
               onClick={() => void gerarCodigo()}
-              disabled={isSending}
-              startIcon={
-                isSending ? <CircularProgress size={18} /> : <FontAwesomeIcon icon={faPaperPlane} />
-              }
+              disabled={!conectado}
+              startIcon={isSending ? <CircularProgress size={18} /> : <FontAwesomeIcon icon={faPaperPlane} />}
             >
               {isSending ? 'Enviando…' : 'Gerar e enviar via WhatsApp'}
             </Button>
