@@ -291,12 +291,7 @@ export default function CriarCampanhaPage() {
               )}
               <Box>
                 <Stack spacing={2}>
-                  <TextField
-                    label="Nome da campanha"
-                    size="small"
-                    value={nome}
-                    onChange={(e) => setNome(e.target.value)}
-                  />
+                 
 
                   <ColorSelector
                     label="Cor de fundo da campanha"
