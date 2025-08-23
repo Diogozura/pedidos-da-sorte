@@ -1,192 +1,84 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import { BaseSorteio } from '@/components/BaseSorteio';
 import { Button, Container, FormControl, TextField, Typography } from '@mui/material';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { db } from '@/lib/firebase';
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  increment,
-  doc,
-  updateDoc,
-  Timestamp,
-  getDoc,
-} from 'firebase/firestore';
 import { getRedirectUrlByStatus } from '@/utils/redirectByStatus';
 
-import { verificarEEncerrarCampanha } from '@/lib/campanhaUtils';
+type CampanhaUI = { logoUrl?: string | null; corFundo?: string | null; titulo?: string | null };
 
-
-type Campanha = {
-  logoUrl?: string;
-  // ...outros campos se quiser tipar
-};
 export default function CodigoPage() {
-  const [codigo, setCodigo] = useState('');
-  const [campanha, setCampanha] = useState<any | null>(null);
+  const [codigo, setCodigo] = useState<string>('');
+  const [campanha, setCampanha] = useState<CampanhaUI | null>(null);
 
   const router = useRouter();
-  const params = useParams();
-  const campanhaId = params?.campanha as string;
+  const params = useParams<{ campanha: string }>();
+  const campanhaId = params?.campanha;
 
-  // Pega o código da URL (?MXI5VL) e busca campanha
   useEffect(() => {
     const search = window.location.search;
-
     if (!search.startsWith('?')) {
       toast.error('Código não informado na URL.');
       return;
     }
+    const parsed = search.substring(1).toUpperCase();
+    setCodigo(parsed);
 
-    const parsedCodigo = search.substring(1).toUpperCase();
-    setCodigo(parsedCodigo);
-    buscarDados(parsedCodigo);
-  }, []);
-  useEffect(() => {
-    const carregarCampanha = async () => {
-      if (!campanhaId) return;
+    // Carregar infos mínimas da campanha via API (server)
+    (async () => {
       try {
-        const snap = await getDoc(doc(db, 'campanhas', campanhaId));
-        if (!snap.exists()) {
-          toast.error('Campanha não encontrada.');
-          return;
-        }
-        const data = snap.data() as Campanha;
-        setCampanha(data);
-
-        // 2) Pré-carregar a imagem do logo para evitar flicker
-        if (data.logoUrl) {
-          const img = new Image();
-          img.src = data.logoUrl; // pré-carrega no cache do navegador
-        }
-      } catch (e: unknown) {
-        const err = e as { message?: string };
-        toast.error('Erro ao carregar campanha: ' + (err.message ?? 'desconhecido'));
+        const res = await fetch('/api/sorteio/campanha-info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ campanhaId }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Falha ao carregar campanha');
+        setCampanha(json.campanha as CampanhaUI);
+        if (json.campanha?.logoUrl) new Image().src = json.campanha.logoUrl;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'desconhecido';
+        toast.error('Erro ao carregar campanha: ' + msg);
       }
-    };
-    carregarCampanha();
+    })();
   }, [campanhaId]);
-  const buscarDados = async (codigo: string) => {
-    if (!campanhaId) {
-      toast.error('Campanha inválida na URL.');
-      return;
-    }
 
-    try {
-      const q = query(collection(db, 'codigos'), where('codigo', '==', codigo));
-      const snapshot = await getDocs(q);
-
-      if (snapshot.empty) {
-        toast.error('Código não encontrado');
-        return;
-      }
-
-      const codeDoc = snapshot.docs[0];
-      const data = codeDoc.data();
-
-      if (data.campanhaId !== campanhaId) {
-        toast.warning('Código não pertence a essa campanha.');
-        return;
-      }
-
-      const campanhaSnap = await getDoc(doc(db, 'campanhas', campanhaId));
-      if (!campanhaSnap.exists()) {
-        toast.error('Campanha não encontrada.');
-        return;
-      }
-
-      setCampanha(campanhaSnap.data());
-    } catch (err: any) {
-      toast.error('Erro ao buscar dados: ' + err.message);
-    }
-  };
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    const upperCode = codigo.trim().toUpperCase();
-
-    if (upperCode.length < 5) {
+    const upper = codigo.trim().toUpperCase();
+    if (upper.length < 5) {
       toast.warning('O código deve ter pelo menos 5 caracteres.');
       return;
     }
 
     try {
-      // Busca o documento de código
-      const q = query(
-        collection(db, 'codigos'),
-        where('codigo', '==', upperCode)
-      );
-      const snapshot = await getDocs(q);
+      const res = await fetch('/api/sorteio/validar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo: upper, campanhaId }),
+      });
+      const json = await res.json();
 
-      if (snapshot.empty) {
-        toast.error('Código inválido ❌');
+      if (!res.ok || json.ok === false) {
+        toast.error(json.motivo ?? json.error ?? 'Código inválido ❌');
         return;
       }
 
-      const codeDoc = snapshot.docs[0];
-      const data = codeDoc.data();
-      const status = data.status;
-
-      // Só processa se estiver ativo
-      if (status !== 'ativo') {
-        toast.info('Este código já foi validado anteriormente.');
-      } else {
-        // Atualiza contadores na campanha
-        const campanhaRef = doc(db, 'campanhas', data.campanhaId);
-        const updates: Record<string, any> = {
-          raspadinhasRestantes: increment(-1),
-        };
-        // Aqui verifica se precisa encerrar
-        await verificarEEncerrarCampanha(data.campanhaId);
-        // Se tiver prêmio associado, decrementa também
-        if (data.premiado && data.premiado !== 'nenhum') {
-          updates.premiosRestantes = increment(-1);
-        }
-        await updateDoc(campanhaRef, updates);
-
-        // Marca código como validado
-        await updateDoc(codeDoc.ref, {
-          status: 'validado',
-          usado: true,
-          usadoEm: Timestamp.now(),
-        });
-
-        toast.success('Código válido! 🎉');
-      }
-
-      // Redireciona conforme status (novo ou existente)
-      const nextStatus = status === 'ativo' ? 'validado' : status;
-      const redirectUrl = getRedirectUrlByStatus(
-        nextStatus,
-        upperCode,
-        data.campanhaId
-      );
-      if (redirectUrl) router.push(redirectUrl);
-    } catch (err: any) {
-      toast.error('Erro ao validar código: ' + err.message);
+      toast.success('Código válido! 🎉');
+      const nextStatus = json.statusDepois ?? 'validado';
+      const redirect = getRedirectUrlByStatus(nextStatus, upper, json.campanhaId);
+      if (redirect) router.push(redirect);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'desconhecido';
+      toast.error('Erro ao validar código: ' + msg);
     }
   };
-  return (
-    <BaseSorteio logoUrl={campanha?.logoUrl}>
-      <Container
-        maxWidth="md"
-        sx={{
-          height: '40vh',
-          display: 'grid',
-          alignContent: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-          mt: 6,
-        }}
-      >
-        <Typography variant="h4" component="h1">
-          Digite seu código de sorteio
-        </Typography>
 
+  return (
+    <BaseSorteio logoUrl={campanha?.logoUrl ?? undefined}>
+      <Container maxWidth="md" sx={{ height: '40vh', display: 'grid', alignContent: 'center', justifyContent: 'center', textAlign: 'center', mt: 6 }}>
+        <Typography variant="h4" component="h1">Digite seu código de sorteio</Typography>
         <form onSubmit={handleSubmit}>
           <FormControl fullWidth sx={{ mt: 4 }}>
             <TextField
@@ -197,9 +89,9 @@ export default function CodigoPage() {
               inputProps={{ minLength: 5 }}
               onChange={(e) => setCodigo(e.target.value.toUpperCase())}
               sx={{
-                input: { color: 'white' }, // texto digitado
-                '& .MuiInputLabel-root': { color: 'white' }, // label padrão
-                '& .MuiInputLabel-root.Mui-focused': { color: 'white' }, // label focado
+                input: { color: 'white' },
+                '& .MuiInputLabel-root': { color: 'white' },
+                '& .MuiInputLabel-root.Mui-focused': { color: 'white' },
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': { borderColor: 'white' },
                   '&:hover fieldset': { borderColor: 'white' },
@@ -207,13 +99,7 @@ export default function CodigoPage() {
                 },
               }}
             />
-            <Button
-              type="submit"
-              color="primary"
-              variant="contained"
-              sx={{ mt: 2 }}
-              disabled={codigo.length < 5}
-            >
+            <Button type="submit" color="primary" variant="contained" sx={{ mt: 2 }} disabled={codigo.length < 5}>
               Validar
             </Button>
           </FormControl>

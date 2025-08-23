@@ -160,7 +160,7 @@ export default function EnviarCodigoAutomatico({ campanhaId, delayMs = 800 }: Pr
       for (const tel of telefones) {
         try {
           const codigo = await gerarCodigoParaTelefone(tel);
-          const link = `${window.location.origin}/${campanhaId}/validador?${codigo}`;
+          const link = `https://sorteio.pedidodasorte.com.br/${campanhaId}/validador?${codigo}`;
           const message =
             `Parabéns! Você ganhou uma ficha para jogar no *Pedidos da Sorte*! 🎉\n\n` +
             `Seu código é *${codigo}*\n` +
