@@ -8,7 +8,7 @@ import { toast } from 'react-toastify';
 import { useTheme } from '@mui/material/styles';
 import { db } from '@/lib/firebase';
 import {
-  collection, doc, getDocs, getDoc, addDoc, query, where, Timestamp, updateDoc, onSnapshot, limit 
+  collection, doc, getDocs, getDoc, addDoc, query, where, Timestamp, updateDoc, onSnapshot, limit
 } from 'firebase/firestore';
 
 type Props = {
@@ -16,7 +16,7 @@ type Props = {
   delayMs?: number; // delay sugerido entre mensagens no sender
 };
 
-type CampanhaDoc = { tenantId?: string; nome?: string };
+type CampanhaDoc = { pizzariaId?: string; nome?: string };
 
 type BatchDoc = {
   batchId: string;
@@ -35,7 +35,6 @@ const onlyDigits = (v: string): string => v.replace(/\D/g, '');
 export default function EnviarCodigoAutomatico({ campanhaId, delayMs = 800 }: Props) {
   const theme = useTheme();
   const [tenantId, setTenantId] = useState<string>('');
-  const [campanhaNome, setCampanhaNome] = useState<string>('');
   const [telefones, setTelefones] = useState<string[]>([]);
   const [batchId, setBatchId] = useState<string>('');
   const [batch, setBatch] = useState<BatchDoc | null>(null);
@@ -44,15 +43,21 @@ export default function EnviarCodigoAutomatico({ campanhaId, delayMs = 800 }: Pr
 
   // carrega tenantId REAL da campanha
   useEffect(() => {
+    if (!campanhaId) {
+      // opcional: limpar UI quando troca para vazio
+      setTenantId('');
+      return;
+    }
     let mounted = true;
     (async () => {
       try {
         const snap = await getDoc(doc(db, 'campanhas', campanhaId));
         if (!snap.exists()) { toast.error('Campanha não encontrada.'); return; }
         const data = snap.data() as CampanhaDoc;
-        if (!data.tenantId) { toast.error('Campanha sem tenantId.'); return; }
-        if (mounted) { setTenantId(data.tenantId); setCampanhaNome(data.nome ?? ''); }
+        if (!data.pizzariaId) { toast.error('Campanha sem tenantId.'); return; }
+        if (mounted) { setTenantId(data.pizzariaId); }
       } catch {
+
         toast.error('Falha ao carregar campanha.');
       }
     })();
@@ -111,6 +116,7 @@ export default function EnviarCodigoAutomatico({ campanhaId, delayMs = 800 }: Pr
       body: JSON.stringify({ tenantId, items, delayMsBetween: delayMs }),
     });
     const data = await res.json().catch(() => ({}));
+
     if (!res.ok) {
       const err = (data && typeof data.error === 'string') ? data.error : `Erro ${res.status}`;
       throw new Error(err);
@@ -189,13 +195,12 @@ export default function EnviarCodigoAutomatico({ campanhaId, delayMs = 800 }: Pr
       <CardContent>
         <Stack spacing={0.5} alignItems="center" sx={{ mb: 2 }}>
           <Typography variant="h6" fontWeight="bold">Envio Automático por CSV</Typography>
-          <Typography variant="caption" color="text.secondary">
-            Campanha: <b>{campanhaNome || campanhaId}</b> · Tenant: <b>{tenantId || '—'}</b>
-          </Typography>
+          <Typography variant="h6" fontWeight="bold">Em breve </Typography>
+          
         </Stack>
 
-        <Box display="flex" flexDirection="column" gap={2}>
-          <Button variant="outlined" component="label" size="small" sx={{ fontWeight: 'bold', width: 'fit-content' }}>
+        <Box display="flex" flexDirection="column" alignItems={'center'}  gap={2}>
+          <Button variant="outlined" disabled component="label" size="small" sx={{ fontWeight: 'bold', width: 'fit-content' }}>
             Importar CSV
             <input type="file" accept=".csv" hidden onChange={handleCSVUpload} />
           </Button>
