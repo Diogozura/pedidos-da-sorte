@@ -190,7 +190,7 @@ export default function EnviarCodigoManual({
       onCodigoGerado?.(codigoRef.id);
 
       // monta mensagem (mantive o link com campanhaId; ajuste se preferir por tenantId)
-      const siteLink = `${window.location.origin}/${campanhaId}/validador?${novoCodigo}`;
+      const siteLink = `https://sorteio.pedidodasorte.com.br/${campanhaId}/validador?${novoCodigo}`;
       const message =
         `Parabéns! Você ganhou uma ficha para jogar no *Pedidos da Sorte*! 🎉\n\n` +
         `Seu código é *${novoCodigo}*\n` +
