@@ -96,7 +96,8 @@ export default function VoucherPage() {
         throw new Error(('error' in json && json.error) || 'Falha ao encerrar');
       }
     } catch (e) {
-      toast.error('Erro ao copiar/encerrar: ' + (e as Error).message);
+      console.error(e);
+      // toast.error('Erro ao copiar/encerrar: ' + (e as Error).message);
     }
   };
 
@@ -129,7 +130,7 @@ export default function VoucherPage() {
         )}
 
         <Typography variant="body1" mt={2}>
-          Voltar para o <Link href="/">início</Link>
+          Voltar para o <Link href="https://www.pedidodasorte.com.br">início</Link>
         </Typography>
       </Container>
     </BaseSorteio>
