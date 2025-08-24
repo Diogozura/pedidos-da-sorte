@@ -30,8 +30,11 @@ export default function RaspadinhaPage() {
   const router = useRouter();
   const params = useParams<{ campanha: string }>();
 
-  const campanhaId = params?.campanha;
-  const theme = useCampaignTheme(campanhaId);
+  const slug = params?.campanha;                          // <-- agora é o SLUG
+
+  const [campanhaId, setCampanhaId] = useState<string | null>(null); // <-- novo
+  const theme = useCampaignTheme(campanhaId ?? '');       // <-- hook com o ID real
+
   const [codigo, setCodigo] = useState<string | null>(null);
   const [finalizado, setFinalizado] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState('/result.png');
@@ -39,12 +42,34 @@ export default function RaspadinhaPage() {
   const [premiado, setPremiado] = useState<boolean>(false);
   const [logoCampanha, setLogoCampanha] = useState<string>('');
 
+
+
   // parser robusto p/ diagnosticar respostas não-JSON
   const parseJsonSafe = async <T,>(res: Response): Promise<T> => {
     const text = await res.text();
     try { return JSON.parse(text) as T; }
     catch { throw new Error(`Resposta inválida (${res.status}): ${text.slice(0, 180)}`); }
   };
+  useEffect(() => {
+    if (!slug) return;
+    (async () => {
+      try {
+        const res = await fetch('/api/sorteio/campanha-info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug }),
+        });
+        const json = await parseJsonSafe<{ campanhaId: string; campanha?: { logoUrl?: string | null } }>(res);
+        if (!res.ok) throw new Error((json as { error?: string })?.error ?? 'Falha ao carregar campanha');
+
+        setCampanhaId(json.campanhaId);
+        setLogoCampanha(json.campanha?.logoUrl ?? '');
+      } catch {
+        toast.error('Campanha não encontrada.');
+        router.replace('/');
+      }
+    })();
+  }, [slug, router]);
 
   const iniciarRaspadinha = useCallback(async (code: string) => {
     try {
@@ -70,15 +95,15 @@ export default function RaspadinhaPage() {
   }, [router]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('codigo');
+      const qs = new URLSearchParams(window.location.search);
+    const code = (qs.get('codigo') || '').toUpperCase();
     setCodigo(code);
     if (!code) {
-      router.replace('/sorteio');
+      router.replace(`/${slug}/validador`);
       return;
     }
     iniciarRaspadinha(code.toUpperCase());
-  }, [router, iniciarRaspadinha]);
+  }, [router, iniciarRaspadinha, slug]);
 
   const handleComplete = async () => {
     if (!codigo) return;
@@ -98,10 +123,10 @@ export default function RaspadinhaPage() {
       const ok = json as FinalizarOk;
       if (ok.proximoStatus === 'aguardando dados ganhador') {
         toast.success('🎉 Você ganhou!');
-        setTimeout(() => router.replace(`/${ok.campanhaId}/ganhador?codigo=${codigo}`), 1200);
+       setTimeout(() => router.replace(`/${slug}/ganhador?codigo=${encodeURIComponent(codigo)}`), 1200); // <-- usa SLUG
       } else {
         toast.error('Infelizmente você não ganhou desta vez.');
-        setTimeout(() => router.replace(`/`), 1200);
+        setTimeout(() => router.replace(`/${slug}/validador`), 1200);
       }
     } catch (e) {
       toast.error('Erro ao finalizar: ' + (e as Error).message);

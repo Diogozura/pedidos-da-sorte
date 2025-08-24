@@ -45,6 +45,7 @@ type Props = {
 type CampanhaDoc = {
   pizzariaId?: string;
   nome?: string;
+  slug?: string;
 };
 
 const PHONE_RE = /^\d{10,15}$/;
@@ -64,6 +65,8 @@ export default function EnviarCodigoManual({
   const [isSending, setIsSending] = useState<boolean>(false);
   const [tenantId, setTenantId] = useState<string>('');
   const { conectado, loading: waLoading } = useWaSession(tenantId);
+  const [slug, setSlug] = useState<string>(''); // <- add
+
   const abortRef = useRef<AbortController | null>(null);
 
   // 1) Carrega o tenantId REAL da campanha (nada de slug)
@@ -85,7 +88,7 @@ export default function EnviarCodigoManual({
         }
         if (mounted) {
           setTenantId(data.pizzariaId);
-
+          setSlug((data.slug ?? '').toString()); // <- add
         }
       } catch (e) {
 
@@ -188,9 +191,10 @@ export default function EnviarCodigoManual({
       await updateDoc(doc(db, 'campanhas', campanhaId, 'posicoes', posId), { usado: true });
 
       onCodigoGerado?.(codigoRef.id);
+      const slugPath = slug && slug.length > 0 ? slug : campanhaId; // fallback seguro
 
       // monta mensagem (mantive o link com campanhaId; ajuste se preferir por tenantId)
-      const siteLink = `https://sorteio.pedidodasorte.com.br/${campanhaId}/validador?${novoCodigo}`;
+      const siteLink = `https://sorteio.pedidodasorte.com.br/${encodeURIComponent(slugPath)}/validador?${encodeURIComponent(novoCodigo)}`;
       const message =
         `Oba! O seu código chegou: *${novoCodigo}* Acesse o link abaixo e boa  sorte!  🎉\n\n` +
         `Acesse: ${siteLink}`;

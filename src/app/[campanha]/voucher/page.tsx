@@ -18,15 +18,42 @@ export default function VoucherPage() {
   const codigo = searchParams.get('codigo') ?? '';
   const [voucherCode, setVoucherCode] = useState<string | null>(null);
 
+
+
   const params = useParams<{ campanha: string }>();
-  const campanhaId = params?.campanha;
-  const theme = useCampaignTheme(campanhaId);
+  const slug = params?.campanha;                              // <-- slug
+  const [campanhaId, setCampanhaId] = useState<string>('');   // <-- id real
+  const theme = useCampaignTheme(campanhaId);                 // <-- hook com ID
+
 
   const parseJsonSafe = async <T,>(res: Response): Promise<T> => {
     const txt = await res.text();
     try { return JSON.parse(txt) as T; }
     catch { throw new Error(`Resposta inválida (${res.status}): ${txt.slice(0, 200)}`); }
   };
+
+  useEffect(() => {
+    if (!slug) return;
+    (async () => {
+      try {
+        const res = await fetch('/api/sorteio/campanha-info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug }),
+        });
+        const json = await parseJsonSafe<{ campanhaId: string }>(res);
+        if (!res.ok) {
+          const errorMsg = typeof (json as unknown) === 'object' && json && 'error' in json
+            ? (json as { error?: string }).error
+            : undefined;
+          throw new Error(errorMsg ?? 'Falha ao carregar campanha');
+        }
+        setCampanhaId(json.campanhaId);
+      } catch {
+        // opcional: router.replace('/');
+      }
+    })();
+  }, [slug]);
 
   useEffect(() => {
     const gerarOuRecuperar = async () => {
@@ -74,7 +101,7 @@ export default function VoucherPage() {
   };
 
   return (
-    <BaseSorteio backgroundColor={theme.backgroundColor ?? undefined}
+    <BaseSorteio  logoUrl={theme?.logoUrl ?? undefined} backgroundColor={theme.backgroundColor ?? undefined}
       textColor={theme.textColor ?? undefined}>
       <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignContent: 'center', justifyContent: 'center' }}>
         <h2>🎉 Seu voucher foi gerado!</h2>

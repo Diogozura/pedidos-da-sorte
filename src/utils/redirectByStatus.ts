@@ -1,20 +1,20 @@
 import { toast } from 'react-toastify';
 
-export function getRedirectUrlByStatus(status: string, codigo: string,campanhaId: string): string | null {
-  const base = `/${campanhaId}`;
+export function getRedirectUrlByStatus(status: string, codigo: string,slug: string): string | null {
+  const qp = `?codigo=${encodeURIComponent(codigo)}`;
 
   switch (status) {
     case 'ativo':
     case 'validado':
     case 'aguardando raspagem':
-      return `${base}/raspadinha?codigo=${codigo}`;
+      return `${slug}/raspadinha?${qp}`;
     case 'aguardando dados ganhador':
     case 'coleta de dados do ganhador':
-      return `${base}/ganhador?codigo=${codigo}`;
+      return `${slug}/ganhador?${qp}`;
     case 'voucher gerado':
-      return `${base}/voucher?codigo=${codigo}`;
+      return `${slug}/voucher?${qp}`;
     case 'voucher disponível':
-      return `${base}/voucher?codigo=${codigo}`;
+      return `${slug}/voucher?${qp}`;
     case 'encerrado':
       toast.error('Este código já foi encerrado.');
       return null;

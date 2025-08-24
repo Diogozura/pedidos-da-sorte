@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/app/dashboard/criar-campanha/page.tsx
 'use client';
 
@@ -6,8 +5,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Container, Typography, Grid, TextField, Button, FormControl, InputLabel, MenuItem, Select, Divider, Box, Stack } from '@mui/material';
 import { getStorage, ref as storageRef, listAll, getDownloadURL, uploadBytes } from 'firebase/storage';
-import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
+import { collection, writeBatch, doc,  runTransaction, serverTimestamp } from 'firebase/firestore';
+
+
 import { toast } from 'react-toastify';
+import type { SelectChangeEvent } from '@mui/material';
 
 import { db } from '@/lib/firebase';
 import BaseDash from '../base';
@@ -18,6 +20,10 @@ import LogoUploader from '@/components/CriarCampanha/LogoUploader';
 import AppBreadcrumbs from '@/components/shared/AppBreadcrumbs';
 import { faHome, faTrophy } from '@fortawesome/free-solid-svg-icons';
 import ColorSelector, { CampanhaColors } from '@/components/CriarCampanha/ColorSelector';
+import { slugify } from '@/lib/slug';
+
+
+type ModoCampanha = 'raspadinha' | 'prazo';
 
 export default function CriarCampanhaPage() {
   const { usuario } = useUsuarioLogado();
@@ -30,7 +36,7 @@ export default function CriarCampanhaPage() {
     text: '#FFFFFF',
   });
   const [totalRaspadinhas, setTotalRaspadinhas] = useState('100');
-  const [modo, setModo] = useState<'raspadinha' | 'prazo'>('raspadinha');
+  const [modo, setModo] = useState<ModoCampanha>('raspadinha');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [premios, setPremios] = useState<Premio[]>([]);
@@ -109,8 +115,9 @@ export default function CriarCampanhaPage() {
           const ref = storageRef(storage, path);
           await uploadBytes(ref, premio.file);
           imagemFinal = await getDownloadURL(ref);
-        } catch (err: any) {
-          toast.error(`Erro ao enviar imagem do prêmio ${premio.nome}: ${err.message}`);
+        } catch (err: unknown) {
+          const e = err as { message?: string };
+          toast.error(`Erro ao enviar imagem do prêmio ${premio.nome}: ${e.message ?? 'desconhecido'}`);
           return;
         }
       }
@@ -147,7 +154,7 @@ export default function CriarCampanhaPage() {
     }
 
     try {
-      const novaCampanha = {
+      const baseData = {
         nome,
         backgroundColor: cores.background,
         textColor: cores.text,
@@ -158,20 +165,37 @@ export default function CriarCampanhaPage() {
         premiosTotais: somaPremios,
         premiosRestantes: somaPremios,
         premios: premiosProcessados,
-        criadoEm: new Date(),
-        pizzariaId: usuario?.uid || null,
+        criadoEm: serverTimestamp(),
+        pizzariaId: usuario?.uid ?? null,
         status: 'ativa',
         ...(modo === 'prazo' && {
           dataInicio: new Date(`${dataInicio}T00:00:00`),
           dataFim: new Date(`${dataFim}T23:59:59`),
         })
       };
-      const campanhaRef = await addDoc(collection(db, 'campanhas'), novaCampanha);
 
-      const slots: (string | null)[] = [];
-      premiosProcessados.forEach((p) => {
-        for (let i = 0; i < p.quantidadeTotais; i++) slots.push(p.nome);
+      const { campanhaId } = await runTransaction(db, async (tx) => {
+        const base = slugify(nome);
+        let attempt = 1;
+        let candidate = base;
+
+        while (true) {
+          const slugRef = doc(db, 'slugs', candidate);
+          const slugSnap = await tx.get(slugRef);
+          if (!slugSnap.exists()) {
+            const campanhaRef = doc(collection(db, 'campanhas'));
+            tx.set(campanhaRef, { ...baseData, slug: candidate });
+            tx.set(slugRef, { campanhaId: campanhaRef.id, reservedAt: serverTimestamp() });
+            return { campanhaId: campanhaRef.id, finalSlug: candidate };
+          }
+          attempt += 1;
+          candidate = `${base}-${attempt}`;
+        }
       });
+
+      // cria as posições fora da transação (seu código original, só trocando o id)
+      const slots: (string | null)[] = [];
+      premiosProcessados.forEach((p) => { for (let i = 0; i < p.quantidadeTotais; i++) slots.push(p.nome); });
       while (slots.length < total) slots.push(null);
 
       const shuffle = [...slots];
@@ -182,7 +206,7 @@ export default function CriarCampanhaPage() {
 
       const batch = writeBatch(db);
       shuffle.forEach((prizeName, index) => {
-        const posRef = doc(db, 'campanhas', campanhaRef.id, 'posicoes', `${index + 1}`);
+        const posRef = doc(db, 'campanhas', campanhaId, 'posicoes', `${index + 1}`);
         batch.set(posRef, {
           chance: index + 1,
           prize: prizeName,
@@ -190,12 +214,13 @@ export default function CriarCampanhaPage() {
           enviado: false,
         });
       });
-
       await batch.commit();
+
       toast.success('Campanha criada com sucesso!');
       router.push('/dashboard');
-    } catch (err: any) {
-      toast.error('Erro ao criar campanha: ' + err.message);
+    } catch (err) {
+      const e = err as Error;
+      toast.error('Erro ao criar campanha: ' + e.message);
     }
   };
 
@@ -258,7 +283,9 @@ export default function CriarCampanhaPage() {
                   labelId="modo-label"
                   label="Modo da campanha"
                   value={modo}
-                  onChange={(e) => setModo(e.target.value as any)}
+                  onChange={(e: SelectChangeEvent<ModoCampanha>) =>
+                    setModo(e.target.value as ModoCampanha)
+                  }
                 >
                   <MenuItem value="raspadinha">Número de jogos</MenuItem>
                   <MenuItem value="prazo">Por tempo</MenuItem>
@@ -291,7 +318,7 @@ export default function CriarCampanhaPage() {
               )}
               <Box>
                 <Stack spacing={2}>
-                 
+
 
                   <ColorSelector
                     label="Cor de fundo da campanha"
@@ -300,7 +327,7 @@ export default function CriarCampanhaPage() {
                     size="small"
                   />
 
-                  
+
                 </Stack>
               </Box>
             </Grid>

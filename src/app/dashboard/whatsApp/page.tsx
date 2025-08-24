@@ -296,7 +296,7 @@ export default function WhatsApp() {
                                     }
                                 }}
                             >
-                                Hard reset
+                                gerar QR code
                             </Button>
                         </Stack>
 

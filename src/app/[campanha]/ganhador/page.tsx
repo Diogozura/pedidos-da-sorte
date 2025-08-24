@@ -3,7 +3,7 @@
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useFormContext } from '@/config/FormContext';
 import { Button, Container, TextField, Typography, Box } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { BaseSorteio } from '@/components/BaseSorteio';
 import { useCampaignTheme } from '@/hook/useCampaignTheme';
@@ -14,15 +14,38 @@ type RespErr = { ok: false; error: string };
 export default function GanhadorPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+   const params = useParams<{ campanha: string }>();
+  const slug = params?.campanha;                             // <-- slug
+  const [campanhaId, setCampanhaId] = useState<string>('');  // <-- id real
+  const theme = useCampaignTheme(campanhaId);                // <-- hook com ID
+
   const codigo = searchParams.get('codigo') ?? '';
   const { formValues, setFormValues } = useFormContext();
   const [loading, setLoading] = useState(false);
   const values = (formValues['ganhador'] as Record<string, string>) || {};
 
-    const params = useParams<{ campanha: string }>();
-  const campanhaId = params?.campanha;
-  const theme = useCampaignTheme(campanhaId);
 
+
+
+ useEffect(() => {
+    if (!slug) return;
+    (async () => {
+      try {
+        const res = await fetch('/api/sorteio/campanha-info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug }),
+        });
+        const json = await parseJsonSafe<{ campanhaId: string }>(res);
+        if (!res.ok) throw new Error((json as { error?: string })?.error ?? 'Falha ao carregar campanha');
+        setCampanhaId(json.campanhaId);
+      } catch {
+        // segue sem tema se falhar, mas ideal redirecionar:
+        // router.replace('/');
+      }
+    })();
+  }, [slug]);
+  
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormValues('ganhador', { [name]: value });
@@ -31,7 +54,7 @@ export default function GanhadorPage() {
   const parseJsonSafe = async <T,>(res: Response): Promise<T> => {
     const text = await res.text();
     try { return JSON.parse(text) as T; }
-    catch { throw new Error(`Resposta inválida (${res.status}): ${text.slice(0,180)}`); }
+    catch { throw new Error(`Resposta inválida (${res.status}): ${text.slice(0, 180)}`); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -59,9 +82,9 @@ export default function GanhadorPage() {
         throw new Error(('error' in json && json.error) || 'Falha ao salvar dados');
       }
 
-      const ok = json as RespOk;
+    
       toast.success('Dados enviados com sucesso!');
-      router.push(`/${ok.campanhaId}/voucher?codigo=${codigo}`);
+       router.push(`/${slug}/voucher?codigo=${encodeURIComponent(codigo)}`); // <-- usa SLUG
     } catch (err) {
       toast.error('Erro ao salvar dados: ' + (err as Error).message);
     } finally {
@@ -70,7 +93,7 @@ export default function GanhadorPage() {
   };
 
   return (
-    <BaseSorteio backgroundColor={theme.backgroundColor ?? undefined}
+    <BaseSorteio logoUrl={theme?.logoUrl ?? undefined} backgroundColor={theme.backgroundColor ?? undefined}
       textColor={theme.textColor ?? undefined}>
       <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignItems: 'center', justifyContent: 'center' }}>
         <Typography variant="h4" gutterBottom>

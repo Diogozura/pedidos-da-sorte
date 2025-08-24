@@ -12,46 +12,57 @@ type CampanhaUI = { logoUrl?: string | null; backgroundColor?: string | null; te
 export default function CodigoPage() {
   const [codigo, setCodigo] = useState<string>('');
   const [campanha, setCampanha] = useState<CampanhaUI | null>(null);
-  console.log('Campanha:', campanha);
+  const [campanhaId, setCampanhaId] = useState<string | null>(null); // <-- novo
   const router = useRouter();
   const params = useParams<{ campanha: string }>();
-  const campanhaId = params?.campanha;
+  const slug = params?.campanha; // <-- agora isso é o SLUG
+
+  function readCodigoFromSearch(): string | null {
+    const qs = typeof window !== 'undefined' ? window.location.search : '';
+    if (!qs) return null;
+    const usp = new URLSearchParams(qs);
+    const byKey = usp.get('codigo') || usp.get('c') || usp.get('C');
+    if (byKey) return byKey.toUpperCase();
+    return qs.startsWith('?') ? qs.substring(1).toUpperCase() : null;
+  }
 
   useEffect(() => {
-    const search = window.location.search;
-    if (!search.startsWith('?')) {
+    const parsed = readCodigoFromSearch();
+    if (!parsed) {
       toast.error('Código não informado na URL.');
       return;
     }
-    const parsed = search.substring(1).toUpperCase();
     setCodigo(parsed);
 
-    // Carregar infos mínimas da campanha via API (server)
     (async () => {
       try {
+        // agora enviamos SLUG; a API resolve slug -> campanhaId
         const res = await fetch('/api/sorteio/campanha-info', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ campanhaId }),
+          body: JSON.stringify({ slug }),
         });
         const json = await res.json();
-        saveCampaignTheme(campanhaId, {
+        if (!res.ok) throw new Error(json.error || 'Falha ao carregar campanha');
+
+        const cid: string = json.campanhaId ?? json.campanha?.id;
+        setCampanhaId(cid);
+        setCampanha(json.campanha as CampanhaUI);
+
+        // salva tema usando o ID real, não o slug
+        saveCampaignTheme(cid, {
           logoUrl: json.campanha.logoUrl ?? null,
           backgroundColor: json.campanha.backgroundColor ?? json.campanha.corFundo ?? null,
           textColor: json.campanha.textColor ?? null,
         });
-        if (!res.ok) throw new Error(json.error || 'Falha ao carregar campanha');
-        setCampanha(json.campanha as CampanhaUI);
-        console.log('Campanha fetch:', json.campanha);
 
         if (json.campanha?.logoUrl) new Image().src = json.campanha.logoUrl;
-
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'desconhecido';
         toast.error('Erro ao carregar campanha: ' + msg);
       }
     })();
-  }, [campanhaId]);
+  }, [slug]);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -76,7 +87,7 @@ export default function CodigoPage() {
 
       toast.success('Código válido! 🎉');
       const nextStatus = json.statusDepois ?? 'validado';
-      const redirect = getRedirectUrlByStatus(nextStatus, upper, json.campanhaId);
+      const redirect = getRedirectUrlByStatus(nextStatus, upper, slug);
       if (redirect) router.push(redirect);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'desconhecido';
