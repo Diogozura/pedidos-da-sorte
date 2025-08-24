@@ -23,7 +23,7 @@ export function middleware(req: NextRequest) {
   if (isStatic(pathname)) return NextResponse.next();
 
   const isDashboardHost =
-    host.startsWith('dashboard.') && host.endsWith('pedidodasorte.com.br');
+    host.startsWith('sistema.') && host.endsWith('pedidodasorte.com.br');
 
   if (isDashboardHost) {
     // 1) Deixa /api e /auth na raiz do subdomínio
