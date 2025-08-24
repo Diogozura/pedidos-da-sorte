@@ -14,7 +14,7 @@ type RespErr = { ok: false; error: string };
 export default function GanhadorPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-   const params = useParams<{ campanha: string }>();
+  const params = useParams<{ campanha: string }>();
   const slug = params?.campanha;                             // <-- slug
   const [campanhaId, setCampanhaId] = useState<string>('');  // <-- id real
   const theme = useCampaignTheme(campanhaId);                // <-- hook com ID
@@ -27,7 +27,7 @@ export default function GanhadorPage() {
 
 
 
- useEffect(() => {
+  useEffect(() => {
     if (!slug) return;
     (async () => {
       try {
@@ -45,7 +45,7 @@ export default function GanhadorPage() {
       }
     })();
   }, [slug]);
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormValues('ganhador', { [name]: value });
@@ -73,7 +73,6 @@ export default function GanhadorPage() {
           codigo,
           nome: values.nome ?? '',
           telefone: values.telefone ?? '',
-          endereco: values.endereco ?? '',
         }),
       });
       const json = await parseJsonSafe<RespOk | RespErr>(res);
@@ -82,9 +81,9 @@ export default function GanhadorPage() {
         throw new Error(('error' in json && json.error) || 'Falha ao salvar dados');
       }
 
-    
+
       toast.success('Dados enviados com sucesso!');
-       router.push(`/${slug}/voucher?codigo=${encodeURIComponent(codigo)}`); // <-- usa SLUG
+      router.push(`/${slug}/voucher?codigo=${encodeURIComponent(codigo)}`); // <-- usa SLUG
     } catch (err) {
       toast.error('Erro ao salvar dados: ' + (err as Error).message);
     } finally {
@@ -95,10 +94,16 @@ export default function GanhadorPage() {
   return (
     <BaseSorteio logoUrl={theme?.logoUrl ?? undefined} backgroundColor={theme.backgroundColor ?? undefined}
       textColor={theme.textColor ?? undefined}>
-      <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography variant="h4" gutterBottom>
-          🎉 Parabéns! Preencha seus dados:
-        </Typography>
+      <Container maxWidth="md" sx={{ height: '70vh', display: 'grid', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{textAlign: 'center' , padding:1}}>
+          <Typography variant="h4" component={'h2'} gutterBottom>
+            🎉 Parabéns!
+          </Typography>
+          <Typography variant="body1" component={'p'} gutterBottom>
+            Preencha os dados abaixo e receba o sou voucher para resgatar o seu prêmio!
+          </Typography>
+        </Box>
+
 
         <Box
           component="form"
@@ -129,15 +134,6 @@ export default function GanhadorPage() {
             autoComplete="tel"
             required
             value={values.telefone || ''}
-            onChange={handleInputChange}
-          />
-          <TextField
-            label="Endereço"
-            name="endereco"
-            fullWidth
-            autoComplete="street-address"
-            required
-            value={values.endereco || ''}
             onChange={handleInputChange}
           />
 

@@ -9,7 +9,6 @@ type ReqBody = {
   codigo: string;
   nome: string;
   telefone: string;
-  endereco: string;
 };
 
 type RespOk = { ok: true; campanhaId: string; ganhadorId: string };
@@ -18,9 +17,9 @@ type RespErr = { ok: false; error: string };
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as Partial<ReqBody>;
-    const { codigo, nome, telefone, endereco } = body;
+    const { codigo, nome, telefone } = body;
 
-    if (!codigo || !nome || !telefone || !endereco) {
+    if (!codigo || !nome || !telefone ) {
       return NextResponse.json<RespErr>(
         { ok: false, error: 'Parâmetros inválidos' },
         { status: 400 }
@@ -74,7 +73,6 @@ export async function POST(req: Request) {
     batch.set(ganhadorRef, {
       nome,
       telefone,
-      endereco,
       codigoOriginal: code,
       codigoId: codeRef.id,
       campanhaId: codeData.campanhaId,

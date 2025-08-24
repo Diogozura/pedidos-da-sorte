@@ -16,8 +16,8 @@ type Props = {
 export function BaseSorteio({
   children,
   logoUrl,
-  width = 200,
-  height = 200,
+  width = 150,
+  height = 150,
   backgroundColor = "#b30000", // fallback vermelho
   textColor = "#ffffff",       // fallback branco
 }: Props) {

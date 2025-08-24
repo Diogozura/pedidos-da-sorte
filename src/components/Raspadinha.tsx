@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 type Props = {
   width: number;
   height: number;
-  backgroundImage: string;
+  backgroundImage?: string;
   overlayColor?: string;
   radius?: number;
   percentToFinish?: number;
@@ -134,7 +134,7 @@ export default function RaspadinhaJogo({
     canvas.addEventListener('mouseup', end);
     canvas.addEventListener('mouseleave', end);
     canvas.addEventListener('touchstart', start);
-  canvas.addEventListener('touchmove', touchMoveHandler, { passive: false });
+    canvas.addEventListener('touchmove', touchMoveHandler, { passive: false });
     canvas.addEventListener('touchend', end);
 
     return () => {
@@ -159,7 +159,9 @@ export default function RaspadinhaJogo({
         borderRadius: 12,
         overflow: 'hidden',
         border: '2px solid #000',
-        backgroundImage: isReady ? `url(${backgroundImage.startsWith('/') ? backgroundImage : '/' + backgroundImage})` : 'none',
+        backgroundImage: isReady && backgroundImage
+          ? `url("${backgroundImage}")`
+          : 'none',
         backgroundColor: !isReady ? overlayColor : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',

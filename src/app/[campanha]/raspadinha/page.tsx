@@ -18,9 +18,11 @@ type IniciarOk = {
   campanhaId: string;
   logoUrl?: string | null;
   premiado: boolean;
-  imagemPremio?: string;
+  imagemPremio?: string | null
 };
 type IniciarErr = { ok: false; error: string };
+
+const DEFAULT_NAO_GANHOU_IMG = '/nao-ganhou.png';
 
 type FinalizarOk = {
   ok: true;
@@ -40,13 +42,29 @@ export default function RaspadinhaPage() {
 
   const [codigo, setCodigo] = useState<string | null>(null);
   const [finalizado, setFinalizado] = useState(false);
-  const [backgroundImage, setBackgroundImage] = useState('/result.png');
+  const [backgroundImage, setBackgroundImage] = useState<string>(DEFAULT_NAO_GANHOU_IMG);
 
   const [premiado, setPremiado] = useState<boolean>(false);
   const [logoCampanha, setLogoCampanha] = useState<string>('');
 
 
+  function preloadImage(src: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      // sem crossOrigin aqui!
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = src;
+    });
+  }
 
+  async function applyBackgroundFromResult(isPremiado: boolean, imagemPremio?: string | null) {
+    const candidate =
+      isPremiado && imagemPremio && imagemPremio.trim() ? imagemPremio : DEFAULT_NAO_GANHOU_IMG;
+
+    const ok = await preloadImage(candidate);
+    setBackgroundImage(ok ? candidate : DEFAULT_NAO_GANHOU_IMG);
+  }
   // parser robusto p/ diagnosticar respostas não-JSON
   const parseJsonSafe = async <T,>(res: Response): Promise<T> => {
     const text = await res.text();
@@ -90,15 +108,16 @@ export default function RaspadinhaPage() {
       const ok = json as IniciarOk;
       setLogoCampanha(ok.logoUrl ?? '');
       setPremiado(Boolean(ok.premiado));
-      setBackgroundImage(ok.premiado ? (ok.imagemPremio ?? '/result.png') : '/nao-ganhou.png');
+      console.log('Iniciar raspadinha:', ok);
+      await applyBackgroundFromResult(Boolean(ok.premiado), ok.imagemPremio);
     } catch (e) {
       toast.error('Erro na validação: ' + (e as Error).message);
-      router.replace('/sorteio');
+      router.replace(`/${slug}/validador`);
     }
   }, [router]);
 
   useEffect(() => {
-      const qs = new URLSearchParams(window.location.search);
+    const qs = new URLSearchParams(window.location.search);
     const code = (qs.get('codigo') || '').toUpperCase();
     setCodigo(code);
     if (!code) {
@@ -126,7 +145,7 @@ export default function RaspadinhaPage() {
       const ok = json as FinalizarOk;
       if (ok.proximoStatus === 'aguardando dados ganhador') {
         toast.success('🎉 Você ganhou!');
-       setTimeout(() => router.replace(`/${slug}/ganhador?codigo=${encodeURIComponent(codigo)}`), 1200); // <-- usa SLUG
+        setTimeout(() => router.replace(`/${slug}/ganhador?codigo=${encodeURIComponent(codigo)}`), 1200); // <-- usa SLUG
       } else {
         toast.error('Infelizmente você não ganhou desta vez.');
         setTimeout(() => router.replace(`/${slug}/validador`), 1200);
@@ -136,6 +155,7 @@ export default function RaspadinhaPage() {
     }
   };
 
+  console.log('backgroundImage',backgroundImage)
   return (
     <BaseSorteio logoUrl={logoCampanha} backgroundColor={theme.backgroundColor ?? undefined}
       textColor={theme.textColor ?? undefined} >
@@ -143,13 +163,14 @@ export default function RaspadinhaPage() {
         maxWidth="md"
         sx={{ textAlign: 'center', mt: 4, height: '60vh', display: 'grid', alignContent: 'center', justifyContent: 'center' }}
       >
-        <Typography variant="h4" gutterBottom>
+        <Typography variant="h5" component={'h1'} >
           Raspe para descobrir se ganhou
         </Typography>
 
         <RaspadinhaJogo
-          width={300}
-          height={300}
+          key={backgroundImage}
+          width={280}
+          height={280}
           backgroundImage={backgroundImage}
           onComplete={handleComplete}
         />

@@ -102,11 +102,12 @@ export default function VoucherPage() {
   };
 
   return (
-    <BaseSorteio  logoUrl={theme?.logoUrl ?? undefined} backgroundColor={theme.backgroundColor ?? undefined}
+    <BaseSorteio logoUrl={theme?.logoUrl ?? undefined} backgroundColor={theme.backgroundColor ?? undefined}
       textColor={theme.textColor ?? undefined}>
-      <Container maxWidth="md" sx={{ height: '80vh', display: 'grid', alignContent: 'center', justifyContent: 'center' }}>
-        <h2>🎉 Seu voucher foi gerado!</h2>
-        <p>Use esse voucher na loja ou envie para a equipe.</p>
+      <Container maxWidth="md" sx={{ height: '70vh', display: 'grid', alignContent: 'center', textAlign:'center', justifyContent: 'center' }}>
+        <Typography variant='h4' component={'h1'}>🎉 Seu voucher foi gerado!</Typography>
+
+        <Typography variant='body1' component={'p'}>Use esse voucher na loja.</Typography>
 
         {voucherCode ? (
           <Box
@@ -128,7 +129,7 @@ export default function VoucherPage() {
         ) : (
           <Typography>Gerando voucher...</Typography>
         )}
-
+        <Typography variant='body1' component={'p'}>📷 tire print </Typography>
         <Typography variant="body1" mt={2}>
           Voltar para o <Link href="https://www.pedidodasorte.com.br">início</Link>
         </Typography>
