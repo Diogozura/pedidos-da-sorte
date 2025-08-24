@@ -349,9 +349,7 @@ export default function CriarCampanhaPage() {
           </Grid>
 
           <Divider sx={{ mt: 4, mb: 2 }} />
-          <Typography variant="body2" color="text.secondary">
-            As campanhas agora pré-alocam posições aleatórias de prêmios em subcoleção `posicoes`.
-          </Typography>
+        
         </Container>
       </BaseDash>
     </ProtegePagina>
