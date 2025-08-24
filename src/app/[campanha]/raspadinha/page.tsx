@@ -2,13 +2,16 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import RaspadinhaJogo from '@/components/Raspadinha';
 import { toast } from 'react-toastify';
-import { Container, Typography } from '@mui/material';
+import { Container, Skeleton, Typography } from '@mui/material';
 import Link from 'next/link';
 import { BaseSorteio } from '@/components/BaseSorteio';
 import { useCampaignTheme } from '@/hook/useCampaignTheme';
-
+import dynamic from 'next/dynamic';
+const RaspadinhaJogo = dynamic(() => import('@/components/Raspadinha'), {
+  ssr: false,
+  loading: () => <Skeleton variant="rounded" width={300} height={300} />,
+});
 
 type IniciarOk = {
   ok: true;

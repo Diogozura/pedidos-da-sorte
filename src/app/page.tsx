@@ -2,15 +2,18 @@
 
 import { BaseSorteio } from '@/components/BaseSorteio';
 import { useRouter } from 'next/navigation';
-import { Container, Typography } from '@mui/material';
+import { Container, Skeleton, Typography } from '@mui/material';
 
 
 import { toast } from 'react-toastify';
 import dynamic from 'next/dynamic';
 
+const RaspadinhaJogo = dynamic(() => import('@/components/Raspadinha'), {
+  ssr: false,
+  loading: () => <Skeleton variant="rounded" width={300} height={300} />,
+});
 
 
-const RaspadinhaJogo = dynamic(() => import('@/components/Raspadinha'));
 
 export default function CodigoPage() {
  const router = useRouter();
