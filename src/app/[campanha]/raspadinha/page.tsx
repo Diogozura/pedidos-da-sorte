@@ -17,7 +17,7 @@ type IniciarOk = {
   ok: true;
   campanhaId: string;
   logoUrl?: string | null;
-  premiado: boolean;
+  premiado: string | null;
   imagemPremio?: string | null
 };
 type IniciarErr = { ok: false; error: string };
@@ -44,9 +44,9 @@ export default function RaspadinhaPage() {
   const [finalizado, setFinalizado] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState<string>(DEFAULT_NAO_GANHOU_IMG);
 
-  const [premiado, setPremiado] = useState<boolean>(false);
+  const [premiado, setPremiado] = useState<string | null>(null);
   const [logoCampanha, setLogoCampanha] = useState<string>('');
-
+console.log('premiado', premiado)
 
   function preloadImage(src: string): Promise<boolean> {
     return new Promise((resolve) => {
@@ -58,19 +58,22 @@ export default function RaspadinhaPage() {
     });
   }
 
-  async function applyBackgroundFromResult(isPremiado: boolean, imagemPremio?: string | null) {
+  const applyBackgroundFromResult = useCallback(async (isPremiado: boolean, imagemPremio?: string | null) => {
     const candidate =
       isPremiado && imagemPremio && imagemPremio.trim() ? imagemPremio : DEFAULT_NAO_GANHOU_IMG;
 
     const ok = await preloadImage(candidate);
     setBackgroundImage(ok ? candidate : DEFAULT_NAO_GANHOU_IMG);
-  }
+  }, []);
+
+
   // parser robusto p/ diagnosticar respostas não-JSON
   const parseJsonSafe = async <T,>(res: Response): Promise<T> => {
     const text = await res.text();
     try { return JSON.parse(text) as T; }
     catch { throw new Error(`Resposta inválida (${res.status}): ${text.slice(0, 180)}`); }
   };
+
   useEffect(() => {
     if (!slug) return;
     (async () => {
@@ -107,14 +110,14 @@ export default function RaspadinhaPage() {
 
       const ok = json as IniciarOk;
       setLogoCampanha(ok.logoUrl ?? '');
-      setPremiado(Boolean(ok.premiado));
-      console.log('Iniciar raspadinha:', ok);
+      setPremiado(ok.premiado);
+      console.log('Iniciar raspadinha:', ok.premiado);
       await applyBackgroundFromResult(Boolean(ok.premiado), ok.imagemPremio);
     } catch (e) {
       toast.error('Erro na validação: ' + (e as Error).message);
       router.replace(`/${slug}/validador`);
     }
-  }, [router]);
+  }, [router, applyBackgroundFromResult, slug]);
 
   useEffect(() => {
     const qs = new URLSearchParams(window.location.search);
@@ -144,7 +147,7 @@ export default function RaspadinhaPage() {
 
       const ok = json as FinalizarOk;
       if (ok.proximoStatus === 'aguardando dados ganhador') {
-        toast.success('🎉 Você ganhou!');
+        toast.success(`🎉 Você ganhou! ${premiado}`);
         setTimeout(() => router.replace(`/${slug}/ganhador?codigo=${encodeURIComponent(codigo)}`), 1200); // <-- usa SLUG
       } else {
         toast.error('Infelizmente você não ganhou desta vez.');
@@ -155,7 +158,7 @@ export default function RaspadinhaPage() {
     }
   };
 
-  console.log('backgroundImage',backgroundImage)
+  
   return (
     <BaseSorteio logoUrl={logoCampanha} backgroundColor={theme.backgroundColor ?? undefined}
       textColor={theme.textColor ?? undefined} >
