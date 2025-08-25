@@ -19,11 +19,8 @@ import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash, faHome } from "@fortawesome/free-solid-svg-icons";
 import { auth, db } from "@/lib/firebase";
-import {
-  createUserWithEmailAndPassword,
-  updateProfile,
-} from "firebase/auth";
-import { collection, doc, getDocs, setDoc } from "firebase/firestore";
+
+import { collection, getDocs } from "firebase/firestore";
 import { toast } from "react-toastify";
 import BaseDash from "../base";
 
@@ -63,52 +60,57 @@ export default function GerenciarConta() {
   }, [usuario]);
 
   const handleCadastro = async () => {
-    if (!nome || !email || !senha || !confirmarSenha) {
-      toast.error('Preencha todos os campos!');
+  if (!nome || !email || !senha || !confirmarSenha) {
+    toast.error('Preencha todos os campos!');
+    return;
+  }
+  if (senha !== confirmarSenha) {
+    toast.error('As senhas não coincidem!');
+    return;
+  }
+  if (!usuario) {
+    toast.error('Usuário não autenticado.');
+    return;
+  }
+  if (nivel === 'funcionario' && usuario.nivel === 'admin' && !pizzariaSelecionada) {
+    toast.error('Selecione a pizzaria do funcionário.');
+    return;
+  }
+
+  try {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) {
+      toast.error('Falha ao obter token de autenticação.');
       return;
     }
 
-    if (senha !== confirmarSenha) {
-      toast.error('As senhas não coincidem!');
-      return;
-    }
-
-    if (!usuario) {
-      toast.error('Usuário não autenticado.');
-      return;
-    }
-
-    if (nivel === 'funcionario' && usuario.nivel === 'admin' && !pizzariaSelecionada) {
-      toast.error('Selecione a pizzaria do funcionário.');
-      return;
-    }
-
-    try {
-      const result = await createUserWithEmailAndPassword(auth, email, senha);
-      await updateProfile(result.user, { displayName: nome });
-
-      const novoUsuario = {
-        uid: result.user.uid,
+    const res = await fetch('/api/usuarios/criar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
         nome,
         email,
+        senha,
         nivel,
-        criadoEm: new Date(),
-        pizzariaId:
-          nivel === 'empresa'
-            ? result.user.uid
-            : usuario.nivel === 'empresa'
-              ? usuario.uid
-              : pizzariaSelecionada,
-      };
+        pizzariaId: nivel === 'funcionario' && usuario.nivel === 'admin' ? pizzariaSelecionada : undefined,
+      }),
+    });
 
-      await setDoc(doc(db, 'usuarios', result.user.uid), novoUsuario);
-
-      toast.success(`Usuário ${nivel === 'empresa' ? 'empresa' : 'funcionário'} criado com sucesso!`);
-       router.push('/dashboard');
-    } catch (err: any) {
-      toast.error('Erro ao cadastrar: ' + err.message);
+    const data = await res.json();
+    if (!res.ok || !data?.ok) {
+      throw new Error(data?.error || 'Erro ao cadastrar');
     }
-  };
+
+    toast.success(`Usuário ${nivel === 'empresa' ? 'empresa' : 'colaborador'} criado com sucesso!`);
+    router.push('/dashboard/conta');
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    toast.error('Erro ao cadastrar: ' + msg);
+  }
+};
 
   return (
     <ProtegePagina permitido={['admin', 'empresa']}>
