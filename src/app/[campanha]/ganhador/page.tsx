@@ -11,6 +11,9 @@ import { useCampaignTheme } from '@/hook/useCampaignTheme';
 type RespOk = { ok: true; campanhaId: string; ganhadorId: string };
 type RespErr = { ok: false; error: string };
 
+type InfoOk = { ok: true; premiado: string | null };
+type InfoErr = { ok: false; error: string };
+
 export default function GanhadorPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,7 +28,33 @@ export default function GanhadorPage() {
   const values = (formValues['ganhador'] as Record<string, string>) || {};
 
 
+  const parseJsonSafe = async <T,>(res: Response): Promise<T> => {
+    const text = await res.text();
+    try { return JSON.parse(text) as T; }
+    catch { throw new Error(`Resposta inválida (${res.status}): ${text.slice(0, 180)}`); }
+  };
 
+
+  const [premio, setPremio] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/sorteio/codigo/info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: codigo ? JSON.stringify({ codigo }) : undefined, // ou sem body se usar cookie
+        });
+        const json = await parseJsonSafe<InfoOk | InfoErr>(res);
+        if (!res.ok || ('ok' in json && !json.ok)) {
+          throw new Error(('error' in json && json.error) || 'Falha ao recuperar prêmio');
+        }
+        setPremio((json as InfoOk).premiado);
+      } catch (e) {
+        console.warn(e);
+      }
+    })();
+  }, [codigo]);
 
   useEffect(() => {
     if (!slug) return;
@@ -37,6 +66,7 @@ export default function GanhadorPage() {
           body: JSON.stringify({ slug }),
         });
         const json = await parseJsonSafe<{ campanhaId: string }>(res);
+        console.log(json)
         if (!res.ok) throw new Error((json as { error?: string })?.error ?? 'Falha ao carregar campanha');
         setCampanhaId(json.campanhaId);
       } catch {
@@ -51,11 +81,7 @@ export default function GanhadorPage() {
     setFormValues('ganhador', { [name]: value });
   };
 
-  const parseJsonSafe = async <T,>(res: Response): Promise<T> => {
-    const text = await res.text();
-    try { return JSON.parse(text) as T; }
-    catch { throw new Error(`Resposta inválida (${res.status}): ${text.slice(0, 180)}`); }
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,12 +121,12 @@ export default function GanhadorPage() {
     <BaseSorteio logoUrl={theme?.logoUrl ?? undefined} backgroundColor={theme.backgroundColor ?? undefined}
       textColor={theme.textColor ?? undefined}>
       <Container maxWidth="md" sx={{ height: '70vh', display: 'grid', alignItems: 'center', justifyContent: 'center' }}>
-        <Box sx={{textAlign: 'center' , padding:1}}>
+        <Box sx={{ textAlign: 'center', padding: 1 }}>
           <Typography variant="h4" component={'h2'} gutterBottom>
             🎉 Parabéns!
           </Typography>
           <Typography variant="body1" component={'p'} gutterBottom>
-            Preencha os dados abaixo e receba o sou voucher para resgatar o seu prêmio!
+            Preencha os dados abaixo e receba o sou voucher para resgatar o seu prêmio! <Typography textTransform={'uppercase'} fontWeight={'bold'} > * {premio} * </Typography>
           </Typography>
         </Box>
 
