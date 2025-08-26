@@ -16,7 +16,7 @@ export default function CodigoPage() {
   const router = useRouter();
   const params = useParams<{ campanha: string }>();
   const slug = params?.campanha; // <-- agora isso é o SLUG
-
+  console.log('slug', slug)
   function readCodigoFromSearch(): string | null {
     const qs = typeof window !== 'undefined' ? window.location.search : '';
     if (!qs) return null;
@@ -40,7 +40,7 @@ export default function CodigoPage() {
         const res = await fetch('/api/sorteio/campanha-info', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug :'teste-domingo'}),
+          body: JSON.stringify({ slug}),
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || 'Falha ao carregar campanha');

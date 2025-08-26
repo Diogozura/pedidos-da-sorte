@@ -8,14 +8,13 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { Box, Button, Chip, Container, Grid, Typography } from '@mui/material';
 // import { useRouter } from 'next/navigation';
 import Head from 'next/head';
-import PremiosResgatados from './PremiosResgatados';
 import BaseDash from '../../base';
 import { toast } from 'react-toastify';
-import PremiosNaoResgatados from '@/components/PremiosNaoResgatados';
 import NumerosPremiados from '@/components/NumerosPremiados';
 import RelatorioEnvioCampanha from '@/components/RelatorioEnvioCampanha';
 import AppBreadcrumbs from '@/components/shared/AppBreadcrumbs';
 import { faHome } from '@fortawesome/free-solid-svg-icons';
+import PremiosTabela from './PremiosTabela';
 
 export default function DetalhesCampanhaPage() {
     const { id } = useParams();
@@ -195,8 +194,8 @@ export default function DetalhesCampanhaPage() {
                             </Box>
                         </Grid>
                         <Grid size={12}>
-                            {abaAtual === 'resgatados' && <PremiosResgatados campanhaId={campanha.id} />}
-                            {abaAtual === 'naoResgatados' && <PremiosNaoResgatados campanhaId={campanha.id} />}
+                            {abaAtual === 'resgatados' && <PremiosTabela campanhaId={campanha.id} mode="resgatados" />}
+                            {abaAtual === 'naoResgatados' && <PremiosTabela campanhaId={campanha.id} mode="naoResgatados" />}
                             {abaAtual === 'premiados' && <NumerosPremiados campanhaId={campanha.id} mostrar="premiados" />}
                             {abaAtual === 'naoPremiados' && <NumerosPremiados campanhaId={campanha.id} mostrar="naoPremiados" />}
                             {abaAtual === 'envio' && <RelatorioEnvioCampanha campanhaId={campanha.id} />}

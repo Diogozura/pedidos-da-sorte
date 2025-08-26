@@ -1,108 +1,70 @@
+// src/app/api/sorteio/ganhador/salvar/route.ts
 import 'server-only';
 export const runtime = 'nodejs';
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
 type ReqBody = {
-  codigo?: string;
-  nome?: string;
-  telefone?: string;
+  campanhaId: string;        // obrigatório
+  codigo: string;            // código original (ex.: "EK6BE0") - obrigatório
+  nome: string;              // obrigatório
+  telefone: string;          // obrigatório
+  premio?: string | null;    // opcional (pode vir da api/codigo/info)
+  codigoId?: string | null;  // opcional (id do doc em 'codigos' se você tiver)
 };
 
-type RespOk = {
-  ok: true;
-  proximoStatus: 'voucher gerado';
-  premio: string | null;
-};
-
+type RespOk = { ok: true; id: string };
 type RespErr = { ok: false; error: string };
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    // 1) Body JSON seguro
-    let body: ReqBody = {};
-    try {
-      body = (await req.json()) as ReqBody;
-    } catch {
+    const body = (await req.json()) as ReqBody;
+
+    const { campanhaId, codigo, nome, telefone, premio = null, codigoId = null } = body ?? {};
+
+    if (!campanhaId || !codigo || !nome || !telefone) {
       return NextResponse.json<RespErr>(
-        { ok: false, error: 'Body inválido: envie JSON' },
+        { ok: false, error: 'campanhaId, codigo, nome e telefone são obrigatórios.' },
         { status: 400 }
       );
     }
 
-    const { codigo, nome, telefone } = body;
-    if (!codigo || !nome || !telefone) {
-      return NextResponse.json<RespErr>(
-        { ok: false, error: 'codigo, nome e telefone são obrigatórios' },
-        { status: 400 }
-      );
-    }
-
-    const code = codigo.toUpperCase();
-
-    // 2) Busca do código
-    const snap = await adminDb
-      .collection('codigos')
-      .where('codigo', '==', code)
+    // Evitar duplicidade: 1 ganhador por (campanhaId + codigoOriginal)
+    const q = await adminDb
+      .collection('ganhadores')
+      .where('campanhaId', '==', campanhaId)
+      .where('codigoOriginal', '==', codigo)
       .limit(1)
       .get();
 
-    if (snap.empty) {
-      return NextResponse.json<RespErr>(
-        { ok: false, error: 'Código não encontrado' },
-        { status: 404 }
-      );
-    }
-
-    const ref = snap.docs[0].ref;
-    const data = snap.docs[0].data() as {
-      campanhaId: string;
-      status: string;
-      premiado?: string | null; // nome ou 'nenhum'
-      ganhador?: { nome?: string; telefone?: string } | null;
-    };
-
-    const prizeName =
-      data.premiado && data.premiado !== 'nenhum' ? data.premiado : null;
-
-    if (!prizeName) {
-      return NextResponse.json<RespErr>(
-        { ok: false, error: 'Este código não é premiado.' },
-        { status: 400 }
-      );
-    }
-
-    // 3) Idempotência: se já tem ganhador, só confirma
-    if (data.ganhador?.telefone) {
-      return NextResponse.json<RespOk>({
-        ok: true,
-        proximoStatus: 'voucher gerado',
-        premio: prizeName,
-      });
-    }
-
-    // 4) Persistência
-    await ref.update({
-      ganhador: {
+    if (q.empty) {
+      // cria novo (equivalente ao addDoc no Admin SDK)
+      const docRef = await adminDb.collection('ganhadores').add({
+        campanhaId,
+        codigoOriginal: codigo,
+        codigoId: codigoId ?? null,
         nome,
         telefone,
-        premio: prizeName,
-        createdAt: FieldValue.serverTimestamp(),
-      },
-      status: 'voucher gerado',
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+        premio,
+        criadoEm: FieldValue.serverTimestamp(),
+      });
 
-    // 5) Resposta JSON
-    return NextResponse.json<RespOk>({
-      ok: true,
-      proximoStatus: 'voucher gerado',
-      premio: prizeName,
-    });
+      return NextResponse.json<RespOk>({ ok: true, id: docRef.id });
+    } else {
+      // já existe: atualiza dados (sem criar outro)
+      const docRef = q.docs[0].ref;
+      await docRef.update({
+        nome,
+        telefone,
+        premio,
+        atualizadoEm: FieldValue.serverTimestamp(),
+      });
+
+      return NextResponse.json<RespOk>({ ok: true, id: docRef.id });
+    }
   } catch (e) {
-    console.error('ganhador/salvar error:', e);
     const msg = e instanceof Error ? e.message : 'Falha interna';
     return NextResponse.json<RespErr>({ ok: false, error: msg }, { status: 500 });
   }

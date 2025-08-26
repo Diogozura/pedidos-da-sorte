@@ -151,7 +151,7 @@ console.log('premiado', premiado)
         setTimeout(() => router.replace(`/${slug}/ganhador?codigo=${encodeURIComponent(codigo)}`), 1200); // <-- usa SLUG
       } else {
         toast.error('Infelizmente você não ganhou desta vez.');
-        setTimeout(() => router.replace(`/${slug}/validador`), 1200);
+        setTimeout(() => router.replace(`https://www.pedidodasorte.com.br/`), 1200);
       }
     } catch (e) {
       toast.error('Erro ao finalizar: ' + (e as Error).message);

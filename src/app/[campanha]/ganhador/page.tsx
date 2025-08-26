@@ -36,7 +36,7 @@ export default function GanhadorPage() {
 
 
   const [premio, setPremio] = useState<string | null>(null);
-
+  console.log('campanhaId', campanhaId)
   useEffect(() => {
     (async () => {
       try {
@@ -89,16 +89,29 @@ export default function GanhadorPage() {
       toast.error('Código inválido.');
       return;
     }
-    setLoading(true);
 
+    const resInfo = await fetch('/api/sorteio/codigo/info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ codigo }),
+    });
+
+    if (!resInfo.ok) throw new Error('Erro ao buscar prêmio do código');
+    const info = await resInfo.json() as { ok: boolean; premiado?: string | null };
+
+    const premio = info?.premiado ?? null;
+    setLoading(true);
+    console.log(premio)
     try {
       const res = await fetch('/api/sorteio/ganhador/salvar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           codigo,
+          campanhaId,
           nome: values.nome ?? '',
           telefone: values.telefone ?? '',
+          premio,
         }),
       });
       const json = await parseJsonSafe<RespOk | RespErr>(res);
@@ -152,6 +165,16 @@ export default function GanhadorPage() {
             required
             value={values.nome || ''}
             onChange={handleInputChange}
+            sx={{
+              input: { color: theme?.textColor ?? "#ffffff" },
+              '& .MuiInputLabel-root': { color: theme?.textColor },
+              '& .MuiInputLabel-root.Mui-focused': { color: theme?.textColor },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { borderColor: theme?.textColor },
+                '&:hover fieldset': { borderColor: theme?.textColor },
+                '&.Mui-focused fieldset': { borderColor: theme?.textColor },
+              },
+            }}
           />
           <TextField
             label="Telefone"
@@ -161,6 +184,16 @@ export default function GanhadorPage() {
             required
             value={values.telefone || ''}
             onChange={handleInputChange}
+            sx={{
+              input: { color: theme?.textColor ?? "#ffffff" },
+              '& .MuiInputLabel-root': { color: theme?.textColor },
+              '& .MuiInputLabel-root.Mui-focused': { color: theme?.textColor },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { borderColor: theme?.textColor },
+                '&:hover fieldset': { borderColor: theme?.textColor },
+                '&.Mui-focused fieldset': { borderColor: theme?.textColor },
+              },
+            }}
           />
 
           <Button type="submit" color="primary" variant="contained" disabled={loading}>
