@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       premiado?: string | null;
     };
     const campId = campanhaId ?? codeData.campanhaId;
-
+    console.log('campId', campId)
     // 2) se já existe voucher para esse código, retorna
     const vSnap = await adminDb
       .collection('vouchers')

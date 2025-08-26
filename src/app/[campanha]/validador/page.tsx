@@ -40,7 +40,7 @@ export default function CodigoPage() {
         const res = await fetch('/api/sorteio/campanha-info', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug }),
+          body: JSON.stringify({ slug :'teste-domingo'}),
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || 'Falha ao carregar campanha');

@@ -2,6 +2,15 @@ import { App, cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 
+
+const app = getApps()[0] ?? initializeApp({
+  credential: cert({
+    projectId: process.env.FB_PROJECT_ID!,
+    clientEmail: process.env.FB_CLIENT_EMAIL!,
+    privateKey: (process.env.FB_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+  }),
+});
+
 let adminApp: App;
 if (!getApps().length) {
   adminApp = initializeApp({
@@ -15,13 +24,6 @@ if (!getApps().length) {
   adminApp = getApps()[0];
 }
 
-const app = getApps()[0] ?? initializeApp({
-  credential: cert({
-    projectId: process.env.FB_PROJECT_ID!,
-    clientEmail: process.env.FB_CLIENT_EMAIL!,
-    privateKey: (process.env.FB_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-  }),
-});
 
 export const adminDb = getFirestore(app);
 
