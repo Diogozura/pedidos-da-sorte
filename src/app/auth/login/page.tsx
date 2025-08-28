@@ -124,8 +124,8 @@ export default function LoginPage() {
             {loading ? <CircularProgress size={24} color="inherit" /> : 'Acessar'}
           </Button>
           <Button variant="contained" color='inherit'
-           onClick={() => toast.info('Link de recuperação em breve!')}
-          disabled={loading}
+            onClick={() => router.push('/auth/reset-senha')}
+            disabled={loading}
           >
             Esqueci minha senha
           </Button>
