@@ -75,6 +75,7 @@ export default function LoginPage() {
       setTimeout(() => router.push('/dashboard'), 1500);
     } catch (err: any) {
       toast.error('Erro ao entrar: ' + err.message);
+      setLoading(false);
     }
   };
 

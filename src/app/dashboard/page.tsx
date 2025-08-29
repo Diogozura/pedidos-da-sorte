@@ -33,7 +33,7 @@ export default function DashboardPage() {
      <LoadingOverlay texto="Carregando..." />
     );
   }
-
+console.log('user', user)
 
 
   return (
