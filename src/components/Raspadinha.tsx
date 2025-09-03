@@ -1,14 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import NextImage from 'next/image';
 
 type Props = {
   width: number;
   height: number;
-  backgroundImage?: string;
-  overlayColor?: string;
+  backgroundImage?: string;        // fundo (prêmio) — otimizado pelo Next
+  overlayColor?: string;           // cor sólida para cobrir imediatamente
   radius?: number;
-  percentToFinish?: number;
+  percentToFinish?: number;        // 0–100
   onComplete?: () => void;
   children?: React.ReactNode;
 };
@@ -17,140 +18,149 @@ export default function RaspadinhaJogo({
   width,
   height,
   backgroundImage,
-  overlayColor = '#961f1f0',
-  radius = 25,
+  overlayColor = '#961f1fcc', // vermelho com alpha
+  radius = 24,
   percentToFinish = 50,
   onComplete,
   children,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [isReady, setIsReady] = useState(false); // ✅ controla o "piscado"
+  const drawingRef = useRef(false);
+  const brushImgRef = useRef<HTMLImageElement | null>(null);
+  const dprRef = useRef<number>(1);
+  const sampleRef = useRef<HTMLCanvasElement | null>(null);
 
-
+  const [completed, setCompleted] = useState(false);
+  const [overlayReady, setOverlayReady] = useState(false); // overlay+brush ok
+  const [bgShown, setBgShown] = useState(false);           // fundo já renderizado
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const container = containerRef.current;
-
-    const brush = new Image();
-    brush.src = '/brush.png'; // coloque o brush na pasta /public
-
-    // Cobrir completamente o canvas com cor
-    const overlay = new Image();
-    overlay.src = '/raspe.png';
-    if (!canvas || !container) return;
-
-    const ctx = canvas.getContext('2d');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
-    canvas.width = width;
-    canvas.height = height;
+    // DPI correto
+    const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+    dprRef.current = dpr;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+    // 1) COBERTURA IMEDIATA (sem aguardar rede)
+    ctx.fillStyle = overlayColor;
+    ctx.fillRect(0, 0, width, height);
 
+    let alive = true;
 
-    overlay.onload = () => {
-      ctx.drawImage(overlay, 0, 0, width, height);
-      setIsReady(true);
-    };
+    // 2) Carrega overlay e brush; depois substitui a cor pelo PNG/WebP
+    const overlay = new window.Image();
+    overlay.src = '/raspe.webp'; // use .webp (mais leve); mantenha um .png fallback se quiser
+    const brush = new window.Image();
+    brush.src = '/brush.png';
+    brushImgRef.current = brush;
 
-    overlay.onerror = () => {
-      ctx.fillStyle = overlayColor;
-      ctx.fillRect(0, 0, width, height);
-      setIsReady(true);
-    };
+    const waitLoad = (img: HTMLImageElement) =>
+      new Promise<void>((res) => {
+        if (img.complete && img.naturalWidth) return res();
+        img.onload = () => res();
+        img.onerror = () => res(); // em erro, segue com a cor sólida
+      });
 
-    // ✅ Agora consideramos a imagem pronta
-    setIsReady(true);
+    Promise.all([waitLoad(overlay), waitLoad(brush)]).then(() => {
+      if (!alive) return;
 
-    // Raspagem
-    let isDrawing = false;
+      if (overlay.naturalWidth) {
+        ctx.drawImage(overlay, 0, 0, width, height);
+      } // senão já estamos com a cor sólida
 
-    const getPosition = (e: MouseEvent | TouchEvent) => {
+      // canvas amostra 64x64 para medir progresso
+      const sample = document.createElement('canvas');
+      sample.width = 64;
+      sample.height = 64;
+      sampleRef.current = sample;
+
+      setOverlayReady(true); // só após overlay+brush prontos
+    });
+
+    // Pointer events
+    const getPos = (evt: PointerEvent) => {
       const rect = canvas.getBoundingClientRect();
-      const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
-      return { x: clientX - rect.left, y: clientY - rect.top };
+      return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
     };
 
-    const draw = (e: MouseEvent | TouchEvent) => {
-      if (!isDrawing || isCompleted || !brush.complete) return;
+    const draw = (evt: PointerEvent) => {
+      if (!drawingRef.current || completed) return;
+      const brushImg = brushImgRef.current;
+      if (!brushImg || !brushImg.complete) return;
 
-      const { x, y } = getPosition(e);
+      const { x, y } = getPos(evt);
+      const size = radius * 2;
 
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.globalAlpha = 0.5; // controla o quão forte "apaga" (1 = total)
-
-      const size = radius * 2;
-      ctx.drawImage(brush, x - radius, y - radius, size, size);
-
-      ctx.globalAlpha = 1; // reset para evitar afetar outros desenhos
+      ctx.drawImage(brushImg, x - radius, y - radius, size, size);
+      ctx.globalCompositeOperation = 'source-over';
     };
 
-    const start = (e: MouseEvent | TouchEvent) => {
-      if (isCompleted) return;
-      isDrawing = true;
-      document.body.style.overflow = 'hidden'; // <- trava scroll
-      draw(e);
+    const onDown = (evt: PointerEvent) => {
+      if (completed) return;
+      drawingRef.current = true;
+      draw(evt);
     };
+    const onMove = (evt: PointerEvent) => {
+      if (evt.pointerType === 'touch') evt.preventDefault();
+      draw(evt);
+    };
+    const onUp = () => {
+      drawingRef.current = false;
+      if (completed) return;
 
-    const end = () => {
-      isDrawing = false;
-      document.body.style.overflow = ''; // <- destrava scroll
-      if (isCompleted) return;
+      // mede progresso (barato)
+      const sample = sampleRef.current;
+      if (!sample) return;
+      const sctx = sample.getContext('2d');
+      if (!sctx) return;
 
-      const imageData = ctx.getImageData(0, 0, width, height);
+      sctx.clearRect(0, 0, sample.width, sample.height);
+      sctx.drawImage(
+        canvas,
+        0, 0, canvas.width / dprRef.current, canvas.height / dprRef.current,
+        0, 0, sample.width, sample.height
+      );
+
+      const data = sctx.getImageData(0, 0, sample.width, sample.height).data;
       let cleared = 0;
-      for (let i = 3; i < imageData.data.length; i += 4) {
-        if (imageData.data[i] < 128) cleared++;
-      }
-      const percent = (cleared / (imageData.data.length / 4)) * 100;
+      for (let i = 3; i < data.length; i += 4) if (data[i] < 128) cleared++;
+      const percent = (cleared / (data.length / 4)) * 100;
 
-      if (percent >= percentToFinish && !isCompleted) {
-        setIsCompleted(true);
-
-        // Faz um fade-out do canvas antes de chamar onComplete
-        if (canvas) {
-          canvas.style.transition = 'opacity 0.6s ease-in-out';
-          canvas.style.opacity = '0';
-
-          setTimeout(() => {
-            onComplete?.();
-          }, 600); // Espera o fade-out terminar
-        } else {
-          onComplete?.();
-        }
+      if (percent >= percentToFinish) {
+        setCompleted(true);
+        canvas.style.transition = 'opacity .6s ease';
+        canvas.style.opacity = '0';
+        setTimeout(() => onComplete?.(), 600);
       }
     };
 
-    const touchMoveHandler = (e: TouchEvent) => {
-      e.preventDefault();
-      draw(e);
-    };
-
-    canvas.addEventListener('mousedown', start);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', end);
-    canvas.addEventListener('mouseleave', end);
-    canvas.addEventListener('touchstart', start);
-    canvas.addEventListener('touchmove', touchMoveHandler, { passive: false });
-    canvas.addEventListener('touchend', end);
+    canvas.addEventListener('pointerdown', onDown, { passive: true });
+    canvas.addEventListener('pointermove', onMove as EventListener, { passive: false });
+    canvas.addEventListener('pointerup', onUp, { passive: true });
+    canvas.addEventListener('pointerleave', onUp, { passive: true });
+    canvas.addEventListener('pointercancel', onUp, { passive: true });
 
     return () => {
-      canvas.removeEventListener('mousedown', start);
-      canvas.removeEventListener('mousemove', draw);
-      canvas.removeEventListener('mouseup', end);
-      canvas.removeEventListener('mouseleave', end);
-      canvas.removeEventListener('touchstart', start);
-      canvas.removeEventListener('touchmove', touchMoveHandler);
-      canvas.removeEventListener('touchend', end);
+      alive = false;
+      canvas.removeEventListener('pointerdown', onDown);
+      canvas.removeEventListener('pointermove', onMove as EventListener);
+      canvas.removeEventListener('pointerup', onUp);
+      canvas.removeEventListener('pointerleave', onUp);
+      canvas.removeEventListener('pointercancel', onUp);
     };
-  }, [radius, width, height, overlayColor, percentToFinish, isCompleted, onComplete]);
+  }, [width, height, radius, overlayColor, percentToFinish, onComplete, completed]);
 
   return (
     <div
-      ref={containerRef}
       style={{
         position: 'relative',
         width,
@@ -159,15 +169,32 @@ export default function RaspadinhaJogo({
         borderRadius: 12,
         overflow: 'hidden',
         border: '2px solid #000',
-        backgroundImage: isReady && backgroundImage
-          ? `url("${backgroundImage}")`
-          : 'none',
-        backgroundColor: !isReady ? overlayColor : undefined,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        // 3) nunca mostra “o que tem abaixo”:
+        backgroundColor: '#000000', // qualquer cor sólida segura (não visível por baixo do overlay)
+        touchAction: 'none',
       }}
     >
-      {children && (
+      {/* FUNDO do prêmio — só aparece depois do overlay estar pronto */}
+      {backgroundImage && overlayReady && (
+        <NextImage
+          src={backgroundImage}
+          alt=""
+          fill
+          sizes={`${width}px`}
+          priority
+          draggable={false}
+          onLoadingComplete={() => setBgShown(true)}
+          style={{
+            objectFit: 'cover',
+            zIndex: 0,
+            opacity: bgShown ? 1 : 0,       // 4) fade-in do fundo ao terminar
+            transition: 'opacity .2s ease',
+          }}
+        />
+      )}
+
+      {/* Conteúdo opcional central */}
+      {overlayReady && children && (
         <div
           style={{
             position: 'absolute',
@@ -175,24 +202,25 @@ export default function RaspadinhaJogo({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 1,
             color: '#fff',
             pointerEvents: 'none',
+            zIndex: 1,
           }}
         >
           {children}
         </div>
       )}
+
+      {/* OVERLAY raspável (sempre por cima) */}
       <canvas
         ref={canvasRef}
         style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
+          inset: 0,
           zIndex: 2,
-          pointerEvents: isCompleted ? 'none' : 'auto',
-          opacity: isCompleted ? 0 : 1,
-          transition: 'opacity 0.6s ease-in-out', // fade suave
+          pointerEvents: completed ? 'none' : 'auto',
+          opacity: completed ? 0 : 1,
+          transition: 'opacity .6s ease',
         }}
       />
     </div>

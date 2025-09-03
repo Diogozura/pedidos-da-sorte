@@ -1,6 +1,6 @@
 'use client';
 
-import { BaseSorteio } from '@/components/BaseSorteio';
+
 import { useRouter } from 'next/navigation';
 import { Container, Skeleton, Typography } from '@mui/material';
 
@@ -13,7 +13,26 @@ const RaspadinhaJogo = dynamic(() => import('@/components/Raspadinha'), {
   loading: () => <Skeleton variant="rounded" width={300} height={300} />,
 });
 
-
+const BaseSorteio = dynamic(
+  () => import('@/components/BaseSorteio').then(m => m.BaseSorteio),
+  {
+    ssr: true, // <- mantém render no servidor (evita flash)
+    loading: () => (
+      <div
+        style={{
+          minHeight: '100dvh',
+          // opcional: cor base enquanto carrega o chunk do componente
+          background: '#b30000',
+          color: '#fff',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      />
+    ),
+  }
+);
 
 export default function CodigoPage() {
  const router = useRouter();

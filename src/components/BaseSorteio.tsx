@@ -1,8 +1,8 @@
 'use client';
 
-import { Box, Skeleton } from "@mui/material";
+import { Box } from "@mui/material";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 type Props = {
   children: React.ReactNode;
@@ -18,78 +18,74 @@ export function BaseSorteio({
   logoUrl,
   width = 150,
   height = 150,
-  backgroundColor = "#b30000", // fallback vermelho
-  textColor = "#ffffff",       // fallback branco
+  backgroundColor = "#b30000",
+  textColor = "#ffffff",
 }: Props) {
-  const [resolvedSrc, setResolvedSrc] = useState<string | null>(null);
+  // Resolve cores já no 1º render (evita flicker)
+  const colors = useMemo(
+    () => ({ bg: backgroundColor, fg: textColor }),
+    [backgroundColor, textColor]
+  );
 
-  // Aplica cor de fundo dinamicamente
-  useEffect(() => {
-    const originalBg = document.body.style.backgroundColor;
-    const originalColor = document.body.style.color;
-    document.body.style.backgroundColor = backgroundColor;
-    document.body.style.color = textColor;
-
-    return () => {
-      document.body.style.backgroundColor = originalBg;
-      document.body.style.color = originalColor;
-    };
-  }, [backgroundColor, textColor]);
-
-  // Pré-carrega logo
-  useEffect(() => {
-      localStorage.setItem('colors', backgroundColor + ',' + textColor);
-    let isMounted = true;
-    if (!logoUrl) {
-      setResolvedSrc(null);
-      return;
-    }
-    const img = new window.Image();
-    img.onload = () => { if (isMounted) setResolvedSrc(logoUrl); };
-    img.onerror = () => { if (isMounted) setResolvedSrc(null); };
-    img.src = logoUrl;
-    return () => { isMounted = false; };
-  }, [logoUrl]);
-
-  const topLogoContent = useMemo(() => {
-    if (!resolvedSrc) {
-      return (
-        <Skeleton
-          variant="rounded"
-          width={width}
-          height={height}
-          animation="wave"
-        />
-      );
-    }
-    return (
-      <Image
-        src={resolvedSrc}
-        alt="Logo da campanha"
-        width={width}
-        height={height}
-        priority
-        fetchPriority="high"
-        style={{ display: "block" }}
-      />
-    );
-  }, [resolvedSrc, width, height]);
+  const [logoLoaded, setLogoLoaded] = useState(false);
 
   return (
-    <Box sx={{ color: textColor }}>
-      <Box display="flex" justifyContent="center" alignItems="center" mt={1}>
-        {topLogoContent}
+    <Box
+      sx={{
+        minHeight: '100dvh',
+        bgcolor: colors.bg,
+        color: colors.fg,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        pt: 1,
+      }}
+    >
+      {/* Wrapper com tamanho fixo para zero layout-shift */}
+      <Box
+        sx={{
+          width,
+          height,
+          borderRadius: 2,
+          overflow: 'hidden',
+          mb: 2,
+          position: 'relative',
+          // shimmer leve enquanto a imagem não pinta (sem Skeleton)
+          background:
+            'linear-gradient(90deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,.16) 50%, rgba(255,255,255,.08) 100%)',
+        }}
+      >
+        {logoUrl && (
+          <Image
+            src={logoUrl}
+            alt="Logo da campanha"
+            fill
+            priority
+            sizes={`${width}px`}
+            onLoadingComplete={() => setLogoLoaded(true)}
+            style={{
+              objectFit: 'contain',
+              opacity: logoLoaded ? 1 : 0,
+              transition: 'opacity .2s ease',
+            }}
+          />
+        )}
       </Box>
 
-      {children}
+      {/* Conteúdo central */}
+      <Box sx={{ width: '100%', flex: 1, display: 'grid', placeItems: 'center', px: 2 }}>
+        {children}
+      </Box>
 
-      <Box textAlign="center" mt={4}>
+      {/* Raposinha embaixo — deixa lazy para não competir com a logo */}
+      <Box sx={{ textAlign: 'center', mb: 2 }}>
         <Image
           width={150}
           height={78}
-          src={'/logo-site.png'}
+          src="/logo-site.png"
           alt="Logo do site Pedidos da Sorte"
           loading="lazy"
+          style={{ display: 'inline-block' }}
         />
       </Box>
     </Box>
