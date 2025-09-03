@@ -35,7 +35,7 @@ export default function Head() {
       <meta name="twitter:image" content="https://sorteio.pedidodasorte.com.br/og-image.png" />
 
       <link rel="icon" href="/favicon/favicon.ico" />
-
+      <link rel="preload" as="image" href="/raspe.webp" />
 
     </>
   );

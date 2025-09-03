@@ -1,8 +1,8 @@
 'use client';
 
-import { Box } from "@mui/material";
-import Image from "next/image";
-import { useMemo, useState } from "react";
+import { Box, CircularProgress, Typography } from '@mui/material';
+import Image from 'next/image';
+import { useState } from 'react';
 
 type Props = {
   children: React.ReactNode;
@@ -11,6 +11,9 @@ type Props = {
   height?: number;
   backgroundColor?: string;
   textColor?: string;
+  // overlay de loading (controlado)
+  loading?: boolean;
+  loadingText?: string;
 };
 
 export function BaseSorteio({
@@ -18,66 +21,80 @@ export function BaseSorteio({
   logoUrl,
   width = 150,
   height = 150,
-  backgroundColor = "#b30000",
-  textColor = "#ffffff",
+  backgroundColor = '#b30000',
+  textColor = '#ffffff',
+  loading = false,
+  loadingText = 'Carregando...',
 }: Props) {
-  // Resolve cores já no 1º render (evita flicker)
-  const colors = useMemo(
-    () => ({ bg: backgroundColor, fg: textColor }),
-    [backgroundColor, textColor]
-  );
-
-  const [logoLoaded, setLogoLoaded] = useState(false);
+  // caso você queira poder “forçar” localmente sem prop
+  const [_forceLoading] = useState(false);
+  const showLoading = loading || _forceLoading;
 
   return (
     <Box
       sx={{
         minHeight: '100dvh',
-        bgcolor: colors.bg,
-        color: colors.fg,
+        bgcolor: backgroundColor,
+        color: textColor,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        pt: 1,
+        pt: 2,
+        position: 'relative',
+        overflow: 'clip',
       }}
     >
-      {/* Wrapper com tamanho fixo para zero layout-shift */}
-      <Box
-        sx={{
-          width,
-          height,
-          borderRadius: 2,
-          overflow: 'hidden',
-          mb: 2,
-          position: 'relative',
-          // shimmer leve enquanto a imagem não pinta (sem Skeleton)
-          background:
-            'linear-gradient(90deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,.16) 50%, rgba(255,255,255,.08) 100%)',
-        }}
-      >
-        {logoUrl && (
-          <Image
-            src={logoUrl}
-            alt="Logo da campanha"
-            fill
-            priority
-            sizes={`${width}px`}
-            onLoadingComplete={() => setLogoLoaded(true)}
-            style={{
-              objectFit: 'contain',
-              opacity: logoLoaded ? 1 : 0,
-              transition: 'opacity .2s ease',
+      {/* Overlay tipo modal */}
+      {showLoading && (
+        <Box
+          sx={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: (theme) => theme.zIndex.modal + 1,
+            display: 'grid',
+            placeItems: 'center',
+            background: 'rgba(0,0,0,0.35)',       // escurece um pouco
+            backdropFilter: 'blur(2px)',           // leve blur
+          }}
+        >
+          <Box
+            sx={{
+              minWidth: 220,
+              px: 3,
+              py: 3,
+              borderRadius: 3,
+              bgcolor: 'rgba(0,0,0,0.55)',
+              color: '#fff',
+              display: 'grid',
+              gap: 1.5,
+              justifyItems: 'center',
+              boxShadow: 4,
             }}
-          />
-        )}
-      </Box>
+          >
+            <CircularProgress size={36} sx={{ color: '#fff' }} />
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              {loadingText}
+            </Typography>
+          </Box>
+        </Box>
+      )}
 
-      {/* Conteúdo central */}
-      <Box sx={{ width: '100%', flex: 1, display: 'grid', placeItems: 'center', px: 2 }}>
-        {children}
-      </Box>
+      {/* Logo superior */}
+      {logoUrl && (
+        <Image
+          src={logoUrl}
+          alt="Logo da campanha"
+          width={width}
+          height={height}
+          priority
+          style={{ display: 'block', marginBottom: '1rem', borderRadius: 16 }}
+        />
+      )}
 
-      {/* Raposinha embaixo — deixa lazy para não competir com a logo */}
+      {/* Conteúdo */}
+      <Box sx={{ flex: 1, width: '100%' }}>{children}</Box>
+
+      {/* Footer/assinatura */}
       <Box sx={{ textAlign: 'center', mb: 2 }}>
         <Image
           width={150}

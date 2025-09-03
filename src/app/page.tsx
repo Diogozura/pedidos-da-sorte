@@ -7,6 +7,7 @@ import { Container, Skeleton, Typography } from '@mui/material';
 
 import { toast } from 'react-toastify';
 import dynamic from 'next/dynamic';
+import { useState } from 'react';
 
 const RaspadinhaJogo = dynamic(() => import('@/components/Raspadinha'), {
   ssr: false,
@@ -35,41 +36,46 @@ const BaseSorteio = dynamic(
 );
 
 export default function CodigoPage() {
- const router = useRouter();
+  const router = useRouter();
   const handleComplete = async () => {
-  
-   toast.success('🎉 Você ganhou! 10% de desconto');
-     setTimeout(() => {
-            router.replace('/ganhador');
-          }, 3000); //
-  
+
+    toast.success('🎉 Você ganhou! 10% de desconto');
+    setTimeout(() => {
+      router.replace('/ganhador');
+    }, 3000); //
+
   };
 
-  return (
-    <BaseSorteio logoUrl="/sua-logo.png">
-      <Container
-        maxWidth="md"
-        sx={{
-          height: '50vh',
-          display: 'grid',
-          alignContent: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-          mt: 2,
-          color: '#fff'
-        }}
-      >
-        <Typography variant="h5" component="h1">
-          Raspe e descubra
-        </Typography>
-        <RaspadinhaJogo
-          width={300}
-          height={300}
-          backgroundImage={'/premio-10.jpeg'}
-          onComplete={handleComplete}
-        />
+  const [loading, setLoading] = useState(true);  // controla o overlay
 
-      </Container>
-    </BaseSorteio>
+  return (
+    <>
+      <BaseSorteio logoUrl="/sua-logo.png"  loading={loading} loadingText="Preparando jogo...">
+        <Container
+          maxWidth="md"
+          sx={{
+            height: '50vh',
+            display: 'grid',
+            alignContent: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            mt: 2,
+            color: '#fff'
+          }}
+        >
+          <Typography variant="h5" component="h1" gutterBottom mb={4}>
+            Raspe e descubra
+          </Typography>
+          <RaspadinhaJogo
+            width={300}
+            height={300}
+            backgroundImage={'/premio-10.jpeg'}
+            onReady={() => setLoading(false)} 
+            onComplete={handleComplete}
+          />
+
+        </Container>
+      </BaseSorteio>
+    </>
   );
 }

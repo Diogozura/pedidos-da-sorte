@@ -11,6 +11,7 @@ type Props = {
   radius?: number;
   percentToFinish?: number;        // 0–100
   onComplete?: () => void;
+  onReady?: () => void; // <- AQUI
   children?: React.ReactNode;
 };
 
@@ -22,6 +23,7 @@ export default function RaspadinhaJogo({
   radius = 24,
   percentToFinish = 50,
   onComplete,
+  onReady,
   children,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -83,6 +85,7 @@ export default function RaspadinhaJogo({
       sampleRef.current = sample;
 
       setOverlayReady(true); // só após overlay+brush prontos
+      onReady?.();   
     });
 
     // Pointer events
@@ -165,7 +168,7 @@ export default function RaspadinhaJogo({
         position: 'relative',
         width,
         height,
-        margin: '2rem auto',
+        margin: 'auto',
         borderRadius: 12,
         overflow: 'hidden',
         border: '2px solid #000',
@@ -226,3 +229,5 @@ export default function RaspadinhaJogo({
     </div>
   );
 }
+
+
