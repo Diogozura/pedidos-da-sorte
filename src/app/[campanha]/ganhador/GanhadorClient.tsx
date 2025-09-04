@@ -59,7 +59,7 @@ export default function GanhadorClient({
   return (
     <Container
       maxWidth="md"
-      sx={{ minHeight: '70vh', display: 'grid', alignItems: 'center', justifyContent: 'center' }}
+      sx={{ minHeight: '50vh', display: 'grid', alignItems: 'center', justifyContent: 'center' }}
     >
       <Box sx={{ textAlign: 'center', p: 1 }}>
         <Typography variant="h4" component="h2" gutterBottom>

@@ -55,14 +55,14 @@ export default function RaspadinhaClient(props: Props) {
   };
 
   return (
-    <Container maxWidth="md" sx={{ textAlign: 'center', mt: 4, minHeight: '60vh', display: 'grid', placeContent: 'center', color: '#fff' }}>
+    <Container maxWidth="md" sx={{ textAlign: 'center', mt: 1, minHeight: '50vh', display: 'grid', placeContent: 'center', color: '#fff' }}>
       <Typography variant="h5" component="h1" sx={{ mb: 2 }}>
         Raspe para descobrir se ganhou
       </Typography>
 
       <Raspadinha
-        width={300}
-        height={300}
+        width={250}
+        height={250}
         backgroundImage={props.backgroundImage}
         percentToFinish={props.percentToFinish}
         radius={props.radius}
