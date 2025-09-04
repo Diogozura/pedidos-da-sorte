@@ -1,206 +1,79 @@
-'use client';
+// app/[campanha]/ganhador/page.tsx
+import { notFound } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import GanhadorClient from './GanhadorClient';
 
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useFormContext } from '@/config/FormContext';
-import { Button, Container, TextField, Typography, Box } from '@mui/material';
-import { useEffect, useState } from 'react';
-import { toast } from 'react-toastify';
-import { BaseSorteio } from '@/components/BaseSorteio';
-import { useCampaignTheme } from '@/hook/useCampaignTheme';
+type CampanhaUI = { logoUrl?: string | null; backgroundColor?: string | null; textColor?: string | null };
 
-type RespOk = { ok: true; campanhaId: string; ganhadorId: string };
-type RespErr = { ok: false; error: string };
+const BaseSorteio = dynamic(() => import('@/components/BaseSorteio').then(m => m.BaseSorteio), {
+  ssr: true,
+});
 
-type InfoOk = { ok: true; premiado: string | null };
-type InfoErr = { ok: false; error: string };
-
-export default function GanhadorPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const params = useParams<{ campanha: string }>();
-  const slug = params?.campanha;                             // <-- slug
-  const [campanhaId, setCampanhaId] = useState<string>('');  // <-- id real
-  const theme = useCampaignTheme(campanhaId);                // <-- hook com ID
-
-  const codigo = searchParams.get('codigo') ?? '';
-  const { formValues, setFormValues } = useFormContext();
-  const [loading, setLoading] = useState(false);
-  const values = (formValues['ganhador'] as Record<string, string>) || {};
-
-
-  const parseJsonSafe = async <T,>(res: Response): Promise<T> => {
-    const text = await res.text();
-    try { return JSON.parse(text) as T; }
-    catch { throw new Error(`Resposta inválida (${res.status}): ${text.slice(0, 180)}`); }
+async function getCampanhaBySlug(slug: string) {
+  const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const res = await fetch(`${base}/api/sorteio/campanha-info`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slug }),
+    cache: 'no-store',
+  });
+  if (!res.ok) return null;
+  const json = await res.json();
+  const campanhaId: string | null = json.campanhaId ?? json.campanha?.id ?? null;
+  const tema: CampanhaUI = {
+    logoUrl: json.campanha?.logoUrl ?? null,
+    backgroundColor: json.campanha?.backgroundColor ?? json.campanha?.corFundo ?? null,
+    textColor: json.campanha?.textColor ?? null,
   };
+  return { campanhaId, tema };
+}
 
+async function getPremioByCodigo(codigo: string) {
+  const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const res = await fetch(`${base}/api/sorteio/codigo/info`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ codigo }),
+    cache: 'no-store',
+  });
+  if (!res.ok) return null;
+  const json = await res.json(); // { ok: true, premiado: string | null }
+  return json?.premiado ?? null;
+}
 
-  const [premio, setPremio] = useState<string | null>(null);
-  console.log('campanhaId', campanhaId)
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch('/api/sorteio/codigo/info', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: codigo ? JSON.stringify({ codigo }) : undefined, // ou sem body se usar cookie
-        });
-        const json = await parseJsonSafe<InfoOk | InfoErr>(res);
-        if (!res.ok || ('ok' in json && !json.ok)) {
-          throw new Error(('error' in json && json.error) || 'Falha ao recuperar prêmio');
-        }
-        setPremio((json as InfoOk).premiado);
-      } catch (e) {
-        console.warn(e);
-      }
-    })();
-  }, [codigo]);
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: { campanha: string };
+  searchParams: { codigo?: string };
+}) {
+  const slug = params.campanha;
+  const codigo = (searchParams?.codigo || '').toUpperCase();
 
-  useEffect(() => {
-    if (!slug) return;
-    (async () => {
-      try {
-        const res = await fetch('/api/sorteio/campanha-info', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug }),
-        });
-        const json = await parseJsonSafe<{ campanhaId: string }>(res);
-        console.log(json)
-        if (!res.ok) throw new Error((json as { error?: string })?.error ?? 'Falha ao carregar campanha');
-        setCampanhaId(json.campanhaId);
-      } catch {
-        // segue sem tema se falhar, mas ideal redirecionar:
-        // router.replace('/');
-      }
-    })();
-  }, [slug]);
+  // 1) Tema + campanhaId no servidor (sem flicker)
+  const data = await getCampanhaBySlug(slug);
+  if (!data) return notFound();
+  const { campanhaId, tema } = data;
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormValues('ganhador', { [name]: value });
-  };
+  // 2) Info do prêmio pelo código (server)
+  const premiado = codigo ? await getPremioByCodigo(codigo) : null;
 
-
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!codigo) {
-      toast.error('Código inválido.');
-      return;
-    }
-
-    const resInfo = await fetch('/api/sorteio/codigo/info', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ codigo }),
-    });
-
-    if (!resInfo.ok) throw new Error('Erro ao buscar prêmio do código');
-    const info = await resInfo.json() as { ok: boolean; premiado?: string | null };
-
-    const premio = info?.premiado ?? null;
-    setLoading(true);
-    console.log(premio)
-    try {
-      const res = await fetch('/api/sorteio/ganhador/salvar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          codigo,
-          campanhaId,
-          nome: values.nome ?? '',
-          telefone: values.telefone ?? '',
-          premio,
-        }),
-      });
-      const json = await parseJsonSafe<RespOk | RespErr>(res);
-
-      if (!res.ok || 'ok' in json && json.ok === false) {
-        throw new Error(('error' in json && json.error) || 'Falha ao salvar dados');
-      }
-
-
-      toast.success('Dados enviados com sucesso!');
-      router.push(`/${slug}/voucher?codigo=${encodeURIComponent(codigo)}`); // <-- usa SLUG
-    } catch (err) {
-      toast.error('Erro ao salvar dados: ' + (err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const bg = tema.backgroundColor ?? '#b30000';
+  const fg = tema.textColor ?? '#ffffff';
+  const logo = tema.logoUrl ?? undefined;
 
   return (
-    <BaseSorteio logoUrl={theme?.logoUrl ?? undefined} backgroundColor={theme.backgroundColor ?? undefined}
-      textColor={theme.textColor ?? undefined}>
-      <Container maxWidth="md" sx={{ height: '70vh', display: 'grid', alignItems: 'center', justifyContent: 'center' }}>
-        <Box sx={{ textAlign: 'center', padding: 1 }}>
-          <Typography variant="h4" component={'h2'} gutterBottom>
-            🎉 Parabéns!
-          </Typography>
-          <Typography variant="body1" component={'p'} gutterBottom>
-            Preencha os dados abaixo e receba o sou voucher para resgatar o seu prêmio! <Typography textTransform={'uppercase'} fontWeight={'bold'} > * {premio} * </Typography>
-          </Typography>
-        </Box>
-
-
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-            width: '100%',
-            maxWidth: 400,
-            mx: 'auto',
-            textAlign: 'center',
-          }}
-        >
-          <TextField
-            label="Nome completo"
-            name="nome"
-            fullWidth
-            autoComplete="name"
-            required
-            value={values.nome || ''}
-            onChange={handleInputChange}
-            sx={{
-              input: { color: theme?.textColor ?? "#ffffff" },
-              '& .MuiInputLabel-root': { color: theme?.textColor },
-              '& .MuiInputLabel-root.Mui-focused': { color: theme?.textColor },
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': { borderColor: theme?.textColor },
-                '&:hover fieldset': { borderColor: theme?.textColor },
-                '&.Mui-focused fieldset': { borderColor: theme?.textColor },
-              },
-            }}
-          />
-          <TextField
-            label="Telefone"
-            name="telefone"
-            fullWidth
-            autoComplete="tel"
-            required
-            value={values.telefone || ''}
-            onChange={handleInputChange}
-            sx={{
-              input: { color: theme?.textColor ?? "#ffffff" },
-              '& .MuiInputLabel-root': { color: theme?.textColor },
-              '& .MuiInputLabel-root.Mui-focused': { color: theme?.textColor },
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': { borderColor: theme?.textColor },
-                '&:hover fieldset': { borderColor: theme?.textColor },
-                '&.Mui-focused fieldset': { borderColor: theme?.textColor },
-              },
-            }}
-          />
-
-          <Button type="submit" color="primary" variant="contained" disabled={loading}>
-            {loading ? 'Enviando...' : 'Validar'}
-          </Button>
-        </Box>
-      </Container>
+    <BaseSorteio logoUrl={logo} backgroundColor={bg} textColor={fg}>
+      {/* Client mínimo com o formulário */}
+      <GanhadorClient
+        slug={slug}
+        campanhaId={campanhaId}
+        codigoInicial={codigo}
+        premiado={premiado ?? undefined}
+        textColor={fg}
+      />
     </BaseSorteio>
   );
 }
+

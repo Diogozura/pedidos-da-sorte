@@ -19,4 +19,5 @@ export function loadCampaignTheme(campanhaId: string): CampaignTheme | null {
   } catch {
     return null;
   }
+  
 }

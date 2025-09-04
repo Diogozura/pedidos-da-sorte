@@ -59,7 +59,7 @@ export default function RaspadinhaJogo({
 
     // 2) Carrega overlay e brush; depois substitui a cor pelo PNG/WebP
     const overlay = new window.Image();
-    overlay.src = '/raspe.webp'; // use .webp (mais leve); mantenha um .png fallback se quiser
+    overlay.src = '/raspe.png'; // use .webp (mais leve); mantenha um .png fallback se quiser
     const brush = new window.Image();
     brush.src = '/brush.png';
     brushImgRef.current = brush;

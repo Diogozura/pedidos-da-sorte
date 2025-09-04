@@ -1,133 +1,80 @@
-'use client';
-import { BaseSorteio } from '@/components/BaseSorteio';
-import { Button, Container, FormControl, TextField, Typography } from '@mui/material';
-import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { toast } from 'react-toastify';
-import { getRedirectUrlByStatus } from '@/utils/redirectByStatus';
-import { saveCampaignTheme } from '@/utils/campaignTheme';
+// app/[campanha]/page.tsx
+import { notFound } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import CodigoClient from './CodigoClient';
+
 
 type CampanhaUI = { logoUrl?: string | null; backgroundColor?: string | null; textColor?: string | null };
 
-export default function CodigoPage() {
-  const [codigo, setCodigo] = useState<string>('');
-  const [campanha, setCampanha] = useState<CampanhaUI | null>(null);
-  const [campanhaId, setCampanhaId] = useState<string | null>(null); // <-- novo
-  const router = useRouter();
-  const params = useParams<{ campanha: string }>();
-  const slug = params?.campanha; // <-- agora isso é o SLUG
-  console.log('slug', slug)
-  function readCodigoFromSearch(): string | null {
-    const qs = typeof window !== 'undefined' ? window.location.search : '';
-    if (!qs) return null;
-    const usp = new URLSearchParams(qs);
-    const byKey = usp.get('codigo') || usp.get('c') || usp.get('C');
-    if (byKey) return byKey.toUpperCase();
-    return qs.startsWith('?') ? qs.substring(1).toUpperCase() : null;
-  }
+const BaseSorteio = dynamic(() => import('@/components/BaseSorteio').then(m => m.BaseSorteio), {
+  ssr: true,
+});
 
-  useEffect(() => {
-    const parsed = readCodigoFromSearch();
-    if (!parsed) {
-      toast.error('Código não informado na URL.');
-      return;
-    }
-    setCodigo(parsed);
+async function getCampanhaBySlug(slug: string) {
+  // Se puder, prefira chamar sua camada de dados diretamente aqui (Firestore/SDK).
+  // Caso precise usar sua própria API route, use URL ABSOLUTA:
+  const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const res = await fetch(`${base}/api/sorteio/campanha-info`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slug }),
+    // evita páginas com tema desatualizado em edge:
+    cache: 'no-store',
+    // se quiser forçar usar os cookies do request (auth), use: next: { revalidate: 0 }
+  });
 
-    (async () => {
-      try {
-        // agora enviamos SLUG; a API resolve slug -> campanhaId
-        const res = await fetch('/api/sorteio/campanha-info', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug}),
-        });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error || 'Falha ao carregar campanha');
+  if (!res.ok) return null;
+  const json = await res.json();
 
-        const cid: string = json.campanhaId ?? json.campanha?.id;
-        setCampanhaId(cid);
-        setCampanha(json.campanha as CampanhaUI);
-
-        // salva tema usando o ID real, não o slug
-        saveCampaignTheme(cid, {
-          logoUrl: json.campanha.logoUrl ?? null,
-          backgroundColor: json.campanha.backgroundColor ?? json.campanha.corFundo ?? null,
-          textColor: json.campanha.textColor ?? null,
-        });
-
-        if (json.campanha?.logoUrl) new Image().src = json.campanha.logoUrl;
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'desconhecido';
-        toast.error('Erro ao carregar campanha: ' + msg);
-      }
-    })();
-  }, [slug]);
-
-  const handleSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    const upper = codigo.trim().toUpperCase();
-    if (upper.length < 5) {
-      toast.warning('O código deve ter pelo menos 5 caracteres.');
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/sorteio/validar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ codigo: upper, campanhaId }),
-      });
-      const json = await res.json();
-
-      if (!res.ok || json.ok === false) {
-        toast.error(json.motivo ?? json.error ?? 'Código inválido ❌');
-        return;
-      }
-
-      toast.success('Código válido! 🎉');
-      const nextStatus = json.statusDepois ?? 'validado';
-      const redirect = getRedirectUrlByStatus(nextStatus, upper, slug);
-      if (redirect) router.push(redirect);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'desconhecido';
-      toast.error('Erro ao validar código: ' + msg);
-    }
+  const campanhaId: string | null = json.campanhaId ?? json.campanha?.id ?? null;
+  const tema: CampanhaUI = {
+    logoUrl: json.campanha?.logoUrl ?? null,
+    backgroundColor: json.campanha?.backgroundColor ?? json.campanha?.corFundo ?? null,
+    textColor: json.campanha?.textColor ?? null,
   };
 
+  return { campanhaId, tema };
+}
+
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: { campanha: string };
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
+  
+  const slug = params.campanha;
+ 
+
+  // lê “codigo” da query já no servidor
+  const codigoInicial =
+    (typeof searchParams.codigo === 'string' && searchParams.codigo) ||
+    (typeof searchParams.c === 'string' && searchParams.c) ||
+    '';
+  console.log('slug', slug);
+  const data = await getCampanhaBySlug(slug);
+  if (!data) return notFound();
+
+  const { campanhaId, tema } = data;
+
+  // fallback de cores sempre definidos (nada de undefined → sem flicker)
+  const bg = tema.backgroundColor ?? '#b30000';
+  const fg = tema.textColor ?? '#ffffff';
+  const logo = tema.logoUrl ?? undefined;
+
   return (
-    <BaseSorteio logoUrl={campanha?.logoUrl ?? undefined}
-      backgroundColor={campanha?.backgroundColor ?? "#b30000"}
-      textColor={campanha?.textColor ?? "#ffffff"}
-    >
-      <Container maxWidth="md" sx={{ height: '40vh', display: 'grid', alignContent: 'center', justifyContent: 'center', textAlign: 'center', mt: 6 }}>
-        <Typography variant="h4" component="h1">Digite seu código de sorteio</Typography>
-        <form onSubmit={handleSubmit}>
-          <FormControl fullWidth sx={{ mt: 4 }}>
-            <TextField
-              value={codigo}
-              label="Código"
-              placeholder="EX: ABC123"
-              required
-              inputProps={{ minLength: 5 }}
-              onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-              sx={{
-                input: { color: campanha?.textColor ?? "#ffffff" },
-                '& .MuiInputLabel-root': { color: campanha?.textColor },
-                '& .MuiInputLabel-root.Mui-focused': { color: campanha?.textColor },
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: campanha?.textColor },
-                  '&:hover fieldset': { borderColor: campanha?.textColor },
-                  '&.Mui-focused fieldset': { borderColor: campanha?.textColor },
-                },
-              }}
-            />
-            <Button type="submit" color={"primary"} variant="contained" sx={{ mt: 2 }} disabled={codigo.length < 5}>
-              Validar
-            </Button>
-          </FormControl>
-        </form>
-      </Container>
+    <BaseSorteio logoUrl={logo} backgroundColor={bg} textColor={fg}  loadingText="Preparando jogo..." >
+      {/* O HTML já chega ao cliente com o tema certo.
+          Só o formulário/validação fica client. */}
+      <CodigoClient
+        codigoInicial={String(codigoInicial).toUpperCase()}
+        campanhaId={campanhaId}
+        
+        slug={slug}
+        textColor={fg}
+      />
     </BaseSorteio>
   );
 }
+
