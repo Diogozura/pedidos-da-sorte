@@ -48,11 +48,15 @@ export default function CodigoClient({
 
       if (!res.ok || json.ok === false) {
         toast.error(json.motivo ?? json.error ?? 'Código inválido ❌');
+       
         return;
       }
-
-      toast.success('Código válido! 🎉');
+      
+      
       const nextStatus = json.statusDepois ?? 'validado';
+
+      if(nextStatus != 'encerrado') {toast.success('Código válido! 🎉');}
+      
       const redirect = getRedirectUrlByStatus(nextStatus, upper, slug);
       if (redirect) router.push(redirect);
     } catch (err) {
