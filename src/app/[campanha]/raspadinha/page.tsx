@@ -78,7 +78,7 @@ export default async function Page({
       <RaspadinhaClient
         slug={slug}
         codigo={codigo}
-        backgroundImage={start.imagemPremio ?? '/nao-ganhou.png'}
+        backgroundImage={start.imagemPremio ?? '/nao-foi.jpg'}
         percentToFinish={start.percentToFinish ?? 50}
         radius={start.radius ?? 24}
         premiadoMsg={start.premiado ?? undefined}

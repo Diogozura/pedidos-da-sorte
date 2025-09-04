@@ -181,7 +181,7 @@ export default function RaspadinhaJogo({
       {backgroundImage && overlayReady && (
         <NextImage
           src={backgroundImage}
-          alt=""
+          alt="img pedido da sorte"
           fill
           sizes={`${width}px`}
           priority
