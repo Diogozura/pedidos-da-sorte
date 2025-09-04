@@ -3,11 +3,16 @@ import { notFound } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import GanhadorClient from './GanhadorClient';
 
-type CampanhaUI = { logoUrl?: string | null; backgroundColor?: string | null; textColor?: string | null };
+type CampanhaUI = {
+  logoUrl?: string | null;
+  backgroundColor?: string | null;
+  textColor?: string | null;
+};
 
-const BaseSorteio = dynamic(() => import('@/components/BaseSorteio').then(m => m.BaseSorteio), {
-  ssr: true,
-});
+const BaseSorteio = dynamic(
+  () => import('@/components/BaseSorteio').then(m => m.BaseSorteio),
+  { ssr: true }
+);
 
 async function getCampanhaBySlug(slug: string) {
   const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -18,6 +23,7 @@ async function getCampanhaBySlug(slug: string) {
     cache: 'no-store',
   });
   if (!res.ok) return null;
+
   const json = await res.json();
   const campanhaId: string | null = json.campanhaId ?? json.campanha?.id ?? null;
   const tema: CampanhaUI = {
@@ -37,19 +43,25 @@ async function getPremioByCodigo(codigo: string) {
     cache: 'no-store',
   });
   if (!res.ok) return null;
-  const json = await res.json(); // { ok: true, premiado: string | null }
+
+  const json: { ok?: boolean; premiado?: string | null } = await res.json();
   return json?.premiado ?? null;
 }
+
+type Params = { campanha: string };
+type Search = { codigo?: string };
 
 export default async function Page({
   params,
   searchParams,
 }: {
-  params: { campanha: string };
-  searchParams: { codigo?: string };
+  params: Promise<Params>;
+  searchParams: Promise<Search>;
 }) {
-  const slug = params.campanha;
-  const codigo = (searchParams?.codigo || '').toUpperCase();
+  // 👇 Agora aguardamos as Promises (Next 15)
+  const { campanha: slug } = await params;
+  const sp = await searchParams;
+  const codigo = (sp.codigo ?? '').toUpperCase();
 
   // 1) Tema + campanhaId no servidor (sem flicker)
   const data = await getCampanhaBySlug(slug);
@@ -65,7 +77,6 @@ export default async function Page({
 
   return (
     <BaseSorteio logoUrl={logo} backgroundColor={bg} textColor={fg}>
-      {/* Client mínimo com o formulário */}
       <GanhadorClient
         slug={slug}
         campanhaId={campanhaId}
@@ -76,4 +87,3 @@ export default async function Page({
     </BaseSorteio>
   );
 }
-

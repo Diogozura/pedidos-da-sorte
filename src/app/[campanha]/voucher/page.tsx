@@ -1,4 +1,3 @@
-// app/[campanha]/voucher/page.tsx
 import { notFound } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import VoucherClient from './VoucherClient';
@@ -9,7 +8,6 @@ const BaseSorteio = dynamic(() => import('@/components/BaseSorteio').then(m => m
 
 async function getCampanhaBySlug(slug: string) {
   const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
   const res = await fetch(`${base}/api/sorteio/campanha-info`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -30,7 +28,6 @@ async function getCampanhaBySlug(slug: string) {
 
 async function gerarVoucher(codigo: string) {
   const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
   const res = await fetch(`${base}/api/sorteio/voucher/gerar`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -45,18 +42,21 @@ async function gerarVoucher(codigo: string) {
   return json.codigoVoucher;
 }
 
+type Params = { campanha: string };
+type Search = { codigo?: string; c?: string };
+
 export default async function Page({
   params,
   searchParams,
 }: {
-  params: { campanha: string };
-  searchParams: { codigo?: string; c?: string };
+  params: Promise<Params>;
+  searchParams: Promise<Search>;
 }) {
-  const slug = params.campanha;
-  const codigo = (searchParams.codigo || searchParams.c || '').toUpperCase();
+  const { campanha: slug } = await params;           // ✅
+  const sp = await searchParams;                      // ✅
+  const codigo = (sp.codigo || sp.c || '').toUpperCase();
   if (!codigo) return notFound();
 
-  // 1) tema no servidor (sem flicker)
   const camp = await getCampanhaBySlug(slug);
   if (!camp) return notFound();
   const { tema } = camp;
@@ -64,27 +64,12 @@ export default async function Page({
   const fg = tema.textColor ?? '#ffffff';
   const logo = tema.logoUrl ?? undefined;
 
-  // 2) gera/recupera voucher no servidor
   const voucherCode = await gerarVoucher(codigo);
   if (!voucherCode) return notFound();
 
   return (
-    <BaseSorteio
-      logoUrl={logo}
-      backgroundColor={bg}
-      textColor={fg}
-      loading={true}
-      loadingText="Gerando voucher..."
-    >
-      <VoucherClient
-        codigo={codigo}
-        voucherCode={voucherCode}
-        textColor={fg}
-        // se quiser encerrar automaticamente em vez de só ao copiar:
-        // autoEncerrar
-      />
+    <BaseSorteio logoUrl={logo} backgroundColor={bg} textColor={fg} loading loadingText="Gerando voucher...">
+      <VoucherClient codigo={codigo} voucherCode={voucherCode} textColor={fg} />
     </BaseSorteio>
   );
 }
-
-

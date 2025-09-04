@@ -1,4 +1,3 @@
-// app/[campanha]/raspadinha/page.tsx
 import { notFound } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import RaspadinhaClient from './RaspadinhaClient';
@@ -49,18 +48,21 @@ async function startRaspadinha(slug: string, codigo?: string) {
   }>;
 }
 
+type Params = { campanha: string };
+type Search = { codigo?: string; c?: string };
+
 export default async function Page({
   params,
   searchParams,
 }: {
-  params: { campanha: string };
-  searchParams: { codigo?: string; c?: string };
+  params: Promise<Params>;
+  searchParams: Promise<Search>;
 }) {
-  const slug = params.campanha;
-  const codigo = (searchParams.codigo || searchParams.c || '').toUpperCase();
+  const { campanha: slug } = await params;                    // ✅ await
+  const sp = await searchParams;                               // ✅ await
+  const codigo = (sp.codigo || sp.c || '').toUpperCase();
   if (!codigo) return notFound();
 
-  // 1) tema no servidor (evita piscada)
   const camp = await getCampanhaBySlug(slug);
   if (!camp) return notFound();
   const { tema } = camp;
@@ -68,18 +70,11 @@ export default async function Page({
   const fg = tema.textColor ?? '#ffffff';
   const logo = tema.logoUrl ?? undefined;
 
-  // 2) dados de início (imagem do prêmio, etc.) no servidor
   const start = await startRaspadinha(slug, codigo);
   if (!start) return notFound();
 
   return (
-    <BaseSorteio
-      logoUrl={logo}
-      backgroundColor={bg}
-      textColor={fg}
-      loading={true}
-      loadingText="Preparando jogo..."
-    >
+    <BaseSorteio logoUrl={logo} backgroundColor={bg} textColor={fg} loading loadingText="Preparando jogo...">
       <RaspadinhaClient
         slug={slug}
         codigo={codigo}
@@ -91,5 +86,3 @@ export default async function Page({
     </BaseSorteio>
   );
 }
-
-
