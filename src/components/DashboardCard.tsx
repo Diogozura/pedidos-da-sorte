@@ -18,6 +18,8 @@ type Props = {
   subtext?: string;
   /** opcional: controla dimensões do card (usa a convenção de size do MUI) */
   size?: SizeVariant;
+
+  titleIcon?: React.ReactNode; // NOVO
 };
 
 const SIZES: Record<SizeVariant, { w: number; h: number; icon: number }> = {
@@ -34,6 +36,7 @@ export default function DashboardCard({
   disabled = false,
   subtext,
   size = 'md',
+  titleIcon, // NOVO
 }: Props) {
   const theme = useTheme();
   const dims = SIZES[size];
@@ -100,7 +103,7 @@ export default function DashboardCard({
       >
         {title}
       </Typography>
-
+      {titleIcon && <Box sx={{ ml: 0.5 }}>{titleIcon}</Box>}
       {subtext && (
         <Typography
           variant="caption"

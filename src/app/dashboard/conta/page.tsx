@@ -14,7 +14,6 @@ import {
   DialogActions,
   TextField,
   CircularProgress,
-  Box,
   FormControl,
   InputLabel,
   Select,
@@ -44,7 +43,7 @@ import {
 } from 'firebase/auth';
 import BaseDash from '../base';
 import { toast } from 'react-toastify';
-import { faHome, faUserTie } from '@fortawesome/free-solid-svg-icons';
+import { faHome, faPen, faUser, faUserFriends, faUserTie } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import AppBreadcrumbs from '@/components/shared/AppBreadcrumbs';
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
@@ -244,6 +243,8 @@ export default function GerenciarConta() {
 
   const ehAdmin = usuarioLogado?.nivel === 'admin';
 
+  console.log('usuarios', usuarios);
+
   return (
     <BaseDash>
       <Container maxWidth="md" sx={{ mt: 6 }}>
@@ -256,11 +257,12 @@ export default function GerenciarConta() {
         <Typography variant="h4" gutterBottom>
           Gerenciar Conta
         </Typography>
-        <Typography>Olá {usuarioLogado?.nome}</Typography>
-        <Box display={'flex'} justifyContent="space-evenly" alignItems="center" mb={4}>
+
+        <Grid container spacing={2}>
+
           {(usuarioLogado?.nivel === 'admin' || usuarioLogado?.nivel === 'empresa') && (
             <Grid container spacing={4} sx={{ mb: 6 }}>
-              <Grid size={{ xs: 12, md: 4 }}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <DashboardCard
                   title={usuarioLogado?.nivel === 'admin' ? 'Cadastro Empresa' : 'Cadastrar Colaborador'}
                   icon={<FontAwesomeIcon icon={faUserTie} />}
@@ -271,7 +273,7 @@ export default function GerenciarConta() {
           )}
           {usuarioLogado?.nivel === 'empresa' && (
             <Grid container spacing={4} sx={{ mb: 6 }}>
-              <Grid size={{ xs: 12, md: 4 }}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <DashboardCard
                   title="WhatsApp"
                   color="vermelho"
@@ -281,7 +283,7 @@ export default function GerenciarConta() {
               </Grid>
             </Grid>
           )}
-        </Box>
+        </Grid>
 
         {ehAdmin ? (
           <>
@@ -356,37 +358,22 @@ export default function GerenciarConta() {
         ) : (
           <>
             <Typography variant="h6" gutterBottom>
-              Contas cadastradas
+              Colaborador <FontAwesomeIcon icon={faUserFriends} />
             </Typography>
             <Grid container spacing={2}>
-              {usuarios.map((usuario) => (
-                <Grid size={{ xs: 12, md: 4 }} key={usuario.uid}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography variant="subtitle1" fontWeight="bold">
-                        {usuario.nome}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {usuario.email}
-                      </Typography>
-                      {usuarioLogado?.nivel !== 'empresa' ? (
-                        <Typography variant="caption" color="text.secondary">
-                          A edição deve ser feita pelo administrador.
-                        </Typography>
-                      ) : (
-                        <>
-                          <Button size="small" onClick={() => abrirModal('email', usuario)}>
-                            Alterar Email
-                          </Button>
-                          <Button size="small" onClick={() => abrirModal('senha', usuario)}>
-                            Alterar Senha
-                          </Button>
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
+              {usuarios
+                .filter((usuario) => usuario.uid !== usuarioLogado?.uid)
+                .map((usuario) => (
+                  <Grid key={usuario.uid} size={{ xs: 12, md: 6 }}>
+                    <DashboardCard
+                      title={usuario.nome}
+                      titleIcon={<FontAwesomeIcon icon={faPen} />} // NOVO
+                      color="vermelho"
+                      icon={<FontAwesomeIcon icon={faUser} />}
+                      onClick={() => router.push('/dashboard/conta/#')}
+                    />
+                  </Grid>
+                ))}
             </Grid>
           </>
         )}
@@ -478,9 +465,8 @@ export default function GerenciarConta() {
             </Typography>
             <Stack spacing={1} sx={{ mt: 2 }}>
               <Chip
-                label={`Status: ${
-                  statusSelecionado === 'conta_limitada' ? 'conta limitada' : statusSelecionado
-                }`}
+                label={`Status: ${statusSelecionado === 'conta_limitada' ? 'conta limitada' : statusSelecionado
+                  }`}
                 size="small"
               />
               <Chip label={`Motivo: ${motivoSelecionado}`} size="small" />

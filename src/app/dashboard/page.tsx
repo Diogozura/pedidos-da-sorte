@@ -30,19 +30,21 @@ export default function DashboardPage() {
 
   if (loading || !user) {
     return (
-     <LoadingOverlay texto="Carregando..." />
+      <LoadingOverlay texto="Carregando..." />
     );
   }
-console.log('user', user)
+  
 
 
   return (
     <BaseDash>
       {/* Conteúdo */}
-      <Container sx={{ mt: 6, display:'grid',  height:'60vh'}}>
+      <Container sx={{ mt: 6, display: 'grid', height: '60vh' }}>
+      
         <Typography variant="h4" component={'h1'} textAlign={'center'} gutterBottom>
           Painel de controle
         </Typography>
+
 
         <Grid container spacing={2}>
 
@@ -89,7 +91,7 @@ console.log('user', user)
               />
             </Grid>
           </ComPermissao>
-    
+
           {/* <ComPermissao permitido={['admin', 'empresa']}>
             <Grid size={{ xs: 12, md: 12 }}>
               <ResumoCampanha />
