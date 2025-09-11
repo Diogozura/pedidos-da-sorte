@@ -11,6 +11,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack(config) {
+    config.module.rules.push({
+      test: /\.json$/,
+      type: 'javascript/auto',
+      use: 'json-loader', // pode ser necessário instalar: npm install --save-dev json-loader
+    });
+    return config;
+  },
 };
 
 export default nextConfig;

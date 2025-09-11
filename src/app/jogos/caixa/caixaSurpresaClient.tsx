@@ -17,8 +17,6 @@ type Props = {
   codigo: string;
   premioImagem: string;
   premioNome: string;
-  caixaFechada?: string;
-  caixaAberta?: string;
 };
 
 export default function CaixaSurpresaClient(props: Props) {
@@ -64,8 +62,6 @@ export default function CaixaSurpresaClient(props: Props) {
         height={300}
         premioImagem={props.premioImagem}
         premioNome={props.premioNome}
-        caixaFechada={props.caixaFechada || '/caixa-fechada.png'}
-        caixaAberta={props.caixaAberta || '/caixa-aberta.png'}
         onReady={() => setLoading(false)}
         onComplete={onComplete}
       />

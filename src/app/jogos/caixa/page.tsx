@@ -10,11 +10,16 @@ export default function TesteCaixaSurpresa() {
   // Parâmetros configuráveis para teste
   const [premioImagem, setPremioImagem] = useState('/premios/pizza.png');
   const [premioNome, setPremioNome] = useState('Pizza');
-  const [caixaFechada, setCaixaFechada] = useState('/caixa/caixa-fechada.png');
-  const [caixaAberta, setCaixaAberta] = useState('/caixa/caixa-aberta.png');
+  const [loading, setLoading] = useState(false);
   
   const handleComplete = () => {
-    setResultado(`Prêmio revelado: ${premioNome}`);
+    setLoading(true);
+    
+    // Simula um tempo de carregamento do resultado do servidor
+    setTimeout(() => {
+      setResultado(`Prêmio revelado: ${premioNome}`);
+      setLoading(false);
+    }, 1000);
   };
   
   const resetTeste = () => {
@@ -25,7 +30,7 @@ export default function TesteCaixaSurpresa() {
     <Container maxWidth="md">
       <Paper sx={{ p: 4, mt: 4, mb: 4, borderRadius: 2 }}>
         <Typography variant="h4" gutterBottom align="center">
-          Teste do Componente Caixa Surpresa
+          Caixa Surpresa com Lottie Animation
         </Typography>
         
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4, mt: 4 }}>
@@ -40,7 +45,7 @@ export default function TesteCaixaSurpresa() {
               value={premioImagem}
               onChange={(e) => setPremioImagem(e.target.value)}
               size="small"
-              helperText="Ex: /iphone.png ou https://exemplo.com/imagem.jpg"
+              helperText="Ex: /premios/pizza.png"
             />
             
             <TextField 
@@ -48,22 +53,6 @@ export default function TesteCaixaSurpresa() {
               fullWidth
               value={premioNome}
               onChange={(e) => setPremioNome(e.target.value)}
-              size="small"
-            />
-            
-            <TextField 
-              label="URL da caixa fechada" 
-              fullWidth
-              value={caixaFechada}
-              onChange={(e) => setCaixaFechada(e.target.value)}
-              size="small"
-            />
-            
-            <TextField 
-              label="URL da caixa aberta" 
-              fullWidth
-              value={caixaAberta}
-              onChange={(e) => setCaixaAberta(e.target.value)}
               size="small"
             />
             
@@ -93,16 +82,21 @@ export default function TesteCaixaSurpresa() {
             </Typography>
             
             <CaixaSurpresa
-              width={250}
-              height={250}
+              width={280}
+              height={280}
               premioImagem={premioImagem}
               premioNome={premioNome}
-              caixaFechada={caixaFechada}
-              caixaAberta={caixaAberta}
               onComplete={handleComplete}
+              onReady={() => console.log("Animação pronta!")}
             />
             
-            {resultado && (
+            {loading && (
+              <Typography variant="body2" sx={{ mt: 2 }}>
+                Processando resultado...
+              </Typography>
+            )}
+            
+            {resultado && !loading && (
               <Typography 
                 variant="h6" 
                 sx={{ mt: 2, color: 'success.main', fontWeight: 'bold' }}
