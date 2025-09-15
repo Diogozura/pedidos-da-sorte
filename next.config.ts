@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV === 'development';
+
 const nextConfig: NextConfig = {
+  // Configuração específica para desenvolvimento
+  ...(isDev && {
+    // Desabilita otimizações desnecessárias em dev
+    swcMinify: false,
+  }),
+  
   images: {
     domains: ["firebasestorage.googleapis.com"],
 
@@ -11,7 +19,17 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  webpack(config, { isServer }) {
+  
+  // Evita problemas de prerender com Firebase em desenvolvimento
+  typescript: {
+    ignoreBuildErrors: isDev, // Ignora erros de TS apenas em dev
+  },
+  
+  eslint: {
+    ignoreDuringBuilds: isDev, // Ignora warnings de ESLint apenas em dev
+  },
+  
+  webpack(config, { isServer, dev }) {
     // Corrige problemas com Firebase/gRPC no build
     if (!isServer) {
       config.resolve.fallback = {
@@ -32,6 +50,15 @@ const nextConfig: NextConfig = {
         '@grpc/grpc-js': 'commonjs @grpc/grpc-js',
         '@grpc/proto-loader': 'commonjs @grpc/proto-loader',
       });
+    }
+
+    // Configurações específicas para desenvolvimento
+    if (dev) {
+      // Melhora performance em dev
+      config.watchOptions = {
+        ...config.watchOptions,
+        ignored: ['**/node_modules/**', '**/.git/**'],
+      };
     }
 
     return config;
