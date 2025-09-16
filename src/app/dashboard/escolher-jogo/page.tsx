@@ -32,7 +32,7 @@ export default function EscolherJogo() {
 
 
 
-                    <Container maxWidth="lg" sx={{ mt: 6, display: 'grid', height: '60vh' }} >
+                    <Container maxWidth="lg" sx={{ mt: 6, display: 'grid', height: '80vh' }} >
                         <AppBreadcrumbs
                             items={[
                                 { label: 'Início', href: '/dashboard', icon: faHome },
@@ -46,7 +46,7 @@ export default function EscolherJogo() {
                             justifyContent: 'center'
                         }}>
 
-                            <Grid size={{ xs: 12, md: 3 }} display={'flex'} justifyContent='center' >
+                            <Grid size={{ xs: 6, md: 3 }} display={'flex'} justifyContent='center' >
                                 <DashboardCard
                                     icon={<FontAwesomeIcon icon={faPlus} />}
                                     color='vermelho'
@@ -56,7 +56,7 @@ export default function EscolherJogo() {
                                     onClick={handleClick}
                                 />
                             </Grid>
-                            <Grid size={{ xs: 12, md: 3 }} display={'flex'} justifyContent='center'>
+                            <Grid size={{ xs: 6, md: 3 }} display={'flex'} justifyContent='center'>
                                 <DashboardCard
                                     icon={<FontAwesomeIcon icon={faPlus} />}
                                     color='vermelho'
@@ -65,7 +65,7 @@ export default function EscolherJogo() {
                                 />
                             </Grid>
 
-                            <Grid size={{ xs: 12, md: 3 }} display={'flex'} justifyContent='center'>
+                            <Grid size={{ xs: 6, md: 3 }} display={'flex'} justifyContent='center'>
                                 <DashboardCard
                                     icon={<FontAwesomeIcon icon={faPlus} />}
                                     color='vermelho'

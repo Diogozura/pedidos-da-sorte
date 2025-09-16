@@ -23,6 +23,7 @@
     "next": "15.3.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-image-crop": "^11.0.10",
     "react-toastify": "^11.0.5",
     "styled-components": "^6.1.19",
     "uuid": "^11.1.0"
@@ -32,6 +33,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/react-image-crop": "^8.1.6",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
     "typescript": "^5"

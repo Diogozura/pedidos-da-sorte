@@ -106,7 +106,7 @@ export default function JogosAtivos() {
         </Typography>
         <Grid container spacing={3}>
           {campanhas.map((camp) => (
-            <Grid size={{ xs: 12, md: 4 }} key={camp.id}>
+            <Grid size={{ xs: 6, md: 4 }} key={camp.id}>
               <ButtonBase
                 onClick={() => router.push(`/dashboard/campanhas/${camp.id}`)}
                 sx={{

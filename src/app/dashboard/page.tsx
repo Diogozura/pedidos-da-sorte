@@ -50,7 +50,7 @@ export default function DashboardPage() {
 
 
           <ComPermissao permitido={['admin', 'empresa']}>
-            <Grid size={{ xs: 12, md: 3 }}>
+            <Grid size={{ xs: 6, md: 3 }}>
               <DashboardCard
                 icon={<FontAwesomeIcon icon={faPlus} />}
                 color='vermelho'
@@ -61,7 +61,7 @@ export default function DashboardPage() {
           </ComPermissao>
 
           <ComPermissao permitido={['admin', 'empresa']}>
-            <Grid size={{ xs: 12, md: 3 }}>
+            <Grid size={{ xs: 6, md: 3 }}>
               <DashboardCard
                 icon={<FontAwesomeIcon icon={faCheck} />}
                 title="Minhas campanhas"
@@ -70,7 +70,7 @@ export default function DashboardPage() {
             </Grid>
           </ComPermissao>
           <ComPermissao permitido={['admin', 'empresa']}>
-            <Grid size={{ xs: 12, md: 3 }}>
+            <Grid size={{ xs: 6, md: 3 }}>
               <DashboardCard
                 icon={<FontAwesomeIcon icon={faUser} />}
                 title="Gerenciar Conta"
@@ -81,7 +81,7 @@ export default function DashboardPage() {
           </ComPermissao>
 
           <ComPermissao permitido={['admin', 'empresa', 'funcionario']}>
-            <Grid size={{ xs: 12, md: 3 }}>
+            <Grid size={{ xs: 6, md: 3 }}>
               <DashboardCard
                 icon={<FontAwesomeIcon icon={faShare} />}
                 color='preto'

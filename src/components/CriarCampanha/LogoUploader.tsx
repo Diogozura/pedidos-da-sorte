@@ -5,6 +5,7 @@ import { ChangeEvent, useRef, useState } from 'react';
 import { Box, Typography, Button, Dialog, DialogTitle, DialogContent } from '@mui/material';
 import { toast } from 'react-toastify';
 import ListaImagens from '../shared/ListaImagens';
+import ImageCropDialog from './ImageCropDialog';
 
 interface Props {
   preview: string;
@@ -17,25 +18,36 @@ interface Props {
 
 export default function LogoUploader({ preview, setPreview, setFile, logosDisponiveis }: Props) {
   const [modalAberto, setModalAberto] = useState(false);
+  const [cropDialogAberto, setCropDialogAberto] = useState(false);
+  const [imagemParaCrop, setImagemParaCrop] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 100 * 1024) {
-      toast.error('A imagem deve ter menos de 100 KB.');
+    // Verificar se é uma imagem
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione apenas arquivos de imagem.');
       return;
     }
 
-    const previewUrl = URL.createObjectURL(file);
-    const img = new Image();
-    img.src = previewUrl;
+    // Abrir dialog de crop para qualquer imagem
+    setImagemParaCrop(file);
+    setCropDialogAberto(true);
+    setModalAberto(false);
+  };
 
-    img.onload = () => {
-      setFile(file);
-      setPreview(previewUrl);
-      setModalAberto(false);
-    };
+  const handleCropComplete = (croppedFile: File) => {
+    const previewUrl = URL.createObjectURL(croppedFile);
+    setFile(croppedFile);
+    setPreview(previewUrl);
+    setCropDialogAberto(false);
+    setImagemParaCrop(null);
+  };
+
+  const handleCropCancel = () => {
+    setCropDialogAberto(false);
+    setImagemParaCrop(null);
   };
 
   return (
@@ -65,7 +77,8 @@ export default function LogoUploader({ preview, setPreview, setFile, logosDispon
             }}
           >
             <Typography fontSize={14} color="text.secondary">
-              Adicionar logo da campanha
+              Adicionar logo da campanha<br />
+              <small>(será ajustada para 300x300px)</small>
             </Typography>
           </Box>
           <Button onClick={() => setModalAberto(true)} sx={{ mt: 2 }}>
@@ -178,6 +191,18 @@ export default function LogoUploader({ preview, setPreview, setFile, logosDispon
         accept="image/*"
         onChange={handleChange}
       />
+
+      {/* Dialog de Crop */}
+      {imagemParaCrop && (
+        <ImageCropDialog
+          open={cropDialogAberto}
+          onClose={handleCropCancel}
+          imageFile={imagemParaCrop}
+          onCropComplete={handleCropComplete}
+          targetWidth={300}
+          targetHeight={300}
+        />
+      )}
 
     </>
   );
