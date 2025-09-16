@@ -1,13 +1,11 @@
 // src/components/CriarCampanha/PremiosForm.tsx
 'use client';
 
-import { Box, Button, Grid, IconButton, InputAdornment, TextField, Typography, Dialog, DialogContent, DialogTitle } from '@mui/material';
+import { Box, Button, Grid, IconButton, InputAdornment, TextField } from '@mui/material';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
-import { ChangeEvent, useEffect, useState } from 'react';
-import { toast } from 'react-toastify';
-import ListaImagens from '../shared/ListaImagens';
-import { useRef } from 'react';
+import { useEffect } from 'react';
+import ImagemPremioUploader from './ImagemPremioUploader';
 
 export interface Premio {
   nome: string;
@@ -25,9 +23,7 @@ interface Props {
   usuarioId: string;
 }
 
-export default function PremiosForm({ premios, setPremios, imagensDisponiveis }: Props) {
-  const [modalIndex, setModalIndex] = useState<number | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+export default function PremiosForm({ premios, setPremios, imagensDisponiveis, usuarioId }: Props) {
   const adicionarPremio = () => {
     setPremios((prev: Premio[]) => [
       ...prev,
@@ -50,60 +46,40 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
     setPremios(novos);
   };
 
-  const handleUploadImagem = (e: ChangeEvent<HTMLInputElement>, index: number) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 100 * 1024) {
-      toast.error('A imagem deve ter menos de 100 KB.');
-      return;
-    }
-
-    const previewUrl = URL.createObjectURL(file);
-    const img = new Image();
-    img.src = previewUrl;
-    img.onload = () => {
-      if (img.width !== 500 || img.height !== 500) {
-        toast.error('A imagem precisa ter exatamente 500×500 px.');
-        return;
-      }
-      setPremios((prev: Premio[]) => {
-        const copia = [...prev];
+  const handleImagemChange = (index: number, preview: string, file: File | null) => {
+    setPremios((prev: Premio[]) => {
+      const copia = [...prev];
+      if (file) {
+        // Nova imagem enviada
         copia[index].file = file;
-        copia[index].preview = previewUrl;
-        return copia;
-      });
-       setModalIndex(null);
-    };
-  };
-
-  const handleSelecionarImagem = (url: string, index: number) => {
-    const novos = [...premios];
-    novos[index].imagem = url;
-    novos[index].file = null;
-    novos[index].preview = '';
-    setPremios(novos);
-    setModalIndex(null);
+        copia[index].preview = preview;
+        copia[index].imagem = ''; // limpa a imagem da biblioteca
+      } else {
+        // Imagem da biblioteca selecionada
+        copia[index].imagem = preview;
+        copia[index].file = null;
+        copia[index].preview = '';
+      }
+      return copia;
+    });
   };
 
   useEffect(() => {
-  if (premios.length === 0) {
-    setPremios([
-      {
-        nome: '',
-        imagem: '',
-        quantidadeTotais: 1,
-        file: null,
-        preview: ''
-      }
-    ]);
-  }
-}, []);
-
+    if (premios.length === 0) {
+      setPremios([
+        {
+          nome: '',
+          imagem: '',
+          quantidadeTotais: 1,
+          file: null,
+          preview: ''
+        }
+      ]);
+    }
+  }, [premios.length, setPremios]);
 
   return (
     <>
-      {/* <Typography variant="h6" gutterBottom>Prêmios</Typography> */}
       <Box height={premios.length == 1 ? 150 : 250} overflow="auto" sx={{ mb: 2 }}>
         {premios.map((p, index) => (
           <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
@@ -128,17 +104,19 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
                 />
               </Grid>
               <Grid size={2}>
-                {p.preview ? (
-                  <Box component="img" src={p.preview} sx={{ width: 80, height: 80, borderRadius: 1 }} />
-                ) : p.imagem ? (
-                  <Box component="img" src={p.imagem} sx={{ width: 80, height: 80, borderRadius: 1 }} />
-                ) : (
-                  <Typography variant="body2" color="text.secondary">Nenhuma imagem selecionada</Typography>
-                )}
-                <Box display="flex" gap={2} mt={1}>
-                  <Button variant="outlined" onClick={() => setModalIndex(index)}>Escolher imagem</Button>
-
-                </Box>
+                <ImagemPremioUploader
+                  preview={p.preview || p.imagem}
+                  setPreview={(url) => handleImagemChange(index, url, null)}
+                  setFile={(file) => {
+                    if (file) {
+                      const previewUrl = URL.createObjectURL(file);
+                      handleImagemChange(index, previewUrl, file);
+                    }
+                  }}
+                  usuarioId={usuarioId}
+                  imagensDisponiveis={imagensDisponiveis}
+                  tamanhoPreview={80}
+                />
               </Grid>
               {premios.length >= 2 && (
                 <Grid size={{ xs: 12, sm: 1 }}>
@@ -148,36 +126,6 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
                 </Grid>
               )}
             </Grid>
-
-            {/* Modal de seleção de imagem */}
-            <Dialog open={modalIndex === index} onClose={() => setModalIndex(null)} fullWidth maxWidth="xs">
-              <DialogTitle>Selecionar imagem do prêmio</DialogTitle>
-              <DialogContent>
-                <ListaImagens
-                  imagens={imagensDisponiveis}
-                  imagemSelecionada={p.imagem}
-                  onSelecionar={(url) => handleSelecionarImagem(url, index)}
-                  tamanho={80}
-                />
-                <Box mt={2}>
-                  <Button variant="outlined" onClick={() => inputRef.current?.click()}>
-                    Enviar nova imagem
-                  </Button>
-                  <input
-                    ref={inputRef}
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={(e) => {
-                      if (modalIndex !== null) {
-                        handleUploadImagem(e, modalIndex);
-                        if (inputRef.current) inputRef.current.value = ''; // limpa valor anterior
-                      }
-                    }}
-                  />
-                </Box>
-              </DialogContent>
-            </Dialog>
           </Box>
         ))}
       </Box>
@@ -189,7 +137,6 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis }:
       >
         Adicionar prêmio
       </Button>
-
     </>
   );
 }
