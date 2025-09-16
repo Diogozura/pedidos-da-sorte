@@ -68,7 +68,7 @@ export default async function Page({
   if (!voucherCode) return notFound();
 
   return (
-    <BaseSorteio logoUrl={logo} backgroundColor={bg} textColor={fg} loading loadingText="Gerando voucher...">
+    <BaseSorteio logoUrl={logo} backgroundColor={bg} textColor={fg}  loadingText="Gerando voucher...">
       <VoucherClient codigo={codigo} voucherCode={voucherCode} textColor={fg} />
     </BaseSorteio>
   );

@@ -73,12 +73,13 @@ export default async function Page({
   const start = await startRaspadinha(slug, codigo);
   if (!start) return notFound();
 
+  console.log('Raspadinha start:', start);
   return (
     <BaseSorteio logoUrl={logo} backgroundColor={bg} textColor={fg} loading loadingText="Preparando jogo...">
       <RaspadinhaClient
         slug={slug}
         codigo={codigo}
-        backgroundImage={start.imagemPremio ?? '/nao-foi.jpg'}
+        backgroundImage={start.imagemPremio ?? '/nao_foi.jpg'}
         percentToFinish={start.percentToFinish ?? 50}
         radius={start.radius ?? 24}
         premiadoMsg={start.premiado ?? undefined}

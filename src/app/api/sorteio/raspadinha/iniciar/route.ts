@@ -11,7 +11,9 @@ type RespOk = {
   campanhaId: string;
   logoUrl?: string | null;
   premiado: string | null; // nome do prêmio ou null
-  imagemPremio?: string | null; // deixe null quando não premiado
+  imagemPremio: string | null; // null quando não premiado ou não encontrada
+  percentToFinish?: number; // opcional para configurar raspagem
+  radius?: number; // opcional para configurar pincel
 };
 
 type RespErr = { ok: false; error: string };
@@ -76,9 +78,9 @@ export async function POST(req: Request) {
         : null;
 
     const premiado = !!(prizeName && prizeName !== "nenhum");
-    const imagemPremio = premiado
-      ? premios.find((p) => p.nome === prizeName)?.imagem ?? undefined
-      : undefined;
+    const imagemPremio: string | null = premiado
+      ? (premios.find((p) => p.nome === prizeName)?.imagem ?? null)
+      : null;
 
     // 4) Estados aceitos e transição para “aguardando raspagem”
     if (["usado", "encerrado"].includes(codeData.status)) {
@@ -100,6 +102,9 @@ export async function POST(req: Request) {
       logoUrl,
       premiado: prizeName,
       imagemPremio,
+      // Defaults podem ser ajustados ou carregados de config na campanha futuramente
+      percentToFinish: 50,
+      radius: 24,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Falha interna";

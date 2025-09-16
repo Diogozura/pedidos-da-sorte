@@ -46,24 +46,6 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis, u
     setPremios(novos);
   };
 
-  const handleImagemChange = (index: number, preview: string, file: File | null) => {
-    setPremios((prev: Premio[]) => {
-      const copia = [...prev];
-      if (file) {
-        // Nova imagem enviada
-        copia[index].file = file;
-        copia[index].preview = preview;
-        copia[index].imagem = ''; // limpa a imagem da biblioteca
-      } else {
-        // Imagem da biblioteca selecionada
-        copia[index].imagem = preview;
-        copia[index].file = null;
-        copia[index].preview = '';
-      }
-      return copia;
-    });
-  };
-
   useEffect(() => {
     if (premios.length === 0) {
       setPremios([
@@ -106,11 +88,35 @@ export default function PremiosForm({ premios, setPremios, imagensDisponiveis, u
               <Grid size={2}>
                 <ImagemPremioUploader
                   preview={p.preview || p.imagem}
-                  setPreview={(url) => handleImagemChange(index, url, null)}
+                  // IMPORTANTE: o componente filho dispara setFile(croppedFile) e DEPOIS setPreview(previewUrl).
+                  // Se chamarmos handleImagemChange nas duas chamadas, a segunda (setPreview) perde a referência ao File
+                  // e grava o blob: URL em "imagem". Para evitar isso, só atualizamos imagem quando NÃO existe um file registrado.
+                  setPreview={(url) => {
+                    setPremios(prev => {
+                      const copia = [...prev];
+                      const alvo = copia[index];
+                      // Se já temos um file (upload novo), manter file e preview atuais; não salvar blob em imagem
+                      if (!alvo.file) {
+                        alvo.imagem = url; // imagem da biblioteca
+                        alvo.preview = '';
+                      } else {
+                        // Apenas atualiza o preview visual se por algum motivo ainda não setado
+                        if (!alvo.preview) alvo.preview = url;
+                      }
+                      return copia;
+                    });
+                  }}
                   setFile={(file) => {
                     if (file) {
                       const previewUrl = URL.createObjectURL(file);
-                      handleImagemChange(index, previewUrl, file);
+                      setPremios(prev => {
+                        const copia = [...prev];
+                        const alvo = copia[index];
+                        alvo.file = file;
+                        alvo.preview = previewUrl; // mostrado na UI
+                        alvo.imagem = ''; // será definido após upload na criação
+                        return copia;
+                      });
                     }
                   }}
                   usuarioId={usuarioId}
