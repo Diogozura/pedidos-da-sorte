@@ -271,7 +271,7 @@ export default function GerenciarConta() {
               </Grid>
             </Grid>
           )}
-          {usuarioLogado?.nivel === 'empresa' && (
+          {(usuarioLogado?.nivel === 'empresa' || usuarioLogado?.nivel === 'funcionario')&& (
             <Grid container spacing={4} sx={{ mb: 6 }}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <DashboardCard
@@ -357,7 +357,7 @@ export default function GerenciarConta() {
           </>
         ) : (
           <>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" display={usuarioLogado?.nivel === 'funcionario' ? 'none' : 'block'} gutterBottom>
               Colaborador <FontAwesomeIcon icon={faUserFriends} />
             </Typography>
             <Grid container spacing={2}>

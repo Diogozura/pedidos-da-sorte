@@ -85,8 +85,8 @@ export default function WhatsApp() {
     const lastStatusRef = useRef<GlobalStatus>('desconhecido');
     const [showScanning, setShowScanning] = useState<boolean>(false);
 
-    const { loading, isEmpresa, tenantId } = useTenantEmpresa();
-
+    const { loading, isEmpresa,isFuncionario, tenantId } = useTenantEmpresa();
+    console.log('isFuncionario', isFuncionario);
 
     // --------- helpers de fetch (sem cache) ----------
     const fetchJSON = async <T,>(url: string): Promise<T> => {
@@ -228,11 +228,11 @@ export default function WhatsApp() {
         );
     }
 
-    if (!isEmpresa) {
+    if (!isEmpresa && !isFuncionario) {
         return (
             <BaseDash>
                 <Container maxWidth="lg" sx={{ py: 3 }}>
-                    <Alert severity="info">Somente contas do tipo empresa</Alert>
+                    <Alert severity="info">Somente contas do tipo empresa ou funcionário</Alert>
                 </Container>
             </BaseDash>
         );

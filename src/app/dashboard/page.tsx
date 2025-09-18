@@ -69,7 +69,7 @@ export default function DashboardPage() {
               />
             </Grid>
           </ComPermissao>
-          <ComPermissao permitido={['admin', 'empresa']}>
+          <ComPermissao permitido={['admin', 'empresa', 'funcionario']}>
             <Grid size={{ xs: 6, md: 3 }}>
               <DashboardCard
                 icon={<FontAwesomeIcon icon={faUser} />}
