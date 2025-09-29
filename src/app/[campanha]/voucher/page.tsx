@@ -66,10 +66,28 @@ export default async function Page({
 
   const voucherCode = await gerarVoucher(codigo);
   if (!voucherCode) return notFound();
+  // busca o nome do prêmio associado a esse código (opcional)
+  let premioNome: string | undefined = undefined;
+  try {
+    const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const infoRes = await fetch(`${base}/api/sorteio/codigo/info`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ codigo }),
+      cache: 'no-store',
+    });
+    if (infoRes.ok) {
+      const infoJson = await infoRes.json();
+      if (infoJson?.ok && infoJson?.premiado) premioNome = infoJson.premiado;
+    }
+  } catch (err) {
+    // não bloqueia a geração do voucher — apenas ignora se falhar
+    console.warn('Falha ao buscar info do código:', err);
+  }
 
   return (
     <BaseSorteio logoUrl={logo} backgroundColor={bg} textColor={fg}  loadingText="Gerando voucher...">
-      <VoucherClient codigo={codigo} voucherCode={voucherCode} textColor={fg} />
+      <VoucherClient codigo={codigo} voucherCode={voucherCode} textColor={fg} premio={premioNome} />
     </BaseSorteio>
   );
 }

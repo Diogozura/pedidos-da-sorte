@@ -11,9 +11,10 @@ type Props = {
   voucherCode: string;
   textColor?: string;
   autoEncerrar?: boolean; // opcional: para encerrar o código sem depender do clique
+  premio?: string | null;
 };
 
-export default function VoucherClient({ codigo, voucherCode, autoEncerrar }: Props) {
+export default function VoucherClient({ codigo, voucherCode, autoEncerrar, premio }: Props) {
   const { setLoading } = useBaseSorteioLoading();
   const [copiando, setCopiando] = useState(false);
 
@@ -55,6 +56,12 @@ export default function VoucherClient({ codigo, voucherCode, autoEncerrar }: Pro
     >
       <Typography variant="h4" component="h1">🎉 Seu voucher foi gerado!</Typography>
       <Typography>Use esse voucher na loja.</Typography>
+
+      {premio && (
+        <Typography variant="h6" sx={{ mt: 1, color: '#fff' }}>
+          🎁 Prêmio: {premio}
+        </Typography>
+      )}
 
       <Box
         onClick={handleCopy}
