@@ -20,7 +20,7 @@
     "firebase": "^11.10.0",
     "firebase-admin": "^12.7.0",
     "lottie-react": "^2.4.1",
-    "next": "15.3.5",
+    "next": "15.3.8",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-image-crop": "^11.0.10",
